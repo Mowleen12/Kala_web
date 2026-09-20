@@ -111,7 +111,7 @@ export async function supabaseSignInWithGoogle(
       }
 
       if (data?.url) {
-        // When embedded in an iframe (e.g., AI Studio preview), Google rejects iframe rendering (X-Frame-Options: SAMEORIGIN)
+        // When embedded in an iframe, Google may reject iframe rendering due to X-Frame-Options restrictions.
         // We open a dedicated popup window for Supabase Google OAuth
         if (isIframe) {
           const width = 520;

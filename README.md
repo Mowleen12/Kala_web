@@ -1,20 +1,84 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Kala Web
 
-# Run and deploy your AI Studio app
+Kala Web is a React + Vite application for a creative talent marketplace and opportunity discovery platform. It connects artists, organisers, and opportunity seekers through a polished portal experience with profile views, application flows, opportunities browsing, and Supabase-backed authentication.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/d5bfeb40-9a51-4217-b7de-d91f76c009a1
+- Artist and organiser portal experiences
+- Opportunity discovery and browsing
+- Featured calls and curated listings
+- Application and onboarding flows
+- Profile management UI
+- Supabase authentication and account flows
+- Cloudinary-ready media uploads
+- Responsive, modern interface built with React and Tailwind
 
-## Run Locally
+## Tech Stack
 
-**Prerequisites:**  Node.js
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS
+- Supabase
+- Cloudinary
+- Lucide icons
 
+## Getting Started
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Prerequisites
+
+- Node.js 18+ recommended
+- npm
+
+### Install dependencies
+
+```bash
+npm install
+```
+
+### Environment variables
+
+Copy [.env.example](.env.example) to a local `.env` file and fill in the required values:
+
+```bash
+copy .env.example .env
+```
+
+Then configure:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_CLOUDINARY_CLOUD_NAME`
+- `VITE_CLOUDINARY_UPLOAD_PRESET`
+
+### Run locally
+
+```bash
+npm run dev
+```
+
+The app will start on:
+
+- http://localhost:3000/
+
+## Build
+
+```bash
+npm run build
+```
+
+## Project Structure
+
+```text
+src/
+  components/
+  data/
+  lib/
+  App.tsx
+  main.tsx
+  types.ts
+```
+
+## Notes
+
+This project is configured for local development and deployment in a standard Vite environment. For production setup, ensure your Supabase and Cloudinary environment values are configured securely and not committed to source control.
