@@ -1,0 +1,6 @@
+{
+  "name": "kalā - Emerging Artists Platform",
+  "description": "Where India's emerging artists build careers, not just followers. Discover real opportunities, auditions, residencies, and collaborate with creative minds.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
