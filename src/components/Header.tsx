@@ -106,7 +106,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Global Search Bar */}
-      <div className="flex-1 max-w-xl mx-auto">
+      <div className="flex-1 min-w-0 max-w-xl mx-auto">
         <div className="relative flex items-center">
           <Search className="absolute left-4 w-4 h-4 text-zinc-400 pointer-events-none" />
           <input
@@ -139,7 +139,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={onOpenFreeTierStatus}
-            className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FAF5EE] hover:bg-[#F2ECE3] border border-[#E7E0D2] text-[11px] font-bold text-zinc-800 transition-colors shadow-2xs cursor-pointer"
+            className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FAF5EE] hover:bg-[#F2ECE3] border border-[#E7E0D2] text-[11px] font-bold text-zinc-800 transition-colors shadow-2xs cursor-pointer"
             title="View Supabase Free Tier Auth & Cloudinary Free Media Storage status"
           >
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -150,20 +150,9 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
-        {/* Mobile Portal Badge */}
-        <div className="sm:hidden px-2.5 py-1 rounded-full bg-[#F2EDE4] text-xs font-bold text-zinc-800 flex items-center gap-1">
-          {portalMode === 'artist' ? (
-            <>
-              <Palette className="w-3 h-3 text-[#E45826]" />
-              <span>Artist</span>
-            </>
-          ) : (
-            <>
-              <Building2 className="w-3 h-3 text-[#E45826]" />
-              <span>Host</span>
-            </>
-          )}
-        </div>
+        {/* Mobile portal badge removed: the header cannot fit it alongside logo +
+            search + bell + avatar without overflowing the viewport. The full
+            "Artist Portal" badge above covers sm and up. */}
 
         {/* Notification Bell */}
         <div className="relative">
@@ -244,7 +233,7 @@ export const Header: React.FC<HeaderProps> = ({
               alt="Profile"
               className="w-7 h-7 rounded-full object-cover ring-1 ring-zinc-200"
             />
-            <span className="text-[13px] text-zinc-600 hidden sm:inline">
+            <span className="text-[13px] text-zinc-600 hidden lg:inline">
               {portalMode === 'artist' ? (
                 <>Hello, <strong className="text-zinc-900 font-semibold">{userName}</strong></>
               ) : (
