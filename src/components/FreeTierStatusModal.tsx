@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { isSupabaseConfigured, activeSupabaseUrl } from '../lib/supabase';
 import { isCloudinaryConfigured } from '../lib/cloudinary';
+import { getStorageUsage } from '../lib/threads';
+import { formatMB, IMAGE_MAX_BYTES, VIDEO_MAX_BYTES, USER_MONTHLY_BYTES } from '../lib/limits';
 
 interface FreeTierStatusModalProps {
   isOpen: boolean;
@@ -28,6 +30,13 @@ export const FreeTierStatusModal: React.FC<FreeTierStatusModalProps> = ({
   onClose,
 }) => {
   const [copied, setCopied] = useState(false);
+
+  const [usage, setUsage] = useState<{ storageBytes: number; monthBytes: number } | null>(null);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    getStorageUsage().then(setUsage).catch(() => setUsage(null));
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -180,6 +189,55 @@ VITE_CLOUDINARY_UPLOAD_PRESET=your-unsigned-preset-name`;
                   Preview Demo Mode
                 </span>
               )}
+            </div>
+
+            <div className="mt-3 p-3 rounded-xl bg-white border border-[#E4DFD5] space-y-2.5">
+              <span className="text-[11px] font-bold text-zinc-800 uppercase tracking-wider">
+                Storage &amp; uploads
+              </span>
+
+              {[
+                { label: 'Media stored', value: usage?.storageBytes ?? 0, cap: 8 * 1024 * 1024 * 1024 },
+                { label: 'Your uploads this month', value: usage?.monthBytes ?? 0, cap: USER_MONTHLY_BYTES },
+              ].map((meter) => {
+                const pct = Math.min(100, Math.round((meter.value / meter.cap) * 100));
+                return (
+                  <div key={meter.label}>
+                    <div className="flex items-center justify-between text-[11px] mb-1">
+                      <span className="font-semibold text-zinc-600">{meter.label}</span>
+                      <span className="font-bold text-zinc-800">
+                        {formatMB(meter.value)} / {formatMB(meter.cap)}
+                      </span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-zinc-200 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${pct > 80 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px] border-t border-zinc-100">
+                <span className="text-zinc-500">
+                  Per-file: {formatMB(IMAGE_MAX_BYTES)} image · {formatMB(VIDEO_MAX_BYTES)} video
+                </span>
+                <a
+                  href="https://console.cloudinary.com/settings/account/usage"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-[#E45826] hover:underline flex items-center gap-1"
+                >
+                  Bandwidth &amp; transformations <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+
+              <p className="text-[10px] text-zinc-400 leading-relaxed">
+                Delivery bandwidth is counted by Cloudinary when it serves a file and is only readable
+                through the Admin API, which needs a secret this app never ships. Open the dashboard
+                for the live figure.
+              </p>
             </div>
 
             <div className="text-xs text-zinc-600 space-y-1.5 pt-2 border-t border-zinc-200/60">
