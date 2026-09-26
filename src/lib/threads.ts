@@ -417,7 +417,6 @@ export function subscribeThread(
       { event: 'INSERT', schema: 'public', table: 'messages', filter: `thread_id=eq.${threadId}` },
       (payload) => onMessage(rowToMessage(payload.new))
     )
-    .on('presence', { event: 'sync' }, () => {})
     .subscribe((status) => {
       // TIMED_OUT is a dead socket with no event — surfacing it as an error is
       // what stops the chat looking fine while nothing arrives (spec §7).

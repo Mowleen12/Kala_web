@@ -5,8 +5,14 @@ import {
   fetchMessages, sendMessage, subscribeThread, getBudget, isDbReady, SendMessageInput,
 } from '../lib/threads';
 import { USER_MONTHLY_BYTES, formatMB, maxBytesFor } from '../lib/limits';
-import { uploadToCloudinary, isCloudinaryConfigured, getOptimizedCloudinaryUrl } from '../lib/cloudinary';
+import { isCloudinaryConfigured, getOptimizedCloudinaryUrl } from '../lib/cloudinary';
 import { MediaUploader } from './MediaUploader';
+
+const mergeWithLocal = (prev: Message[], fresh: Message[]): Message[] => {
+  const fetchedIds = new Set(fresh.map((m) => m.id));
+  const localOnly = prev.filter((m) => (m.pending || m.failed) && !fetchedIds.has(m.id));
+  return [...fresh, ...localOnly];
+};
 
 export interface ThreadModalProps {
   isOpen: boolean;
@@ -47,7 +53,7 @@ export const ThreadModal: React.FC<ThreadModalProps> = ({
 
     const onFocus = () => {
       fetchMessages(thread.id).then((fresh) => {
-        if (!cancelled) setMessages(fresh);
+        if (!cancelled) setMessages((prev) => mergeWithLocal(prev, fresh));
         scrollToEnd();
       });
     };
@@ -76,13 +82,7 @@ export const ThreadModal: React.FC<ThreadModalProps> = ({
           if (status === 'SUBSCRIBED') {
             fetchMessages(thread.id).then((fresh) => {
               if (!cancelled) {
-                setMessages((prev) => {
-                  const fetchedIds = new Set(fresh.map((m) => m.id));
-                  const localOnly = prev.filter(
-                    (m) => (m.pending || m.failed) && !fetchedIds.has(m.id)
-                  );
-                  return [...fresh, ...localOnly];
-                });
+                setMessages((prev) => mergeWithLocal(prev, fresh));
                 scrollToEnd();
               }
             });
