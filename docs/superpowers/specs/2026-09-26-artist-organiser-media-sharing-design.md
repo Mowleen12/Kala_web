@@ -1,7 +1,7 @@
 # Artist ↔ Organiser Media Sharing — Design
 
 **Date:** 2026-09-26
-**Status:** Approved, pending implementation plan
+**Status:** Approved; implementation plan at `docs/superpowers/plans/2026-09-26-artist-organiser-media-sharing.md`
 **Sub-project:** B of 3 (A — responsive alignment — shipped; C — upload caps — folded into B)
 
 ---
@@ -23,7 +23,7 @@ Three structural facts shape the solution:
 - A durable, two-way conversation scoped to one application, usable by two real people on different devices.
 - Photos and videos flow in both directions.
 - Both parties stay on free tiers: explicit, enforced limits on file size and monthly volume.
-- Graceful degradation to a local demo when env vars are absent, matching the existing pattern in `supabaseSignIn` / `supabaseSignUp`.
+- Graceful degradation to a local demo when there is no Supabase session or the migration has not run (§6, amended), matching the existing pattern in `supabaseSignIn` / `supabaseSignUp`.
 
 ## 3. Non-goals
 
@@ -234,7 +234,9 @@ Subscriptions are scoped to the single open thread and torn down on close.
 
 ### Fallback
 
-Where `isSupabaseConfigured === false`, `threads.ts` returns local state instead of querying, matching the existing fallback pattern. Because a blob URL from `simulateLocalUpload` only exists in the sending browser, the thread shows a persistent amber banner in this mode: *Preview mode — media won't reach the other person until Cloudinary is configured.* Sending a dead link silently would be worse than saying so.
+**Amended during plan self-review (2026-09-26):** the original text here keyed fallback on `isSupabaseConfigured === false`, but that flag is `true` on every load — `src/lib/supabase.ts:4-5` hardcodes a real URL and anon key as fallback, so the trigger can never fire. Fallback is now keyed on **capability**: `threads.ts` exposes `isDbReady()`, true only when a Supabase session exists (quick-demo users have none, so `auth.uid()` would be NULL and RLS would reject every write) *and* the `threads` table is queryable (migration not yet run). The table result is cached per page load.
+
+Where `isDbReady()` is false, `threads.ts` returns local state instead of querying, matching the existing fallback pattern. Because a blob URL from `simulateLocalUpload` only exists in the sending browser, the thread shows a persistent amber banner in this mode: *Preview mode — media won't reach the other person until Cloudinary is configured.* Sending a dead link silently would be worse than saying so.
 
 ---
 
