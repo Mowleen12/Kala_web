@@ -51,11 +51,22 @@ export const ThreadModal: React.FC<ThreadModalProps> = ({
     let cancelled = false;
     let unsubscribe: (() => void) | null = null;
 
+    const applyFetched = ({
+      messages: fresh,
+      error: loadError,
+    }: Awaited<ReturnType<typeof fetchMessages>>) => {
+      if (cancelled) return;
+      if (loadError) {
+        setError(loadError);
+        return;
+      }
+      setError(null);
+      setMessages((prev) => mergeWithLocal(prev, fresh));
+      scrollToEnd();
+    };
+
     const onFocus = () => {
-      fetchMessages(thread.id).then((fresh) => {
-        if (!cancelled) setMessages((prev) => mergeWithLocal(prev, fresh));
-        scrollToEnd();
-      });
+      fetchMessages(thread.id).then(applyFetched);
     };
     window.addEventListener('focus', onFocus);
 
@@ -66,7 +77,13 @@ export const ThreadModal: React.FC<ThreadModalProps> = ({
         isDbReady(),
       ]);
       if (cancelled) return;
-      setMessages(initial);
+      if (initial.error) {
+        setMessages([]);
+        setError(initial.error);
+      } else {
+        setMessages(initial.messages);
+        setError(null);
+      }
       setBudgetBytes(budget.remainingBytes);
       scrollToEnd();
       if (!live) return; // local mode: no realtime (subscribeThread's contract)
@@ -80,12 +97,7 @@ export const ThreadModal: React.FC<ThreadModalProps> = ({
         (status) => {
           setChannelDown(status === 'CHANNEL_ERROR' || status === 'CLOSED');
           if (status === 'SUBSCRIBED') {
-            fetchMessages(thread.id).then((fresh) => {
-              if (!cancelled) {
-                setMessages((prev) => mergeWithLocal(prev, fresh));
-                scrollToEnd();
-              }
-            });
+            fetchMessages(thread.id).then(applyFetched);
           }
         }
       );
@@ -246,7 +258,7 @@ export const ThreadModal: React.FC<ThreadModalProps> = ({
 
         {/* Message list */}
         <div ref={listRef} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 min-h-[220px]">
-          {messages.length === 0 && (
+          {messages.length === 0 && !error && (
             <div className="text-center py-10 text-zinc-400 text-xs">
               No messages yet. Say hello, or send a photo or reel.
             </div>

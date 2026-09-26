@@ -92,7 +92,9 @@ export async function isDbReady(): Promise<boolean> {
   if (!data.session) return false;
   if (tablesOk === null) {
     const { error } = await supabase.from('threads').select('id', { head: true });
-    tablesOk = !(error && /does not exist|schema cache/i.test(error.message));
+    if (!error) tablesOk = true;
+    else if (/does not exist|schema cache/i.test(error.message)) tablesOk = false;
+    else return false; // transient (paused project, network): don't cache, retry next call
   }
   return tablesOk;
 }
@@ -323,9 +325,11 @@ export async function claimThread(threadId: string, user: AuthUser): Promise<voi
 /* Messages                                                                     */
 /* -------------------------------------------------------------------------- */
 
-export async function fetchMessages(threadId: string): Promise<Message[]> {
+export async function fetchMessages(
+  threadId: string
+): Promise<{ messages: Message[]; error: string | null }> {
   if (!(await isDbReady())) {
-    return [...(localMessages.get(threadId) || [])];
+    return { messages: [...(localMessages.get(threadId) || [])], error: null };
   }
   const { data, error } = await supabase
     .from('messages')
@@ -335,9 +339,9 @@ export async function fetchMessages(threadId: string): Promise<Message[]> {
     .limit(200);
   if (error || !data) {
     console.warn('[threads]', 'fetchMessages', error);
-    return [];
+    return { messages: [], error: friendlyError(error?.message) };
   }
-  return data.map(rowToMessage);
+  return { messages: data.map(rowToMessage), error: null };
 }
 
 export async function sendMessage(
