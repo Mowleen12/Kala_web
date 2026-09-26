@@ -1,15 +1,20 @@
 import React from 'react';
-import { FileText, Calendar, MapPin, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { FileText, Calendar, MapPin, CheckCircle2, Clock, AlertCircle, MessageSquare } from 'lucide-react';
 import { KalaStar } from './KalaLogo';
-import { Application } from '../types';
+import { Application, Thread } from '../types';
+import { isUnread } from '../lib/threads';
 
 interface ApplicationsViewProps {
   applications: Application[];
+  threads: Thread[];
+  onOpenThread?: (opportunityId: string) => void;
   onExplore: () => void;
 }
 
 export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
   applications,
+  threads,
+  onOpenThread,
   onExplore,
 }) => {
   const getStatusBadge = (status: Application['status']) => {
@@ -104,6 +109,20 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
             </div>
 
             <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-100">
+              {(() => {
+                const thread = threads.find((t) => t.opportunityId === app.opportunityId);
+                const unread = thread ? isUnread(thread, 'artist') : false;
+                return (
+                  <button
+                    onClick={() => onOpenThread?.(app.opportunityId)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FDEEE7] border border-[#FAD7C8] text-[#E45826] text-[11px] font-bold hover:bg-[#FCE4D9] transition-colors cursor-pointer shrink-0"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>Messages</span>
+                    {unread && <span className="w-2 h-2 rounded-full bg-[#E45826] animate-pulse" />}
+                  </button>
+                );
+              })()}
               <div>{getStatusBadge(app.status)}</div>
               <span className="text-[11px] text-zinc-400">
                 ID: {app.id.toUpperCase()}

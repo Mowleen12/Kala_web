@@ -448,3 +448,10 @@ export async function markRead(threadId: string, role: MessageSenderRole): Promi
     .eq('id', threadId);
   if (error) console.warn('[threads] markRead:', error.message);
 }
+
+/** Boolean unread: thread has activity the caller has not seen. A count would
+ *  need one grouped query per thread; the row already carries both timestamps. */
+export function isUnread(thread: Thread, role: MessageSenderRole): boolean {
+  const lastRead = role === 'artist' ? thread.artistLastReadAt : thread.organiserLastReadAt;
+  return new Date(thread.lastMessageAt).getTime() > new Date(lastRead).getTime();
+}

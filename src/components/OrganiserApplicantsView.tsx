@@ -17,15 +17,19 @@ import {
   FileText,
   X,
   Award,
-  Music
+  Music,
+  MessageSquare
 } from 'lucide-react';
-import { ApplicantReview, Opportunity } from '../types';
+import { ApplicantReview, Opportunity, Thread } from '../types';
 import { KalaStar } from './KalaLogo';
+import { isUnread } from '../lib/threads';
 
 interface OrganiserApplicantsViewProps {
   applicants: ApplicantReview[];
   opportunities: Opportunity[];
   onUpdateApplicantStatus: (applicantId: string, newStatus: ApplicantReview['status']) => void;
+  threads: Thread[];
+  onOpenThread?: (opportunityId: string, artistId: string) => void;
   selectedOpportunityId?: string;
 }
 
@@ -33,6 +37,8 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
   applicants,
   opportunities,
   onUpdateApplicantStatus,
+  threads,
+  onOpenThread,
   selectedOpportunityId: initialOppId,
 }) => {
   // Filter states
@@ -593,6 +599,22 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                 </span>
 
                 <div className="flex items-center gap-1.5">
+                  {(() => {
+                    const thread = threads.find(
+                      (t) => t.opportunityId === app.opportunityId && t.artistId === app.artistId
+                    );
+                    const unread = thread ? isUnread(thread, 'organiser') : false;
+                    return (
+                      <button
+                        onClick={() => onOpenThread?.(app.opportunityId, app.artistId ?? '')}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FDEEE7] border border-[#FAD7C8] text-[#E45826] text-[11px] font-bold hover:bg-[#FCE4D9] transition-colors cursor-pointer"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>Message</span>
+                        {unread && <span className="w-2 h-2 rounded-full bg-[#E45826] animate-pulse" />}
+                      </button>
+                    );
+                  })()}
                   {app.status !== 'interview' && (
                     <button
                       onClick={() => onUpdateApplicantStatus(app.id, 'interview')}

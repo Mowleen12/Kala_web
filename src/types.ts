@@ -67,6 +67,7 @@ export interface ApplicantReview {
   id: string;
   opportunityId: string;
   opportunityTitle: string;
+  artistId?: string;
   artistName: string;
   artistAvatar: string;
   artistRole: string;

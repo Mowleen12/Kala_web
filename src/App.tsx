@@ -40,6 +40,8 @@ import {
   isSupabaseConfigured 
 } from './lib/supabase';
 import { isCloudinaryConfigured } from './lib/cloudinary';
+import { ensureArtistThread, findThread, ensureProfile, claimThread, fetchThreads, markRead } from './lib/threads';
+import { ThreadModal } from './components/ThreadModal';
 
 import { 
   FEATURED_OPPORTUNITIES, 
@@ -59,7 +61,8 @@ import {
   OrganiserProfile,
   OrganiserStats,
   ApplicantReview,
-  AuthUser
+  AuthUser,
+  Thread
 } from './types';
 
 export default function App() {
@@ -111,6 +114,9 @@ export default function App() {
   const [organiserProfile, setOrganiserProfile] = useState<OrganiserProfile>(INITIAL_ORGANISER_PROFILE);
   const [organiserStats, setOrganiserStats] = useState<OrganiserStats>(INITIAL_ORGANISER_STATS);
   const [applicantReviews, setApplicantReviews] = useState<ApplicantReview[]>(INITIAL_APPLICANT_REVIEWS);
+
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [activeThread, setActiveThread] = useState<Thread | null>(null);
 
   // Supabase Auth State Synchronization & OAuth Callback Handling
   useEffect(() => {
@@ -165,6 +171,15 @@ export default function App() {
       unsubscribe();
     };
   }, []);
+
+  // Profile row (RLS needs it for role checks) + the caller's thread list, which
+  // is what both unread pills read. Keyed on the user id so it covers every login
+  // path: initial demo user, quick demo login, and the Supabase auth callback.
+  useEffect(() => {
+    if (!currentUser) return;
+    ensureProfile(currentUser);
+    fetchThreads().then(setThreads);
+  }, [currentUser?.id]);
 
   // Toast System
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -303,6 +318,47 @@ export default function App() {
       showToast(`Welcome to the Artist Portal, ${currentUser.name}! Your portfolio is live.`);
     } else {
       showToast(`Welcome to the Organiser Portal, ${currentUser?.orgName || 'Curator'}!`);
+    }
+  };
+
+  const openArtistThread = async (opportunityId: string) => {
+    const opp = opportunities.find((o) => o.id === opportunityId);
+    const { thread, error } = await ensureArtistThread({
+      opportunityId,
+      opportunityTitle: opp?.title || 'Opportunity',
+      user: currentUser!,
+      organiserName: opp?.organizer,
+    });
+    if (thread) {
+      setThreads((prev) => (prev.some((t) => t.id === thread.id) ? prev : [...prev, thread]));
+      setActiveThread(thread);
+    } else {
+      showToast(error || "Couldn't open this conversation.");
+    }
+  };
+
+  const openOrganiserThread = async (opportunityId: string, artistId: string) => {
+    let thread = await findThread(opportunityId, artistId);
+    if (!thread) {
+      showToast('This applicant has not started a conversation yet.');
+      return;
+    }
+    if (thread.organiserId !== currentUser?.id) {
+      await claimThread(thread.id, currentUser!);
+      thread = { ...thread, organiserId: currentUser!.id };
+    }
+    setThreads((prev) => prev.map((t) => (t.id === thread.id ? thread : t)));
+    setActiveThread(thread);
+  };
+
+  // Close = mark read first, then refetch. Sequenced with await so the unread
+  // pill can never read the list before the write lands.
+  const closeThread = async () => {
+    const t = activeThread;
+    setActiveThread(null);
+    if (t && currentUser) {
+      await markRead(t.id, currentUser.role === 'organiser' ? 'organiser' : 'artist');
+      setThreads(await fetchThreads());
     }
   };
 
@@ -593,6 +649,8 @@ export default function App() {
               {currentArtistTab === 'applications' && (
                 <ApplicationsView
                   applications={applications}
+                  threads={threads}
+                  onOpenThread={openArtistThread}
                   onExplore={() => setCurrentArtistTab('discover')}
                 />
               )}
@@ -697,7 +755,9 @@ export default function App() {
               {currentOrgTab === 'applicants' && (
                 <OrganiserApplicantsView
                   applicants={applicantReviews}
+                  threads={threads}
                   opportunities={opportunities}
+                  onOpenThread={openOrganiserThread}
                   onUpdateApplicantStatus={handleUpdateApplicantStatus}
                 />
               )}
@@ -756,6 +816,13 @@ export default function App() {
       <FreeTierStatusModal
         isOpen={isFreeTierModalOpen}
         onClose={() => setIsFreeTierModalOpen(false)}
+      />
+
+      <ThreadModal
+        isOpen={activeThread !== null}
+        onClose={closeThread}
+        thread={activeThread}
+        currentUser={currentUser}
       />
 
       {/* 2. Onboarding / Loading Transition Screen */}

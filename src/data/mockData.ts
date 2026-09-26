@@ -258,6 +258,7 @@ export const INITIAL_APPLICANT_REVIEWS: ApplicantReview[] = [
     id: 'rev-1',
     opportunityId: 'opp-1',
     opportunityTitle: 'National Creative Fest 2026',
+    artistId: 'user-mowleen',
     artistName: 'Mowleen',
     artistAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=240&q=80',
     artistRole: 'Vocal Performance & Sound Production',
