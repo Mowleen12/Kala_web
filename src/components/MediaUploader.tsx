@@ -12,6 +12,7 @@ import {
   FileText
 } from 'lucide-react';
 import { uploadToCloudinary, isCloudinaryConfigured, CloudinaryUploadResult } from '../lib/cloudinary';
+import { maxBytesFor, isVideoFile, IMAGE_MAX_BYTES, VIDEO_MAX_BYTES, formatMB } from '../lib/limits';
 
 interface MediaUploaderProps {
   label?: string;
@@ -21,7 +22,10 @@ interface MediaUploaderProps {
   folder?: string;
   onChange: (url: string, result?: CloudinaryUploadResult) => void;
   onRemove?: () => void;
-  maxSizeMB?: number;
+  /** Spec §6 send path step 1: runs before any upload, returns an error to
+   *  show (rejecting the file) or null to proceed. ThreadModal uses it for the
+   *  monthly budget so a rejected insert can never orphan an uploaded asset. */
+  beforeUpload?: (file: File) => string | null;
   className?: string;
 }
 
@@ -33,7 +37,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   folder = 'kala-arts',
   onChange,
   onRemove,
-  maxSizeMB = 50,
+  beforeUpload,
   className = '',
 }) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -54,10 +58,18 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   const handleFile = async (file: File) => {
     setError(null);
 
-    // Validate size (Free Tier friendliness: default 50MB)
-    const fileSizeMB = file.size / (1024 * 1024);
-    if (fileSizeMB > maxSizeMB) {
-      setError(`File size (${fileSizeMB.toFixed(1)}MB) exceeds maximum ${maxSizeMB}MB limit`);
+    const limitBytes = maxBytesFor(file);
+    if (file.size > limitBytes) {
+      const kind = isVideoFile(file) ? 'video' : 'image';
+      setError(
+        `${formatMB(file.size)} exceeds the ${formatMB(limitBytes)} ${kind} limit`
+      );
+      return;
+    }
+
+    const gateError = beforeUpload?.(file);
+    if (gateError) {
+      setError(gateError);
       return;
     }
 
@@ -253,7 +265,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                 <span>•</span>
                 <span>JPG • PNG • WEBP</span>
                 <span>•</span>
-                <span>Up to {maxSizeMB}MB</span>
+                <span>Up to {formatMB(IMAGE_MAX_BYTES)} image · {formatMB(VIDEO_MAX_BYTES)} video</span>
               </div>
             </div>
           )}

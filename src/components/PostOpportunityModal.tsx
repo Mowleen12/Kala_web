@@ -276,7 +276,6 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                   value={selectedImage}
                   onChange={(url) => setSelectedImage(url)}
                   onRemove={() => setSelectedImage(PRESET_IMAGES[0].url)}
-                  maxSizeMB={20}
                 />
 
                 <div>

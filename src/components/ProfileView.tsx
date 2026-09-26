@@ -160,7 +160,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 setCurrentAvatar(url);
                 setIsEditingAvatar(false);
               }}
-              maxSizeMB={10}
             />
           </div>
         )}
@@ -198,7 +197,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           value={reelUrl}
           onChange={handleReelUploaded}
           onRemove={() => setReelUrl('')}
-          maxSizeMB={50}
         />
       </div>
 
@@ -231,7 +229,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               folder="kala-artists/gallery"
               value={newGalleryImage}
               onChange={handleAddGalleryImage}
-              maxSizeMB={15}
             />
           </div>
         )}

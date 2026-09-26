@@ -109,7 +109,6 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
                 else if (res?.resourceType === 'image') setMediaType('image');
               }}
               onRemove={() => setMediaUrl('')}
-              maxSizeMB={50}
             />
           </div>
 

@@ -627,7 +627,6 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                       value={avatarUrl}
                       onChange={(url) => setAvatarUrl(url)}
                       onRemove={() => setAvatarUrl('')}
-                      maxSizeMB={15}
                     />
                   </div>
                 )}
