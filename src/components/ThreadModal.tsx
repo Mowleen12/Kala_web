@@ -75,8 +75,16 @@ export const ThreadModal: React.FC<ThreadModalProps> = ({
           setChannelDown(status === 'CHANNEL_ERROR' || status === 'CLOSED');
           if (status === 'SUBSCRIBED') {
             fetchMessages(thread.id).then((fresh) => {
-              setMessages(fresh);
-              scrollToEnd();
+              if (!cancelled) {
+                setMessages((prev) => {
+                  const fetchedIds = new Set(fresh.map((m) => m.id));
+                  const localOnly = prev.filter(
+                    (m) => (m.pending || m.failed) && !fetchedIds.has(m.id)
+                  );
+                  return [...fresh, ...localOnly];
+                });
+                scrollToEnd();
+              }
             });
           }
         }
