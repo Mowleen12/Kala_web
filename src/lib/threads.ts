@@ -144,7 +144,10 @@ export async function getStorageUsage(): Promise<{ storageBytes: number; monthBy
     let query = supabase.from('messages').select('media_bytes').not('media_bytes', 'is', null);
     if (from) query = query.gte('created_at', from);
     const { data, error } = await query;
-    if (error || !data) return 0;
+    if (error || !data) {
+      console.warn('[threads]', 'getStorageUsage', error);
+      return 0;
+    }
     return data.reduce((s, r) => s + (r.media_bytes || 0), 0);
   };
 
@@ -168,6 +171,7 @@ export async function getBudget(user: AuthUser): Promise<Budget> {
     .not('media_bytes', 'is', null);
 
   if (error || !data) {
+    console.warn('[threads]', 'getBudget', error);
     return { usedBytes: 0, remainingBytes: USER_MONTHLY_BYTES };
   }
   const usedBytes = data.reduce((sum, r) => sum + (r.media_bytes || 0), 0);
@@ -272,7 +276,10 @@ export async function findThread(opportunityId: string, artistId: string): Promi
     .eq('opportunity_id', opportunityId)
     .eq('artist_id', artistId)
     .maybeSingle();
-  if (error || !data) return null;
+  if (error || !data) {
+    console.warn('[threads]', 'findThread', error);
+    return null;
+  }
   return rowToThread(data);
 }
 
@@ -287,7 +294,10 @@ export async function fetchThreads(): Promise<Thread[]> {
     .from('threads')
     .select('*')
     .order('last_message_at', { ascending: false });
-  if (error || !data) return [];
+  if (error || !data) {
+    console.warn('[threads]', 'fetchThreads', error);
+    return [];
+  }
   return data.map(rowToThread);
 }
 
@@ -323,7 +333,10 @@ export async function fetchMessages(threadId: string): Promise<Message[]> {
     .eq('thread_id', threadId)
     .order('created_at', { ascending: true })
     .limit(200);
-  if (error || !data) return [];
+  if (error || !data) {
+    console.warn('[threads]', 'fetchMessages', error);
+    return [];
+  }
   return data.map(rowToMessage);
 }
 
@@ -391,6 +404,11 @@ export function subscribeThread(
 ): () => void {
   // Contract: callers gate on isDbReady() first — local mode has no realtime
   // (one browser, no server), so there is nothing to subscribe to here.
+
+  if (!supabaseClient) {
+    onStatus('CHANNEL_ERROR');
+    return () => {};
+  }
 
   const channel = supabase
     .channel(`thread:${threadId}`)
