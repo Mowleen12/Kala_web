@@ -523,6 +523,7 @@ export default function App() {
         <FreeTierStatusModal
           isOpen={isFreeTierModalOpen}
           onClose={() => setIsFreeTierModalOpen(false)}
+          currentUser={currentUser}
         />
         {toastMessage && (
           <div className="fixed bottom-6 right-6 z-50 bg-zinc-900 text-white px-5 py-3 rounded-2xl shadow-xl text-xs sm:text-sm font-medium flex items-center gap-3 animate-in slide-in-from-bottom-4 duration-200">
@@ -833,6 +834,7 @@ export default function App() {
       <FreeTierStatusModal
         isOpen={isFreeTierModalOpen}
         onClose={() => setIsFreeTierModalOpen(false)}
+        currentUser={currentUser}
       />
 
       <ThreadModal

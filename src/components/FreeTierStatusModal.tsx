@@ -17,26 +17,35 @@ import {
 } from 'lucide-react';
 import { isSupabaseConfigured, activeSupabaseUrl } from '../lib/supabase';
 import { isCloudinaryConfigured } from '../lib/cloudinary';
-import { getStorageUsage } from '../lib/threads';
+import { getStorageUsage, getBudget, Budget } from '../lib/threads';
 import { formatMB, IMAGE_MAX_BYTES, VIDEO_MAX_BYTES, USER_MONTHLY_BYTES } from '../lib/limits';
+import { AuthUser } from '../types';
 
 interface FreeTierStatusModalProps {
   isOpen: boolean;
   onClose: () => void;
+  currentUser: AuthUser | null;
 }
 
 export const FreeTierStatusModal: React.FC<FreeTierStatusModalProps> = ({
   isOpen,
   onClose,
+  currentUser,
 }) => {
   const [copied, setCopied] = useState(false);
 
   const [usage, setUsage] = useState<{ storageBytes: number; monthBytes: number } | null>(null);
+  const [budget, setBudget] = useState<Budget | null>(null);
 
   React.useEffect(() => {
     if (!isOpen) return;
     getStorageUsage().then(setUsage).catch(() => setUsage(null));
-  }, [isOpen]);
+    if (currentUser) {
+      getBudget(currentUser).then(setBudget).catch(() => setBudget(null));
+    } else {
+      setBudget(null);
+    }
+  }, [isOpen, currentUser?.id]);
 
   if (!isOpen) return null;
 
@@ -197,8 +206,12 @@ VITE_CLOUDINARY_UPLOAD_PRESET=your-unsigned-preset-name`;
               </span>
 
               {[
-                { label: 'Media stored', value: usage?.storageBytes ?? 0, cap: 8 * 1024 * 1024 * 1024 },
-                { label: 'Your uploads this month', value: usage?.monthBytes ?? 0, cap: USER_MONTHLY_BYTES },
+                { label: 'Media stored (visible to you)', value: usage?.storageBytes ?? 0, cap: 8 * 1024 * 1024 * 1024 },
+                {
+                  label: 'Your uploads this month',
+                  value: currentUser ? budget?.usedBytes ?? 0 : usage?.monthBytes ?? 0,
+                  cap: USER_MONTHLY_BYTES,
+                },
               ].map((meter) => {
                 const pct = Math.min(100, Math.round((meter.value / meter.cap) * 100));
                 return (
