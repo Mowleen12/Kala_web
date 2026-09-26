@@ -109,3 +109,38 @@ export interface AuthUser {
   authProvider?: 'google' | 'email' | 'demo';
 }
 
+export type MessageSenderRole = 'artist' | 'organiser';
+
+export interface Thread {
+  id: string;
+  opportunityId: string;
+  opportunityTitle: string;
+  artistId: string;
+  artistName: string | null;
+  artistAvatar: string | null;
+  organiserId: string | null;
+  organiserName: string | null;
+  organiserAvatar: string | null;
+  artistLastReadAt: string;
+  organiserLastReadAt: string;
+  lastMessageAt: string;
+  createdAt: string;
+}
+
+export interface Message {
+  id: string;
+  threadId: string;
+  senderId: string;
+  senderRole: MessageSenderRole;
+  body: string | null;
+  mediaUrl: string | null;
+  mediaPublicId: string | null;
+  mediaType: 'image' | 'video' | null;
+  mediaBytes: number | null;
+  createdAt: string;
+  /** Client-only: queued locally, not yet acknowledged by the server. */
+  pending?: boolean;
+  /** Client-only: send failed, retry offered. Never dropped silently. */
+  failed?: boolean;
+}
+
