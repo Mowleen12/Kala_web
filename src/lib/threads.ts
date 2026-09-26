@@ -435,6 +435,23 @@ export function subscribeThread(
   };
 }
 
+export function subscribeThreads(onChange: () => void): () => void {
+  if (!supabaseClient) return () => {};
+
+  const channel = supabase
+    .channel('threads-list')
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'threads' },
+      () => onChange()
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
 export async function markRead(threadId: string, role: MessageSenderRole): Promise<void> {
   const column = role === 'artist' ? 'artist_last_read_at' : 'organiser_last_read_at';
   if (!(await isDbReady())) {

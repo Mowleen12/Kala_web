@@ -40,7 +40,7 @@ import {
   isSupabaseConfigured 
 } from './lib/supabase';
 import { isCloudinaryConfigured } from './lib/cloudinary';
-import { ensureArtistThread, findThread, ensureProfile, claimThread, fetchThreads, markRead } from './lib/threads';
+import { ensureArtistThread, findThread, ensureProfile, claimThread, fetchThreads, markRead, isDbReady, subscribeThreads } from './lib/threads';
 import { ThreadModal } from './components/ThreadModal';
 
 import { 
@@ -177,8 +177,24 @@ export default function App() {
   // path: initial demo user, quick demo login, and the Supabase auth callback.
   useEffect(() => {
     if (!currentUser) return;
-    ensureProfile(currentUser);
-    fetchThreads().then(setThreads);
+    let active = true;
+    let unsubscribe: (() => void) | null = null;
+    (async () => {
+      await ensureProfile(currentUser).catch(() => {});
+      const fresh = await fetchThreads();
+      if (!active) return;
+      setThreads(fresh);
+      if (!(await isDbReady()) || !active) return;
+      unsubscribe = subscribeThreads(() => {
+        fetchThreads().then((t) => {
+          if (active) setThreads(t);
+        });
+      });
+    })();
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
   }, [currentUser?.id]);
 
   // Toast System
