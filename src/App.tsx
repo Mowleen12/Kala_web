@@ -396,6 +396,7 @@ export default function App() {
       id: `rev-${Date.now().toString().slice(-4)}`,
       opportunityId: opp.id,
       opportunityTitle: opp.title,
+      artistId: currentUser?.id,
       artistName: userName,
       artistAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=140&q=80',
       artistRole: currentUser?.discipline || 'Contemporary Vocalist & Composer',
