@@ -148,6 +148,70 @@ create trigger messages_touch_thread_trg
   after insert on public.messages
   for each row execute function public.touch_thread_on_message();
 
+-- Trigger 4: RLS cannot restrict WHICH columns an UPDATE touches, so the
+-- threads read-receipt policy below is column-agnostic. This enforces it:
+-- a participant may change only their own *_last_read_at, plus the claim
+-- fields (organiser_id null -> value) on an unclaimed thread. The column
+-- list keeps trigger 3's security definer last_message_at bump out of scope.
+create or replace function public.enforce_thread_update()
+returns trigger
+language plpgsql
+as $$
+begin
+  -- Claim: the first organiser sets the claim fields on an unclaimed thread.
+  if old.organiser_id is null and new.organiser_id is not null then
+    if new.id is distinct from old.id
+       or new.opportunity_id is distinct from old.opportunity_id
+       or new.opportunity_title is distinct from old.opportunity_title
+       or new.artist_id is distinct from old.artist_id
+       or new.artist_name is distinct from old.artist_name
+       or new.artist_avatar is distinct from old.artist_avatar
+       or new.artist_last_read_at is distinct from old.artist_last_read_at
+       or new.organiser_last_read_at is distinct from old.organiser_last_read_at
+       or new.last_message_at is distinct from old.last_message_at
+       or new.created_at is distinct from old.created_at then
+      raise exception 'THREAD_CLAIM_COLUMNS: a claim may only set the organiser fields';
+    end if;
+    return new;
+  end if;
+
+  -- Read receipt: nothing but the caller's own cursor may move.
+  if new.id is distinct from old.id
+     or new.opportunity_id is distinct from old.opportunity_id
+     or new.opportunity_title is distinct from old.opportunity_title
+     or new.artist_id is distinct from old.artist_id
+     or new.artist_name is distinct from old.artist_name
+     or new.artist_avatar is distinct from old.artist_avatar
+     or new.organiser_id is distinct from old.organiser_id
+     or new.organiser_name is distinct from old.organiser_name
+     or new.organiser_avatar is distinct from old.organiser_avatar
+     or new.last_message_at is distinct from old.last_message_at
+     or new.created_at is distinct from old.created_at then
+    raise exception 'THREAD_UPDATE_COLUMNS: only read cursors may change';
+  end if;
+
+  if auth.uid() = old.artist_id then
+    if new.organiser_last_read_at is distinct from old.organiser_last_read_at then
+      raise exception 'THREAD_UPDATE_COLUMNS: you may only advance your own read cursor';
+    end if;
+  elsif auth.uid() = old.organiser_id then
+    if new.artist_last_read_at is distinct from old.artist_last_read_at then
+      raise exception 'THREAD_UPDATE_COLUMNS: you may only advance your own read cursor';
+    end if;
+  else
+    raise exception 'THREAD_UPDATE_COLUMNS: not a participant';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists threads_update_columns_trg on public.threads;
+create trigger threads_update_columns_trg
+  before update of artist_last_read_at, organiser_last_read_at,
+                   organiser_id, organiser_name, organiser_avatar
+  on public.threads
+  for each row execute function public.enforce_thread_update();
+
 -- ---------------------------------------------------------------------------
 -- 3. Row Level Security (spec §4 "Access control")
 -- ---------------------------------------------------------------------------
@@ -198,9 +262,16 @@ create policy threads_claim on public.threads
     organiser_id is null
     and artist_id <> auth.uid()
     and public.is_organiser()
+  )
+  with check (
+    organiser_id = auth.uid()
+    and artist_id <> auth.uid()
+    and public.is_organiser()
   );
 
--- Participants may advance only their own read cursor.
+-- Column-agnostic by necessity: RLS cannot restrict which columns an UPDATE
+-- touches, so this policy scopes only WHO may update. The own-cursor-only
+-- rule is enforced by public.enforce_thread_update() (trigger 4 above).
 drop policy if exists threads_read_receipt on public.threads;
 create policy threads_read_receipt on public.threads
   for update using (
