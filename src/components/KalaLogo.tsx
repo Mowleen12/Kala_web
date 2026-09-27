@@ -50,7 +50,14 @@ export const KalaLogo: React.FC<{
       <KalaStar size={starSize} className="text-[#E45826] transition-transform duration-300 group-hover:rotate-45" />
       {showWordmark && (
         <span className={`font-brand font-black text-zinc-900 ${textSize}`}>
-          kalā
+          kal
+          <span className="relative inline-block">
+            a
+            <span
+              aria-hidden="true"
+              className="absolute left-1/2 -translate-x-1/2 bottom-[0.85em] w-[0.5em] h-[0.075em] rounded-full bg-current"
+            />
+          </span>
         </span>
       )}
     </div>

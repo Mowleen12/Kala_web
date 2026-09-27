@@ -43,17 +43,17 @@ export const BrowseCategories: React.FC<BrowseCategoriesProps> = ({
   };
 
   return (
-    <section className="mb-8">
+    <section className="mb-8 rounded-3xl bg-zinc-950 p-6 sm:p-8">
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
         <div>
           <div className="flex items-center gap-2">
             <KalaStar size={18} className="text-[#E45826]" />
-            <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
               Browse by Category
             </h2>
           </div>
-          <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">
+          <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
             Find the right opportunities for your creative journey.
           </p>
         </div>
@@ -61,7 +61,7 @@ export const BrowseCategories: React.FC<BrowseCategoriesProps> = ({
         <button
           id="view-all-categories-btn"
           onClick={onViewAll}
-          className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#E45826] hover:text-[#C73E0E] transition-colors self-start sm:self-auto cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#F8A97D] hover:text-[#FFC9AC] transition-colors self-start sm:self-auto cursor-pointer"
         >
           <span>View All</span>
           <ArrowRight className="w-4 h-4" />

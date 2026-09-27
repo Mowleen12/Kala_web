@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'motion/react';
 import { 
   X, 
   Calendar, 
@@ -14,6 +15,27 @@ import {
 import { Opportunity } from '../types';
 import { KalaStar, KalaLogo } from './KalaLogo';
 import { MediaUploader } from './MediaUploader';
+import { getDraft, setDraft, clearDraft } from '../lib/drafts';
+
+interface PostOpportunityDraft {
+  title?: string;
+  category?: string;
+  venue?: string;
+  city?: string;
+  dateRange?: string;
+  compensation?: string;
+  deadlineDays?: string;
+  selectedImage?: string;
+  description?: string;
+  requirements?: string;
+}
+
+const DRAFT_KEY = 'kala_draft_post';
+
+const DEFAULT_DESCRIPTION =
+  'Seeking innovative performers and emerging creative voices for our curated seasonal spotlight. Open to solo artists and ensemble troupes.';
+const DEFAULT_REQUIREMENTS =
+  'Original portfolio or video reel (2-5 mins)\nAvailable for on-stage technical soundcheck\nOpen to artists aged 18-35';
 
 interface PostOpportunityModalProps {
   isOpen: boolean;
@@ -36,21 +58,35 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
   onPublish,
   organizerName = "National Centre for the Performing Arts (NCPA)",
 }) => {
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('Music & Dance');
-  const [venue, setVenue] = useState('NCPA Tata Theatre');
-  const [city, setCity] = useState('Mumbai, Maharashtra');
-  const [dateRange, setDateRange] = useState('18 Nov – 22 Nov 2026');
-  const [compensation, setCompensation] = useState('₹15,000 – ₹30,000');
-  const [deadlineDays, setDeadlineDays] = useState('7');
-  const [selectedImage, setSelectedImage] = useState(PRESET_IMAGES[0].url);
-  const [description, setDescription] = useState(
-    'Seeking innovative performers and emerging creative voices for our curated seasonal spotlight. Open to solo artists and ensemble troupes.'
-  );
-  const [requirements, setRequirements] = useState(
-    'Original portfolio or video reel (2-5 mins)\nAvailable for on-stage technical soundcheck\nOpen to artists aged 18-35'
-  );
+  const savedDraft = useRef(getDraft<PostOpportunityDraft>(DRAFT_KEY)).current;
+  const [title, setTitle] = useState(savedDraft?.title ?? '');
+  const [category, setCategory] = useState(savedDraft?.category ?? 'Music & Dance');
+  const [venue, setVenue] = useState(savedDraft?.venue ?? 'NCPA Tata Theatre');
+  const [city, setCity] = useState(savedDraft?.city ?? 'Mumbai, Maharashtra');
+  const [dateRange, setDateRange] = useState(savedDraft?.dateRange ?? '18 Nov â€“ 22 Nov 2026');
+  const [compensation, setCompensation] = useState(savedDraft?.compensation ?? 'â‚¹15,000 â€“ â‚¹30,000');
+  const [deadlineDays, setDeadlineDays] = useState(savedDraft?.deadlineDays ?? '7');
+  const [selectedImage, setSelectedImage] = useState(savedDraft?.selectedImage || PRESET_IMAGES[0].url);
+  const [description, setDescription] = useState(savedDraft?.description ?? DEFAULT_DESCRIPTION);
+  const [requirements, setRequirements] = useState(savedDraft?.requirements ?? DEFAULT_REQUIREMENTS);
   const [error, setError] = useState('');
+
+  // Persist the in-progress call so it survives logout/login and reloads.
+  useEffect(() => {
+    setDraft(DRAFT_KEY, {
+      title,
+      category,
+      venue,
+      city,
+      dateRange,
+      compensation,
+      deadlineDays,
+      // blob: previews die on reload â€” fall back to the default preset.
+      selectedImage: selectedImage.startsWith('blob:') ? undefined : selectedImage,
+      description,
+      requirements,
+    });
+  }, [title, category, venue, city, dateRange, compensation, deadlineDays, selectedImage, description, requirements]);
 
   if (!isOpen) return null;
 
@@ -70,7 +106,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
         label: `Closes in ${deadlineDays} days`,
         variant: 'countdown',
       },
-      location: `${venue} • ${city}`,
+      location: `${venue} â€¢ ${city}`,
       venue: venue,
       city: city,
       dateRange: dateRange,
@@ -84,11 +120,16 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
     };
 
     onPublish(newOpp);
+    clearDraft(DRAFT_KEY);
   };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl bg-white rounded-3xl overflow-hidden shadow-2xl border border-[#E9E4DC] my-auto">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 14 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        className="relative w-full max-w-4xl bg-white rounded-3xl overflow-hidden shadow-2xl border border-[#E9E4DC] my-auto">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -104,7 +145,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
             <div className="relative z-10">
               <div className="inline-flex items-center gap-2 mb-6">
                 <KalaStar size={24} className="text-[#E45826]" />
-                <span className="font-brand font-black text-2xl text-zinc-900">kalā</span>
+                <span className="font-brand font-black text-2xl text-zinc-900">kalÄ</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FDEEE7] text-[#E45826] ml-1">
                   ORGANISER
                 </span>
@@ -250,7 +291,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                     type="text"
                     value={dateRange}
                     onChange={(e) => setDateRange(e.target.value)}
-                    placeholder="e.g. 18 Nov – 22 Nov"
+                    placeholder="e.g. 18 Nov â€“ 22 Nov"
                     className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
                   />
                 </div>
@@ -260,7 +301,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                     type="text"
                     value={compensation}
                     onChange={(e) => setCompensation(e.target.value)}
-                    placeholder="e.g. ₹15,000 – ₹30,000"
+                    placeholder="e.g. â‚¹15,000 â€“ â‚¹30,000"
                     className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
                   />
                 </div>
@@ -269,7 +310,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
               {/* Cover Image Preset Selector & Cloudinary Upload */}
               <div className="space-y-3">
                 <MediaUploader
-                  label="Opportunity Banner (Stored on Cloudinary Free Tier)"
+                  label="Opportunity Banner (Stored on Cloudinary)"
                   description="Upload a custom stage banner, production poster or venue photo"
                   resourceType="image"
                   folder="kala-opportunities"
@@ -321,7 +362,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
             </form>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

@@ -164,14 +164,14 @@ export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
           <h4 className="text-base sm:text-lg font-black text-zinc-900 leading-snug">
             Your art<br />matters.
           </h4>
-          <p className="text-xs text-zinc-600 font-medium mt-1 mb-3 leading-snug">
+          <p className="text-sm text-zinc-600 font-medium mt-1 mb-3 leading-snug">
             Find your people. Build your future.
           </p>
           <button
             id="promo-explore-btn"
             onClick={onFindAuditions}
             aria-label="Discover opportunities"
-            className="w-8 h-8 rounded-full bg-[#E45826] text-white flex items-center justify-center shadow-xs hover:bg-[#D44716] active:scale-95 transition-all cursor-pointer"
+            className="w-8 h-8 rounded-full bg-white border border-[#E45826] text-[#E45826] flex items-center justify-center shadow-2xs hover:bg-[#FDEEE7] active:scale-95 transition-all cursor-pointer"
           >
             <ArrowRight className="w-4 h-4" />
           </button>

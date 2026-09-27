@@ -1,5 +1,5 @@
 /**
- * Cloudinary Free Tier Storage Utility
+ * Cloudinary Media Storage Utility
  * Direct unsigned uploads for images (headshots, art stills, logos, cover photos)
  * and videos (audition reels, stage performances, venue tours).
  */
@@ -35,7 +35,7 @@ export interface UploadOptions {
 }
 
 /**
- * Upload a media file (video or image) directly to Cloudinary Free Tier storage
+ * Upload a media file (video or image) directly to Cloudinary storage
  */
 export async function uploadToCloudinary(
   file: File,

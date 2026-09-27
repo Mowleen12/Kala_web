@@ -52,7 +52,7 @@ export const PortalGateway: React.FC<PortalGatewayProps> = ({
             Select Your Workspace to Log In
           </h1>
           <p className="text-sm sm:text-base text-zinc-600 mt-3 leading-relaxed">
-            Kala maintains strictly separated workspaces for individual performing & visual artists, and curatorial cultural hosts.
+            Kalā maintains strictly separated workspaces for individual performing & visual artists, and curatorial cultural hosts.
           </p>
         </div>
 
@@ -92,10 +92,6 @@ export const PortalGateway: React.FC<PortalGatewayProps> = ({
                 <div className="flex items-start gap-2.5 text-xs text-zinc-700">
                   <CheckCircle2 className="w-4 h-4 text-[#E45826] shrink-0 mt-0.5" />
                   <span>Submit audio audition reels & track application status</span>
-                </div>
-                <div className="flex items-start gap-2.5 text-xs text-zinc-700">
-                  <CheckCircle2 className="w-4 h-4 text-[#E45826] shrink-0 mt-0.5" />
-                  <span>Verified artist profile & direct curator audition invitations</span>
                 </div>
               </div>
             </div>
@@ -291,7 +287,7 @@ export const PortalGateway: React.FC<PortalGatewayProps> = ({
 
       {/* Footer */}
       <footer className="relative z-10 max-w-6xl mx-auto w-full pt-8 border-t border-[#EDE8E0] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500">
-        <p>&copy; {new Date().getFullYear()} Kala Creative Network &bull; India's Performing Arts Ecosystem</p>
+        <p>&copy; {new Date().getFullYear()} Kalā Creative Network &bull; India's Performing Arts Ecosystem</p>
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-[#E45826]" />

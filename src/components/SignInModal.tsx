@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { 
   X, 
   Mail, 
@@ -21,6 +22,7 @@ interface SignInModalProps {
   onClose: () => void;
   onSuccess: (user: AuthUser) => void;
   onSwitchToSignUp: (role?: PortalMode) => void;
+  onDemoLogin?: (role: PortalMode) => void;
   initialRole?: PortalMode;
 }
 
@@ -29,6 +31,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   onClose,
   onSuccess,
   onSwitchToSignUp,
+  onDemoLogin,
   initialRole = 'artist',
 }) => {
   const [role, setRole] = useState<PortalMode>(initialRole);
@@ -78,7 +81,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
     setIsLoading(true);
 
     try {
-      const { user, error: signInError } = await supabaseSignIn(email.trim(), password);
+      const { user, error: signInError } = await supabaseSignIn(email.trim(), password, role);
 
       if (signInError || !user) {
         setError(signInError || 'Failed to sign in. Please verify your email and password.');
@@ -101,21 +104,19 @@ export const SignInModal: React.FC<SignInModalProps> = ({
     }
   };
 
-  const handleFillDemo = (demoRole: PortalMode) => {
-    setRole(demoRole);
-    if (demoRole === 'artist') {
-      setEmail('mowleen2006@gmail.com');
-      setPassword('artistPass123!');
-    } else {
-      setEmail('auditions@ncpamumbai.com');
-      setPassword('ncpaCurator123!');
-    }
+  const handleDemoLogin = (demoRole: PortalMode) => {
     setError(null);
+    onDemoLogin?.(demoRole);
+    onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl border border-[#E9E4DC] my-auto">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 14 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        className="relative w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl border border-[#E9E4DC] my-auto">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -131,10 +132,10 @@ export const SignInModal: React.FC<SignInModalProps> = ({
             <KalaStar className="w-6 h-6" />
           </div>
           <h2 className="text-2xl font-black text-zinc-950 tracking-tight">
-            Log In to Kalā
+            Log In to KalÄ
           </h2>
           <p className="text-xs text-zinc-600 mt-1">
-            Powered by Supabase Free Tier Authentication
+            Secure Authentication with Supabase
           </p>
 
           {/* Role Selector Pill */}
@@ -252,7 +253,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
+                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                 className="w-full bg-[#FAF8F5] border border-[#E5DFD5] rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-zinc-900 placeholder:text-zinc-400 outline-none focus:border-[#E45826] transition-colors"
               />
               <Lock className="w-4 h-4 text-zinc-400 absolute left-3 top-3 pointer-events-none" />
@@ -283,14 +284,14 @@ export const SignInModal: React.FC<SignInModalProps> = ({
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => handleFillDemo('artist')}
+                onClick={() => handleDemoLogin('artist')}
                 className="px-2 py-1 rounded-md bg-[#FAF8F5] hover:bg-[#F2ECE3] border border-[#E8E2D8] text-[11px] font-semibold text-zinc-700 cursor-pointer"
               >
                 Mowleen (Artist)
               </button>
               <button
                 type="button"
-                onClick={() => handleFillDemo('organiser')}
+                onClick={() => handleDemoLogin('organiser')}
                 className="px-2 py-1 rounded-md bg-[#FAF8F5] hover:bg-[#F2ECE3] border border-[#E8E2D8] text-[11px] font-semibold text-zinc-700 cursor-pointer"
               >
                 NCPA (Host)
@@ -309,12 +310,12 @@ export const SignInModal: React.FC<SignInModalProps> = ({
               }}
               className="font-bold text-[#E45826] hover:underline cursor-pointer"
             >
-              Sign up for free
+              Create an account
             </button>
           </div>
         </form>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

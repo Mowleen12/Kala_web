@@ -1,6 +1,6 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
-import { KalaStar } from './KalaLogo';
 
 interface HeroSectionProps {
   onExplore: () => void;
@@ -13,18 +13,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onExplore, onJoin }) =
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         {/* Left Typography & CTA Column */}
         <div className="lg:col-span-6 z-10">
-          {/* Mini Brandmark Tag */}
-          <div className="inline-flex items-center gap-2 mb-4">
-            <KalaStar size={20} className="text-[#E45826]" />
-            <span className="font-brand font-black text-xl text-zinc-900 tracking-tight">kalā</span>
-          </div>
-
           {/* Headline */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[46px] font-extrabold text-zinc-950 tracking-tight leading-[1.12] mb-5">
-            Where India’s<br />
-            emerging artists<br />
-            build <span className="text-[#E45826]">careers</span>,<br />
-            not just followers.
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-extrabold text-zinc-950 tracking-tight leading-[1.12] mb-5 max-w-[560px]">
+            Where India’s emerging artists build <span className="text-[#E45826]">careers</span>, not followers.
           </h1>
 
           {/* Subtitle */}
@@ -55,11 +46,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onExplore, onJoin }) =
         {/* Right Dynamic Artistic Collage with Doodle Accents */}
         <div className="lg:col-span-6 relative flex justify-center lg:justify-end">
           {/* Organic Orange Doodle Vector Strokes */}
-          <svg
-            className="absolute -top-6 -left-6 w-full h-full pointer-events-none z-0 text-[#E45826]/75"
+          <motion.svg
+            className="absolute -top-6 -left-6 w-full h-full pointer-events-none z-0 text-[#E45826]/40"
             viewBox="0 0 500 450"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
+            animate={{ rotate: [0, 2.5, -2.5, 0] }}
+            transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
           >
             {/* Smooth swooping loop stroke matching the screenshot */}
             <path
@@ -69,12 +62,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onExplore, onJoin }) =
               strokeLinecap="round"
               strokeDasharray="none"
             />
-          </svg>
+          </motion.svg>
 
-          {/* 4-Image Grid Cluster */}
+          {/* Asymmetric 3-Tile Collage: wide top + two supporting tiles */}
           <div className="grid grid-cols-2 gap-3.5 max-w-[460px] w-full relative z-10">
-            {/* Top-Left: Concert Crowd with Handwritten Overlay */}
-            <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-md group">
+            {/* Wide Top: Concert Crowd with Handwritten Overlay */}
+            <div className="relative col-span-2 rounded-2xl overflow-hidden aspect-[16/7] shadow-md group">
               <img
                 src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=650&q=80"
                 alt="Concert stage crowd"
@@ -83,15 +76,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onExplore, onJoin }) =
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-3.5">
-                <span className="font-script text-white text-xl sm:text-2xl font-bold leading-tight drop-shadow-md transform -rotate-3 select-none">
-                  Create<br />
-                  Collaborate<br />
-                  Grow
+                <span className="font-script text-white text-xl sm:text-2xl font-bold leading-none drop-shadow-md transform -rotate-3 select-none">
+                  Create · Collaborate · Grow
                 </span>
               </div>
             </div>
 
-            {/* Top-Right: Mountain Hiker Scenic Summit */}
+            {/* Bottom-Left: Mountain Hiker Scenic Summit */}
             <div className="rounded-2xl overflow-hidden aspect-[4/3] shadow-md group">
               <img
                 src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=650&q=80"
@@ -102,9 +93,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onExplore, onJoin }) =
               />
             </div>
 
-            {/* Bottom-Left: Neon Sign "You are what you listen to" */}
+            {/* Bottom-Right: Neon Sign "You are what you listen to" */}
             <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-md group bg-zinc-950 flex items-center justify-center p-3 text-center border border-zinc-800">
-              <div className="absolute inset-0 bg-radial from-amber-600/20 via-zinc-950/90 to-zinc-950" />
+              <motion.div
+                className="absolute inset-0 bg-radial from-amber-600/20 via-zinc-950/90 to-zinc-950"
+                animate={{ opacity: [0.8, 1, 0.8] }}
+                transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+              />
               <div className="relative z-10">
                 <p className="font-script text-amber-400 text-lg sm:text-xl font-bold tracking-wide drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]">
                   you are ♫
@@ -113,17 +108,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onExplore, onJoin }) =
                   what you listen to
                 </p>
               </div>
-            </div>
-
-            {/* Bottom-Right: Vintage Studio Microphone */}
-            <div className="rounded-2xl overflow-hidden aspect-[4/3] shadow-md group">
-              <img
-                src="https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=650&q=80"
-                alt="Classic studio microphone"
-                loading="eager"
-                decoding="async"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
             </div>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { PortalGateway } from './components/PortalGateway';
@@ -11,13 +12,12 @@ import { BrowseCategories } from './components/BrowseCategories';
 import { DashboardWidget } from './components/DashboardWidget';
 import { CreateAccountModal } from './components/CreateAccountModal';
 import { SignInModal } from './components/SignInModal';
-import { FreeTierStatusModal } from './components/FreeTierStatusModal';
 import { OnboardingLoadingScreen } from './components/OnboardingLoadingScreen';
 import { ApplyModal } from './components/ApplyModal';
 import { OpportunityDetailModal } from './components/OpportunityDetailModal';
 import { DiscoverView } from './components/DiscoverView';
 import { ApplicationsView } from './components/ApplicationsView';
-import { ProfileView } from './components/ProfileView';
+import { ProfileView, ProfileMedia } from './components/ProfileView';
 
 // Organiser Portal Components
 import { OrganiserHeroSection } from './components/OrganiserHeroSection';
@@ -31,7 +31,7 @@ import { OrganiserTalentScoutView } from './components/OrganiserTalentScoutView'
 import { OrganiserProfileView } from './components/OrganiserProfileView';
 import { PostOpportunityModal } from './components/PostOpportunityModal';
 
-// Supabase & Cloudinary Free Tier Integrations
+// Supabase auth & Cloudinary media integrations
 import { 
   onSupabaseAuthStateChange, 
   supabaseGetCurrentUser, 
@@ -40,6 +40,7 @@ import {
   isSupabaseConfigured 
 } from './lib/supabase';
 import { isCloudinaryConfigured } from './lib/cloudinary';
+import { getDraft, setDraft } from './lib/drafts';
 import { ensureArtistThread, findThread, ensureProfile, claimThread, fetchThreads, markRead, isDbReady, subscribeThreads } from './lib/threads';
 import { ThreadModal } from './components/ThreadModal';
 
@@ -64,6 +65,43 @@ import {
   AuthUser,
   Thread
 } from './types';
+
+const profileMediaKey = (userId: string) => `kala_profile_media_${userId}`;
+
+// blob: URLs only live in the current tab — never persist them.
+const persistableUrl = (url?: string) => (url && url.startsWith('blob:') ? undefined : url);
+
+function loadProfileMedia(userId: string): ProfileMedia {
+  try {
+    const raw = localStorage.getItem(profileMediaKey(userId));
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveProfileMedia(userId: string, media: ProfileMedia) {
+  try {
+    localStorage.setItem(
+      profileMediaKey(userId),
+      JSON.stringify({
+        avatar: persistableUrl(media.avatar),
+        reel: persistableUrl(media.reel),
+        gallery: (media.gallery || []).filter((u) => !u.startsWith('blob:')),
+      })
+    );
+  } catch {}
+}
+
+const storedArtistName = (email?: string) =>
+  email ? getDraft<{ name?: string }>(`kala_profile_text_${email}`)?.name : undefined;
+
+function applyStoredArtistName(user: AuthUser): AuthUser {
+  const stored = storedArtistName(user.email);
+  return user.role === 'artist' && stored ? { ...user, name: stored } : user;
+}
+
+const storedOrgName = () => getDraft<Partial<OrganiserProfile>>('kala_org_profile_text')?.name;
 
 export default function App() {
   // Authenticated User State (determines active portal separation)
@@ -92,7 +130,6 @@ export default function App() {
   const [signUpInitialRole, setSignUpInitialRole] = useState<PortalMode>('artist');
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [signInInitialRole, setSignInInitialRole] = useState<PortalMode>('artist');
-  const [isFreeTierModalOpen, setIsFreeTierModalOpen] = useState(false);
   const [isLoadingScreenOpen, setIsLoadingScreenOpen] = useState(false);
   const [loadingScreenMessage, setLoadingScreenMessage] = useState({
     title: "Almost there...",
@@ -111,12 +148,18 @@ export default function App() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>(FEATURED_OPPORTUNITIES);
   
   // Organiser State
-  const [organiserProfile, setOrganiserProfile] = useState<OrganiserProfile>(INITIAL_ORGANISER_PROFILE);
+  const [organiserProfile, setOrganiserProfile] = useState<OrganiserProfile>(() => ({
+    ...INITIAL_ORGANISER_PROFILE,
+    ...getDraft<Partial<OrganiserProfile>>('kala_org_profile_text'),
+  }));
   const [organiserStats, setOrganiserStats] = useState<OrganiserStats>(INITIAL_ORGANISER_STATS);
   const [applicantReviews, setApplicantReviews] = useState<ApplicantReview[]>(INITIAL_APPLICANT_REVIEWS);
 
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeThread, setActiveThread] = useState<Thread | null>(null);
+
+  // Per-user profile media (avatar / reel / gallery) persisted across sessions
+  const [profileMedia, setProfileMedia] = useState<ProfileMedia>({});
 
   // Supabase Auth State Synchronization & OAuth Callback Handling
   useEffect(() => {
@@ -146,7 +189,8 @@ export default function App() {
     }
 
     // 3. Check existing session on load
-    supabaseGetCurrentUser().then((user) => {
+    supabaseGetCurrentUser().then((rawUser) => {
+      const user = rawUser && applyStoredArtistName(rawUser);
       if (user) {
         setCurrentUser(user);
         if (user.role === 'artist' && user.name) {
@@ -156,7 +200,8 @@ export default function App() {
     });
 
     // 4. Subscribe to realtime auth state changes from Supabase
-    const unsubscribe = onSupabaseAuthStateChange((user, event) => {
+    const unsubscribe = onSupabaseAuthStateChange((rawUser, event) => {
+      const user = rawUser && applyStoredArtistName(rawUser);
       if (user) {
         setCurrentUser(user);
         if (user.role === 'artist' && user.name) {
@@ -171,6 +216,33 @@ export default function App() {
       unsubscribe();
     };
   }, []);
+
+  // Restore persisted profile media (avatar / reel / gallery) whenever the
+  // signed-in user changes, and mirror a stored avatar into the header.
+  useEffect(() => {
+    if (!currentUser) {
+      setProfileMedia({});
+      return;
+    }
+    const stored = loadProfileMedia(currentUser.id);
+    setProfileMedia(stored);
+    if (stored.avatar && stored.avatar !== (currentUser.avatarUrl || currentUser.avatar)) {
+      setCurrentUser((prev) => (prev ? { ...prev, avatarUrl: stored.avatar } : prev));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id]);
+
+  const handleProfileMediaChange = (patch: ProfileMedia) => {
+    if (!currentUser) return;
+    const next = { ...profileMedia, ...patch };
+    setProfileMedia(next);
+    saveProfileMedia(currentUser.id, next);
+    if ('avatar' in patch) {
+      setCurrentUser((prev) =>
+        prev ? { ...prev, avatarUrl: patch.avatar || prev.avatarUrl } : prev
+      );
+    }
+  };
 
   // Profile row (RLS needs it for role checks) + the caller's thread list, which
   // is what both unread pills read. Keyed on the user id so it covers every login
@@ -218,25 +290,26 @@ export default function App() {
 
   const handleSignInSuccess = (user: AuthUser) => {
     setIsSignInOpen(false);
-    setCurrentUser(user);
+    const resolved = applyStoredArtistName(user);
+    setCurrentUser(resolved);
 
-    if (user.role === 'artist') {
-      setUserName(user.name);
+    if (resolved.role === 'artist') {
+      setUserName(resolved.name);
       setCurrentArtistTab('home');
-      showToast(`Welcome back, ${user.name}! Logged into Artist Portal.`);
+      showToast(`Welcome back, ${resolved.name}! Logged into Artist Portal.`);
     } else {
-      if (user.orgName) {
-        setOrganiserProfile(prev => ({
-          ...prev,
-          name: user.orgName!,
-        }));
-      }
+      setOrganiserProfile(prev => ({
+        ...prev,
+        name: storedOrgName() || resolved.orgName || prev.name,
+        logo: resolved.avatarUrl || resolved.avatar || prev.logo,
+      }));
       setCurrentOrgTab('overview');
-      showToast(`Welcome back! Logged into Organiser Portal for ${user.orgName || 'your venue'}.`);
+      showToast(`Welcome back! Logged into Organiser Portal for ${resolved.orgName || 'your venue'}.`);
     }
   };
 
   const handleSignUpSuccess = (userData: { 
+    id?: string;
     name: string; 
     email: string; 
     role: PortalMode; 
@@ -248,32 +321,31 @@ export default function App() {
     setIsSignUpOpen(false);
 
     const effectiveAvatar = userData.avatarUrl || userData.avatar;
-    const newUser: AuthUser = {
-      id: `user-${Date.now()}`,
+    const newUser: AuthUser = applyStoredArtistName({
+      id: userData.id || `user-${Date.now()}`,
       name: userData.name,
       email: userData.email,
       role: userData.role,
       orgName: userData.orgName,
       discipline: userData.discipline,
       avatarUrl: effectiveAvatar,
-    };
+    });
 
     setCurrentUser(newUser);
 
     if (userData.role === 'artist') {
-      setUserName(userData.name);
+      setUserName(newUser.name);
       setLoadingScreenMessage({
         title: "Almost there...",
-        subtitle: `Welcome to the Artist Portal, ${userData.name}! We're preparing your audition portfolio.`
+        subtitle: `Welcome to the Artist Portal, ${newUser.name}! We're preparing your audition portfolio.`
       });
       setCurrentArtistTab('home');
     } else {
-      if (userData.orgName) {
-        setOrganiserProfile(prev => ({
-          ...prev,
-          name: userData.orgName!,
-        }));
-      }
+      setOrganiserProfile(prev => ({
+        ...prev,
+        name: storedOrgName() || userData.orgName || prev.name,
+        logo: effectiveAvatar || prev.logo,
+      }));
       setLoadingScreenMessage({
         title: "Configuring curatorial desk...",
         subtitle: `Welcome, ${userData.name}! Preparing production pipeline for ${userData.orgName || 'your venue'}.`
@@ -286,18 +358,18 @@ export default function App() {
 
   const handleQuickDemoLogin = (role: PortalMode) => {
     if (role === 'artist') {
-      const artistUser: AuthUser = {
+      const artistUser: AuthUser = applyStoredArtistName({
         id: 'user-mowleen',
         name: 'Mowleen',
         email: 'mowleen2006@gmail.com',
         role: 'artist',
         discipline: 'Classical & Contemporary Vocalist',
         avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=140&q=80',
-      };
+      });
       setCurrentUser(artistUser);
-      setUserName('Mowleen');
+      setUserName(artistUser.name);
       setCurrentArtistTab('home');
-      showToast("Logged in to Artist Portal as Mowleen");
+      showToast(`Logged in to Artist Portal as ${artistUser.name}`);
     } else {
       const orgUser: AuthUser = {
         id: 'user-ncpa',
@@ -399,6 +471,8 @@ export default function App() {
       appliedDate: 'Just now',
       status: 'submitted',
       compensation: opp.compensation,
+      mediaUrl: appData?.reelUrl,
+      fileName: appData?.fileName,
     };
 
     setApplications([newApp, ...applications]);
@@ -414,7 +488,7 @@ export default function App() {
       opportunityTitle: opp.title,
       artistId: currentUser?.id,
       artistName: userName,
-      artistAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=140&q=80',
+      artistAvatar: currentUser?.avatarUrl || currentUser?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=140&q=80',
       artistRole: currentUser?.discipline || 'Contemporary Vocalist & Composer',
       artistLocation: 'Mumbai, Maharashtra',
       appliedDate: 'Just now',
@@ -423,8 +497,8 @@ export default function App() {
       pitch: appData?.statement || 'Eager to perform on the prestigious stage.',
       status: 'under_review',
       rating: 4.8,
-      reelUrl: 'https://actions.google.com/sounds/v1/water/rain_heavy.ogg',
-      portfolioUrl: 'https://kala.art/mowleen',
+      reelUrl: appData?.reelUrl,
+      portfolioUrl: appData?.portfolioUrl || undefined,
     };
     setApplicantReviews(prev => [newReview, ...prev]);
     setOrganiserStats(prev => ({
@@ -509,6 +583,7 @@ export default function App() {
           initialRole={signInInitialRole}
           onClose={() => setIsSignInOpen(false)}
           onSuccess={handleSignInSuccess}
+          onDemoLogin={handleQuickDemoLogin}
           onSwitchToSignUp={(role?: PortalMode) => {
             setIsSignInOpen(false);
             handleOpenSignUp(role || 'artist');
@@ -519,11 +594,6 @@ export default function App() {
           initialRole={signUpInitialRole}
           onClose={() => setIsSignUpOpen(false)}
           onSuccess={handleSignUpSuccess}
-        />
-        <FreeTierStatusModal
-          isOpen={isFreeTierModalOpen}
-          onClose={() => setIsFreeTierModalOpen(false)}
-          currentUser={currentUser}
         />
         {toastMessage && (
           <div className="fixed bottom-6 right-6 z-50 bg-zinc-900 text-white px-5 py-3 rounded-2xl shadow-xl text-xs sm:text-sm font-medium flex items-center gap-3 animate-in slide-in-from-bottom-4 duration-200">
@@ -582,7 +652,6 @@ export default function App() {
           onSelectOrgTab={setCurrentOrgTab}
           onOpenSignUp={() => handleOpenSignUp(portalMode)}
           onOpenSignIn={() => handleOpenSignIn(portalMode)}
-          onOpenFreeTierStatus={() => setIsFreeTierModalOpen(true)}
           onSignOut={handleSignOut}
           onSwitchPortalAccount={handleSwitchPortalAccount}
           userName={currentUser.name}
@@ -594,6 +663,14 @@ export default function App() {
 
         {/* Dynamic Main Body Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1580px] w-full mx-auto">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${portalMode}-${portalMode === 'artist' ? currentArtistTab : currentOrgTab}`}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            >
           {/* ========================================================================= */}
           {/* 1. ARTIST PORTAL VIEWS (Active when user logs in as Artist) */}
           {/* ========================================================================= */}
@@ -667,6 +744,7 @@ export default function App() {
               {currentArtistTab === 'applications' && (
                 <ApplicationsView
                   applications={applications}
+                  opportunities={opportunities}
                   threads={threads}
                   onOpenThread={openArtistThread}
                   onExplore={() => setCurrentArtistTab('discover')}
@@ -679,6 +757,13 @@ export default function App() {
                   userName={currentUser.name}
                   userEmail={currentUser.email}
                   avatarUrl={currentUser.avatarUrl || currentUser.avatar}
+                  profileMedia={profileMedia}
+                  onProfileMediaChange={handleProfileMediaChange}
+                  onProfileTextSaved={(name) => {
+                    setCurrentUser(prev => (prev ? { ...prev, name } : prev));
+                    setUserName(name);
+                    showToast('Profile updated!');
+                  }}
                   onUpdateCompletion={(newVal: number) => {
                     setUserStats(prev => ({ ...prev, profileCompletion: newVal }));
                     showToast('Profile completion updated!');
@@ -792,12 +877,15 @@ export default function App() {
                   profile={organiserProfile}
                   onUpdateProfile={(updated) => {
                     setOrganiserProfile(updated);
+                    setDraft('kala_org_profile_text', updated);
                     showToast('Venue profile updated successfully!');
                   }}
                 />
               )}
             </>
           )}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 
@@ -824,17 +912,11 @@ export default function App() {
         initialRole={signInInitialRole}
         onClose={() => setIsSignInOpen(false)}
         onSuccess={handleSignInSuccess}
+        onDemoLogin={handleQuickDemoLogin}
         onSwitchToSignUp={(role?: PortalMode) => {
           setIsSignInOpen(false);
           handleOpenSignUp(role || 'artist');
         }}
-      />
-
-      {/* 1c. Free Tier Connection Status Modal */}
-      <FreeTierStatusModal
-        isOpen={isFreeTierModalOpen}
-        onClose={() => setIsFreeTierModalOpen(false)}
-        currentUser={currentUser}
       />
 
       <ThreadModal

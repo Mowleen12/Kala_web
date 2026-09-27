@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { 
   User, 
   MapPin, 
@@ -13,10 +14,24 @@ import {
   Play,
   Cloud,
   Camera,
-  Film
+  Film,
+  Pencil
 } from 'lucide-react';
 import { KalaStar } from './KalaLogo';
 import { MediaUploader } from './MediaUploader';
+import { getDraft, setDraft } from '../lib/drafts';
+
+export interface ProfileMedia {
+  avatar?: string;
+  reel?: string;
+  gallery?: string[];
+}
+
+interface ProfileText {
+  name?: string;
+  location?: string;
+  bio?: string;
+}
 
 interface ProfileViewProps {
   completion: number;
@@ -24,7 +39,27 @@ interface ProfileViewProps {
   userName?: string;
   userEmail?: string;
   avatarUrl?: string;
+  profileMedia?: ProfileMedia;
+  onProfileMediaChange?: (patch: ProfileMedia) => void;
+  onProfileTextSaved?: (name: string) => void;
 }
+
+const DEFAULT_GALLERY = [
+  'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80',
+  'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?auto=format&fit=crop&w=600&q=80'
+];
+
+const DEFAULT_SKILLS = [
+  'Vocal Performance',
+  'Acoustic Guitar',
+  'Music Production',
+  'Sound Design',
+  'Audio Mixing',
+  'Songwriting'
+];
+
+const DEFAULT_BIO =
+  'Emerging multidisciplinary artist & music producer based in Mumbai. Crafting sonic landscapes bridging traditional Indian acoustic instruments with contemporary indie textures.';
 
 export const ProfileView: React.FC<ProfileViewProps> = ({
   completion,
@@ -32,33 +67,67 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   userName = "Mowleen Mukherjee",
   userEmail = "mowleen2006@gmail.com",
   avatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=240&q=80",
+  profileMedia,
+  onProfileMediaChange,
+  onProfileTextSaved,
 }) => {
-  const [currentAvatar, setCurrentAvatar] = useState(avatarUrl);
+  const profileTextKey = `kala_profile_text_${userEmail}`;
+  const currentAvatar = profileMedia?.avatar || avatarUrl;
+  const reelUrl = profileMedia?.reel || '';
+  const galleryImages = profileMedia?.gallery || DEFAULT_GALLERY;
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
-  const [reelUrl, setReelUrl] = useState('');
-  const [galleryImages, setGalleryImages] = useState<string[]>([
-    'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?auto=format&fit=crop&w=600&q=80'
-  ]);
   const [newGalleryImage, setNewGalleryImage] = useState('');
   const [showAddGallery, setShowAddGallery] = useState(false);
 
-  const [bio, setBio] = useState(
-    "Emerging multidisciplinary artist & music producer based in Mumbai. Crafting sonic landscapes bridging traditional Indian acoustic instruments with contemporary indie textures."
+  const [displayName, setDisplayName] = useState<string>(
+    () => getDraft<ProfileText>(`kala_profile_text_${userEmail}`)?.name || userName
   );
-  const [skills, setSkills] = useState([
-    'Vocal Performance',
-    'Acoustic Guitar',
-    'Music Production',
-    'Sound Design',
-    'Audio Mixing',
-    'Songwriting'
-  ]);
+  const [location, setLocation] = useState<string>(
+    () => getDraft<ProfileText>(`kala_profile_text_${userEmail}`)?.location || 'Mumbai, Maharashtra'
+  );
+  const [bio, setBio] = useState<string>(
+    () => getDraft<ProfileText>(`kala_profile_text_${userEmail}`)?.bio || DEFAULT_BIO
+  );
+
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editLocation, setEditLocation] = useState('');
+  const [editBio, setEditBio] = useState('');
+
+  const startEditingProfile = () => {
+    setEditName(displayName);
+    setEditLocation(location);
+    setEditBio(bio);
+    setIsEditingProfile(true);
+  };
+
+  const saveProfileText = () => {
+    const name = editName.trim();
+    if (!name) return;
+    const next: ProfileText = {
+      name,
+      location: editLocation.trim(),
+      bio: editBio.trim(),
+    };
+    setDisplayName(name);
+    setLocation(next.location || location);
+    setBio(next.bio || bio);
+    setDraft(profileTextKey, next);
+    setIsEditingProfile(false);
+    onProfileTextSaved?.(name);
+  };
+
+  const [skills, setSkills] = useState<string[]>(() => {
+    const stored = getDraft<string[]>(`kala_skills_${userEmail}`);
+    return stored && stored.length > 0 ? stored : DEFAULT_SKILLS;
+  });
   const [newSkill, setNewSkill] = useState('');
 
   const handleAddSkill = () => {
     if (newSkill.trim() && !skills.includes(newSkill.trim())) {
-      setSkills([...skills, newSkill.trim()]);
+      const next = [...skills, newSkill.trim()];
+      setSkills(next);
+      setDraft(`kala_skills_${userEmail}`, next);
       setNewSkill('');
       if (completion < 100) {
         onUpdateCompletion(Math.min(100, completion + 9));
@@ -67,7 +136,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   };
 
   const handleReelUploaded = (url: string) => {
-    setReelUrl(url);
+    onProfileMediaChange?.({ reel: url });
     if (completion < 100) {
       onUpdateCompletion(100);
     }
@@ -75,7 +144,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
   const handleAddGalleryImage = (url: string) => {
     if (url) {
-      setGalleryImages(prev => [url, ...prev]);
+      onProfileMediaChange?.({ gallery: [url, ...galleryImages] });
       setShowAddGallery(false);
       setNewGalleryImage('');
     }
@@ -104,19 +173,36 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <span className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-emerald-500 ring-2 ring-white" />
             </div>
 
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight">
-                  {userName}
-                </h1>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#FAF2EB] text-[#E45826]">
-                  Artist Pro
-                </span>
+                {isEditingProfile ? (
+                  <input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    maxLength={60}
+                    aria-label="Display name"
+                    className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-1 outline-none focus:border-[#E45826] w-full sm:w-64"
+                  />
+                ) : (
+                  <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight">
+                    {displayName}
+                  </h1>
+                )}
               </div>
               <p className="text-xs sm:text-sm text-zinc-500 mt-1 flex flex-wrap items-center gap-3">
                 <span className="flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5 text-zinc-400" />
-                  Mumbai, Maharashtra
+                  {isEditingProfile ? (
+                    <input
+                      value={editLocation}
+                      onChange={(e) => setEditLocation(e.target.value)}
+                      maxLength={60}
+                      aria-label="Location"
+                      className="w-44 bg-[#FAF8F5] border border-[#E5E0D6] rounded-lg px-2 py-1 text-xs outline-none focus:border-[#E45826]"
+                    />
+                  ) : (
+                    location
+                  )}
                 </span>
                 <span>•</span>
                 <span className="flex items-center gap-1">
@@ -137,6 +223,31 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 style={{ width: `${completion}%` }}
               />
             </div>
+            {isEditingProfile ? (
+              <div className="flex items-center gap-2 mt-3">
+                <button
+                  onClick={saveProfileText}
+                  disabled={!editName.trim()}
+                  className="px-4 py-2 rounded-full bg-[#E45826] hover:bg-[#D44716] text-white text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                >
+                  Save Changes
+                </button>
+                <button
+                  onClick={() => setIsEditingProfile(false)}
+                  className="px-4 py-2 rounded-full bg-white border border-[#EDE8E0] text-zinc-700 text-xs font-semibold hover:bg-zinc-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={startEditingProfile}
+                className="mt-3 px-4 py-2 rounded-full bg-[#E45826] hover:bg-[#D44716] text-white text-xs font-semibold shadow-xs transition-all cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Edit Profile
+              </button>
+            )}
           </div>
         </div>
 
@@ -144,7 +255,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         {isEditingAvatar && (
           <div className="mt-5 p-4 rounded-2xl bg-[#FAF8F5] border border-[#EBE4DA] animate-in fade-in duration-150">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-zinc-800">Update Profile Avatar (Cloudinary Free CDN)</span>
+              <span className="text-xs font-bold text-zinc-800">Update Profile Avatar</span>
               <button
                 onClick={() => setIsEditingAvatar(false)}
                 className="text-xs text-zinc-500 hover:text-zinc-800"
@@ -157,7 +268,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               folder="kala-artists/avatars"
               value={currentAvatar}
               onChange={(url) => {
-                setCurrentAvatar(url);
+                onProfileMediaChange?.({ avatar: url });
                 setIsEditingAvatar(false);
               }}
             />
@@ -169,9 +280,20 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-2">
             Artist Statement & Bio
           </label>
-          <p className="text-xs sm:text-sm text-zinc-700 leading-relaxed max-w-3xl">
-            {bio}
-          </p>
+          {isEditingProfile ? (
+            <textarea
+              value={editBio}
+              onChange={(e) => setEditBio(e.target.value)}
+              maxLength={600}
+              rows={4}
+              aria-label="Artist statement and bio"
+              className="w-full max-w-3xl bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-2 text-xs sm:text-sm text-zinc-700 leading-relaxed outline-none focus:border-[#E45826] resize-y"
+            />
+          ) : (
+            <p className="text-xs sm:text-sm text-zinc-700 leading-relaxed max-w-3xl">
+              {bio}
+            </p>
+          )}
         </div>
       </div>
 
@@ -184,7 +306,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               Audition Reel & Performance Video
             </h3>
             <p className="text-xs text-zinc-500 mt-0.5">
-              Streamed through Cloudinary Free CDN. Directly attached to all your audition callbacks.
+              Streamed through Cloudinary. Directly attached to all your audition callbacks.
             </p>
           </div>
         </div>
@@ -196,7 +318,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           resourceType="video"
           value={reelUrl}
           onChange={handleReelUploaded}
-          onRemove={() => setReelUrl('')}
+          onRemove={() => onProfileMediaChange?.({ reel: '' })}
         />
       </div>
 
@@ -209,12 +331,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               Visual Portfolio & Stage Stills
             </h3>
             <p className="text-xs text-zinc-500 mt-0.5">
-              High-resolution stage photos, costume stills, and album artwork stored on Cloudinary Free Tier.
+              High-resolution stage photos, costume stills, and album artwork stored on Cloudinary.
             </p>
           </div>
           <button
             onClick={() => setShowAddGallery(!showAddGallery)}
-            className="px-3 py-1.5 rounded-xl bg-[#FAF2EB] hover:bg-[#F6E4D7] text-[#E45826] text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+            className="px-4 py-2 rounded-xl bg-[#FAF2EB] hover:bg-[#F6E4D7] text-[#E45826] text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Work</span>
@@ -237,9 +359,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           {galleryImages.map((imgUrl, idx) => (
             <div key={idx} className="relative aspect-4/3 rounded-2xl overflow-hidden border border-[#EDE7DE] group bg-zinc-100">
               <img src={imgUrl} alt={`Portfolio still ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-              <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-xs px-2 py-0.5 rounded-md text-[10px] font-semibold text-white">
-                Cloudinary CDN
-              </div>
             </div>
           ))}
         </div>
@@ -254,12 +373,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
         <div className="flex flex-wrap gap-2 mb-4">
           {skills.map((skill) => (
-            <span
+            <motion.span
               key={skill}
+              layout
+              initial={{ opacity: 0, scale: 0.7 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 32 }}
               className="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#FAF8F5] border border-[#EDE7DE] text-zinc-700"
             >
               {skill}
-            </span>
+            </motion.span>
           ))}
         </div>
 

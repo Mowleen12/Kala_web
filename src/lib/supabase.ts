@@ -55,7 +55,7 @@ export function mapSupabaseUserToAuthUser(user: SupabaseUser): AuthUser {
 }
 
 /**
- * Sign in or Sign up using Google OAuth via Supabase Free Tier
+ * Sign in or Sign up using Google OAuth via Supabase
  * With automatic support for both Artist and Organiser portals
  */
 export async function supabaseSignInWithGoogle(
@@ -235,7 +235,7 @@ export async function supabaseSignInWithGoogle(
 }
 
 /**
- * Sign up with email & password and custom role metadata using Supabase Free Tier Auth
+ * Sign up with email & password and custom role metadata using Supabase Auth
  */
 export async function supabaseSignUp(params: {
   email: string;
@@ -295,11 +295,12 @@ export async function supabaseSignUp(params: {
 }
 
 /**
- * Sign in with email & password using Supabase Free Tier Auth
+ * Sign in with email & password using Supabase Auth
  */
 export async function supabaseSignIn(
   email: string,
-  password: string
+  password: string,
+  fallbackRole?: PortalMode
 ): Promise<{ user: AuthUser | null; error: string | null }> {
   if (!isSupabaseConfigured || !supabase) {
     // Graceful fallback for preview testing
@@ -329,7 +330,15 @@ export async function supabaseSignIn(
       return { user: null, error: 'User not found' };
     }
 
-    return { user: mapSupabaseUserToAuthUser(data.user), error: null };
+    const authUser = mapSupabaseUserToAuthUser(data.user);
+    // Users without a role in metadata always map to 'artist' — honor the portal
+    // pill the user actually picked and persist it so future logins agree.
+    if (!data.user.user_metadata?.role && fallbackRole) {
+      authUser.role = fallbackRole;
+      supabase.auth.updateUser({ data: { role: fallbackRole } }).catch(() => {});
+    }
+
+    return { user: authUser, error: null };
   } catch (err: any) {
     return { user: null, error: err?.message || 'Failed to sign in. Please verify your credentials.' };
   }

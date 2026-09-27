@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { 
   Home, 
   Compass, 
@@ -58,7 +59,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       {/* Desktop Persistent Sidebar */}
-      <aside className="hidden lg:flex flex-col justify-between w-64 shrink-0 h-screen sticky top-0 px-6 py-7 border-r border-[#EFECE6] bg-[#FAF8F5]">
+      <motion.aside
+        initial={{ opacity: 0, x: -18 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className="hidden lg:flex flex-col justify-between w-64 shrink-0 h-screen sticky top-0 px-6 py-7 border-r border-[#EFECE6] bg-[#FAF8F5]">
         <div>
           {/* Brand Logo & Scoped Portal Workspace Card */}
           <div className="mb-6 px-1">
@@ -116,18 +121,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     key={item.id}
                     id={`nav-${item.id}`}
                     onClick={() => onSelectArtistTab(item.id)}
-                    className={`w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-[14px] font-medium transition-all duration-200 text-left cursor-pointer ${
+                    className={`relative w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-[14px] transition-all duration-200 text-left cursor-pointer ${
                       isActive
-                        ? 'bg-[#FDEEE7] text-[#E45826] font-semibold shadow-xs'
-                        : 'text-zinc-600 hover:text-zinc-900 hover:bg-[#F2ECE3]'
+                        ? 'text-[#E45826] font-semibold'
+                        : 'font-medium text-zinc-600 hover:text-zinc-900 hover:bg-[#F2ECE3]'
                     }`}
                   >
+                    {isActive && (
+                      <motion.span
+                        layoutId="nav-active-pill"
+                        className="absolute inset-0 rounded-xl bg-[#FDEEE7] shadow-xs"
+                        transition={{ type: 'spring', stiffness: 450, damping: 38 }}
+                      />
+                    )}
                     <Icon
-                      className={`w-4.5 h-4.5 transition-colors ${
+                      className={`relative z-10 w-4.5 h-4.5 transition-colors ${
                         isActive ? 'text-[#E45826]' : 'text-zinc-500'
                       }`}
                     />
-                    <span>{item.label}</span>
+                    <span className="relative z-10">{item.label}</span>
                   </button>
                 );
               })
@@ -141,18 +153,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       key={item.id}
                       id={`org-nav-${item.id}`}
                       onClick={() => onSelectOrgTab(item.id)}
-                      className={`w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-[14px] font-medium transition-all duration-200 text-left cursor-pointer ${
+                      className={`relative w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-[14px] transition-all duration-200 text-left cursor-pointer ${
                         isActive
-                          ? 'bg-[#FDEEE7] text-[#E45826] font-semibold shadow-xs'
-                          : 'text-zinc-600 hover:text-zinc-900 hover:bg-[#F2ECE3]'
+                          ? 'text-[#E45826] font-semibold'
+                          : 'font-medium text-zinc-600 hover:text-zinc-900 hover:bg-[#F2ECE3]'
                       }`}
                     >
+                      {isActive && (
+                        <motion.span
+                          layoutId="nav-active-pill"
+                          className="absolute inset-0 rounded-xl bg-[#FDEEE7] shadow-xs"
+                          transition={{ type: 'spring', stiffness: 450, damping: 38 }}
+                        />
+                      )}
                       <Icon
-                        className={`w-4.5 h-4.5 transition-colors ${
+                        className={`relative z-10 w-4.5 h-4.5 transition-colors ${
                           isActive ? 'text-[#E45826]' : 'text-zinc-500'
                         }`}
                       />
-                      <span>{item.label}</span>
+                      <span className="relative z-10">{item.label}</span>
                     </button>
                   );
                 })}
@@ -220,7 +239,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
         </div>
-      </aside>
+      </motion.aside>
 
       {/* Mobile Bottom Navigation Bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#EAE6DE] px-3 py-2 flex justify-around items-center">

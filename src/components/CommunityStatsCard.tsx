@@ -51,7 +51,7 @@ export const CommunityStatsCard: React.FC<CommunityStatsCardProps> = ({ onJoin }
           id="community-join-btn"
           onClick={onJoin}
           aria-label="Explore community opportunities"
-          className="w-10 h-10 rounded-full bg-[#E45826] text-white flex items-center justify-center shadow-sm hover:bg-[#D44716] active:scale-95 transition-all cursor-pointer"
+          className="w-10 h-10 rounded-full bg-white border border-[#E45826] text-[#E45826] flex items-center justify-center shadow-2xs hover:bg-[#FDEEE7] active:scale-95 transition-all cursor-pointer"
         >
           <ArrowRight className="w-5 h-5" />
         </button>

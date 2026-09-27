@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { motion } from 'motion/react';
 import { 
   Search, 
   MapPin, 
@@ -436,8 +437,13 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredOpportunities.map((opp) => (
-            <div
+            <motion.div
               key={opp.id}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              whileHover={{ y: -5 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
               className="group bg-white rounded-2xl overflow-hidden border border-[#EDE8E0] shadow-2xs hover:shadow-md hover:border-[#E0D7CB] transition-all flex flex-col justify-between"
             >
               <div>
@@ -492,7 +498,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                   Apply Now
                 </button>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       )}

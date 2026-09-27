@@ -7,7 +7,6 @@ import {
   CheckCircle2, 
   Calendar, 
   Plus, 
-  Sparkles,
   Search
 } from 'lucide-react';
 import { OrganiserStats, OrganiserProfile } from '../types';
@@ -184,14 +183,10 @@ export const OrganiserDashboardWidget: React.FC<OrganiserDashboardWidgetProps> =
       {/* Inspirational Organiser Promo Card */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FDF0E9] via-[#FBE5DA] to-[#F7D8C8] p-6 text-zinc-900 shadow-xs border border-[#F3D5C3]">
         <div className="relative z-10">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/80 border border-[#F4D2BF] text-[#E45826] text-[11px] font-bold mb-3 shadow-2xs">
-            <Sparkles className="w-3 h-3 text-[#E45826]" />
-            <span>Curator Insights</span>
-          </div>
           <h4 className="text-base font-bold leading-snug mb-2 text-zinc-950">
             Stage the future of Indian performance.
           </h4>
-          <p className="text-xs text-zinc-600 leading-relaxed">
+          <p className="text-sm text-zinc-600 leading-relaxed">
             Directly invite verified vocalists, dancers, and visual artists with proven portfolios to your prestigious season.
           </p>
           <button

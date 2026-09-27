@@ -45,6 +45,8 @@ export interface Application {
   appliedDate: string;
   status: 'submitted' | 'under_review' | 'interview' | 'selected' | 'rejected';
   compensation: string;
+  mediaUrl?: string;
+  fileName?: string;
 }
 
 export interface UserStats {

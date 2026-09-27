@@ -1,7 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { X, MapPin, Calendar, CheckCircle2, Link2, Sparkles } from 'lucide-react';
 import { Opportunity } from '../types';
 import { MediaUploader } from './MediaUploader';
+import { getDraft, setDraft, clearDraft } from '../lib/drafts';
+
+interface ApplyDraft {
+  portfolioUrl?: string;
+  statement?: string;
+  mediaUrl?: string;
+}
+
+const applyDraftKey = (oppId: string) => `kala_draft_apply_${oppId}`;
 
 interface ApplyModalProps {
   opportunity: Opportunity | null;
@@ -26,6 +36,26 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
   const [mediaType, setMediaType] = useState<'video' | 'image' | 'auto'>('auto');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Restore a saved draft when this opportunity's form opens...
+  useEffect(() => {
+    if (!isOpen || !opportunity) return;
+    const draft = getDraft<ApplyDraft>(applyDraftKey(opportunity.id));
+    setPortfolioUrl(draft?.portfolioUrl ?? '');
+    setStatement(draft?.statement ?? '');
+    setMediaUrl(draft?.mediaUrl ?? '');
+  }, [isOpen, opportunity?.id]);
+
+  // ...and keep it saved while the artist types, so work survives
+  // logout/login and reloads. Cleared on submit below.
+  useEffect(() => {
+    if (!isOpen || !opportunity) return;
+    setDraft(applyDraftKey(opportunity.id), {
+      portfolioUrl,
+      statement,
+      mediaUrl: mediaUrl.startsWith('blob:') ? '' : mediaUrl,
+    });
+  }, [isOpen, opportunity?.id, portfolioUrl, statement, mediaUrl]);
+
   if (!isOpen || !opportunity) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -39,13 +69,18 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
         reelUrl: mediaUrl || undefined,
         fileName: mediaUrl ? 'audition_reel_cloudinary' : 'portfolio_reel.mp4',
       });
+      clearDraft(applyDraftKey(opportunity.id));
       onClose();
     }, 400);
   };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-white rounded-3xl overflow-hidden shadow-2xl border border-[#EDE7DE] my-auto">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 14 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        className="relative w-full max-w-lg bg-white rounded-3xl overflow-hidden shadow-2xl border border-[#EDE7DE] my-auto">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -87,7 +122,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
             <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200 flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-zinc-900">{userName}</p>
-                <p className="text-[11px] text-zinc-500">{userEmail} • Verified Artist</p>
+                <p className="text-[11px] text-zinc-500">{userEmail} â€¢ Verified Artist</p>
               </div>
               <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3" /> Ready
@@ -99,7 +134,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
           <div>
             <MediaUploader
               label="Audition Video Reel or Work Sample"
-              description="Upload your live performance video (MP4/MOV/WEBM) or artwork still (JPG/PNG). Stored on Cloudinary Free Tier."
+              description="Upload your live performance video (MP4/MOV/WEBM) or artwork still (JPG/PNG). Stored securely on Cloudinary."
               folder="kala-auditions"
               resourceType="auto"
               value={mediaUrl}
@@ -149,7 +184,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
             </button>
           </div>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 };

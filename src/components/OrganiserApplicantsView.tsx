@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { motion } from 'motion/react';
 import { 
   Users, 
   Search, 
@@ -23,6 +24,8 @@ import {
 import { ApplicantReview, Opportunity, Thread } from '../types';
 import { KalaStar } from './KalaLogo';
 import { isUnread } from '../lib/threads';
+import { getOptimizedCloudinaryUrl } from '../lib/cloudinary';
+import { isDirectMediaUrl, mediaKind, linkHost } from '../lib/media';
 
 interface OrganiserApplicantsViewProps {
   applicants: ApplicantReview[];
@@ -53,7 +56,6 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
   // Modal / Play state
-  const [activeAudioReel, setActiveAudioReel] = useState<string | null>(null);
   const [inspectApplicant, setInspectApplicant] = useState<ApplicantReview | null>(null);
 
   const cityOptions = ['all', 'Mumbai', 'Bengaluru', 'Delhi', 'Pune', 'Chennai'];
@@ -487,9 +489,16 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {filteredApplicants.map((app) => (
-            <div
+          {filteredApplicants.map((app) => {
+            const oppBanner = opportunities.find((o) => o.id === app.opportunityId)?.imageUrl;
+            return (
+            <motion.div
               key={app.id}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              whileHover={{ y: -5 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
               className="bg-white rounded-3xl border border-[#EDE8E0] p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
             >
               <div>
@@ -527,13 +536,22 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                 </div>
 
                 {/* Target Opportunity */}
-                <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#EDE8E0] mb-4">
-                  <span className="text-[10px] font-bold uppercase text-zinc-400 block mb-0.5">
-                    Submitted For Call:
-                  </span>
-                  <p className="text-xs font-bold text-zinc-800 line-clamp-1">
-                    {app.opportunityTitle}
-                  </p>
+                <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#EDE8E0] mb-4 flex items-center gap-3">
+                  {oppBanner && (
+                    <img
+                      src={oppBanner}
+                      alt=""
+                      className="w-11 h-11 rounded-xl object-cover shrink-0"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-bold uppercase text-zinc-400 block mb-0.5">
+                      Submitted For Call:
+                    </span>
+                    <p className="text-xs font-bold text-zinc-800 line-clamp-1">
+                      {app.opportunityTitle}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Pitch / Statement */}
@@ -553,41 +571,59 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                   ))}
                 </div>
 
-                {/* Audition Reel Preview Player */}
-                {app.reelUrl && (
-                  <div className="p-3 rounded-2xl bg-[#FAF2EB] border border-[#FAD7C8] mb-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <button
-                        onClick={() => {
-                          if (activeAudioReel === app.id) {
-                            setActiveAudioReel(null);
-                          } else {
-                            setActiveAudioReel(app.id);
-                          }
-                        }}
-                        className="w-8 h-8 rounded-full bg-[#E45826] text-white flex items-center justify-center shrink-0 shadow-xs hover:bg-[#D44716] cursor-pointer"
+                {/* Audition Reel & Portfolio */}
+                {(app.reelUrl || app.portfolioUrl) && (
+                  <div className="p-3 rounded-2xl bg-[#FAF2EB] border border-[#FAD7C8] mb-4 space-y-2.5">
+                    {app.reelUrl && isDirectMediaUrl(app.reelUrl) && (
+                      mediaKind(app.reelUrl) === 'image' ? (
+                        <img
+                          src={getOptimizedCloudinaryUrl(app.reelUrl, { width: 800, quality: 'auto' })}
+                          alt="Audition reel"
+                          className="w-full h-40 rounded-xl object-cover"
+                        />
+                      ) : mediaKind(app.reelUrl) === 'audio' ? (
+                        <audio controls preload="metadata" src={app.reelUrl} className="w-full" />
+                      ) : (
+                        <video
+                          controls
+                          preload="metadata"
+                          src={getOptimizedCloudinaryUrl(app.reelUrl, { width: 1280, quality: 'auto' })}
+                          className="w-full h-40 rounded-xl bg-black object-contain"
+                        />
+                      )
+                    )}
+                    {app.reelUrl && !isDirectMediaUrl(app.reelUrl) && (
+                      <a
+                        href={app.reelUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
                       >
-                        <Play className="w-3.5 h-3.5 fill-white ml-0.5" />
-                      </button>
-                      <div className="min-w-0">
-                        <span className="text-[11px] font-bold text-zinc-800 block truncate">
-                          Audition Reel Audio & Pitch
+                        <span className="w-8 h-8 rounded-full bg-[#E45826] text-white flex items-center justify-center shrink-0 shadow-xs">
+                          <Play className="w-3.5 h-3.5 fill-white ml-0.5" />
                         </span>
-                        <span className="text-[10px] text-zinc-500">
-                          {activeAudioReel === app.id ? 'Now Playing Demo Sample...' : '3:12 mins • High-res master'}
-                        </span>
+                        <div className="min-w-0">
+                          <span className="text-[11px] font-bold text-zinc-800 block truncate">
+                            Audition Reel
+                          </span>
+                          <span className="text-[10px] text-zinc-500">{linkHost(app.reelUrl)}</span>
+                        </div>
+                        <ExternalLink className="w-3.5 h-3.5 text-[#E45826] shrink-0" />
+                      </a>
+                    )}
+                    {app.portfolioUrl && (
+                      <div className="flex justify-end">
+                        <a
+                          href={app.portfolioUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-semibold text-[#E45826] hover:underline flex items-center gap-1 shrink-0"
+                        >
+                          <span>Portfolio</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
                       </div>
-                    </div>
-
-                    <a
-                      href={app.portfolioUrl || '#'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-semibold text-[#E45826] hover:underline flex items-center gap-1 shrink-0"
-                    >
-                      <span>Portfolio</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                    )}
                   </div>
                 )}
               </div>
@@ -644,8 +680,9 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                   )}
                 </div>
               </div>
-            </div>
-          ))}
+            </motion.div>
+            );
+          })}
         </div>
       )}
     </div>

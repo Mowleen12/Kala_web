@@ -16,6 +16,16 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 
+-- This project previously ran another app's schema: its profiles table has no
+-- role/display_name/avatar_url, and `create table if not exists` above skips.
+-- Add them idempotently (no-op on a fresh install). Legacy rows stay role-NULL
+-- until ensureProfile upserts the role at their next login; NULL role simply
+-- reads as "not organiser". Keeping role nullable here also lets the old
+-- signup trigger keep inserting (id, name) without a role.
+alter table public.profiles add column if not exists role text;
+alter table public.profiles add column if not exists display_name text;
+alter table public.profiles add column if not exists avatar_url text;
+
 create table if not exists public.threads (
   id uuid primary key default gen_random_uuid(),
   opportunity_id text not null,

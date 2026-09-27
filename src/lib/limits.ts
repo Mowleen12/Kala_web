@@ -1,7 +1,7 @@
 /**
- * Free-tier upload limits.
+ * Upload size limits.
  *
- * Cloudinary Free caps images at 10 MB and videos at 100 MB, but only applies
+ * Cloudinary caps images at 10 MB and videos at 100 MB, but only applies
  * transformations to videos up to 40 MB — and getOptimizedCloudinaryUrl always
  * emits f_auto,q_auto. Anything larger fails at delivery rather than upload.
  */

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { 
   X, 
   User, 
@@ -30,6 +31,7 @@ interface CreateAccountModalProps {
   initialRole?: PortalMode;
   onClose: () => void;
   onSuccess: (userData: { 
+    id?: string;
     name: string; 
     email: string; 
     role: PortalMode; 
@@ -108,13 +110,14 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
 
     try {
       if (isLoginMode) {
-        const { user, error: signInErr } = await supabaseSignIn(email.trim(), password);
+        const { user, error: signInErr } = await supabaseSignIn(email.trim(), password, role);
         if (signInErr || !user) {
           setError(signInErr || 'Failed to sign in. Please verify your email and password.');
           setIsSubmitting(false);
           return;
         }
         onSuccess({
+          id: user.id,
           name: user.name,
           email: user.email,
           role: user.role || role,
@@ -213,7 +216,11 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl bg-white rounded-3xl overflow-hidden shadow-2xl border border-[#E9E4DC] my-auto">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 14 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        className="relative w-full max-w-4xl bg-white rounded-3xl overflow-hidden shadow-2xl border border-[#E9E4DC] my-auto">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -264,7 +271,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                     </div>
                     <div className="aspect-[4/3] rounded-xl overflow-hidden bg-[#FCEEE7] flex items-center justify-center p-1.5 shadow-2xs border border-[#FAD7C8]">
                       <span className="font-script text-[#E45826] text-[11px] text-center leading-tight font-bold">
-                        you are ♫<br />what you listen to
+                        you are â™«<br />what you listen to
                       </span>
                     </div>
                     <div className="aspect-[4/3] rounded-xl overflow-hidden shadow-2xs">
@@ -621,7 +628,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                   <div>
                     <MediaUploader
                       label={role === 'artist' ? "Profile Photo / Artist Avatar" : "Venue / Cultural House Logo"}
-                      description={role === 'artist' ? "Upload a headshot or portrait (stored on Cloudinary Free CDN)" : "Upload official organization logo (stored on Cloudinary Free CDN)"}
+                      description={role === 'artist' ? "Upload a headshot or portrait (stored on Cloudinary)" : "Upload official organization logo (stored on Cloudinary)"}
                       resourceType="image"
                       folder={role === 'artist' ? "kala-artists/avatars" : "kala-venues/logos"}
                       value={avatarUrl}
@@ -720,7 +727,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
             </p>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

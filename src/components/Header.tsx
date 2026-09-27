@@ -10,11 +10,7 @@ import {
   Palette, 
   LogOut, 
   ArrowLeftRight, 
-  ShieldCheck, 
-  Zap, 
-  LogIn, 
-  Database, 
-  Cloud 
+  LogIn 
 } from 'lucide-react';
 import { KalaLogo } from './KalaLogo';
 import { NOTIFICATIONS } from '../data/mockData';
@@ -29,7 +25,6 @@ interface HeaderProps {
   onSelectOrgTab: (tab: any) => void;
   onOpenSignUp: () => void;
   onOpenSignIn?: () => void;
-  onOpenFreeTierStatus?: () => void;
   onSignOut?: () => void;
   onSwitchPortalAccount?: (targetPortal: PortalMode) => void;
   userName?: string;
@@ -48,7 +43,6 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectOrgTab,
   onOpenSignUp,
   onOpenSignIn,
-  onOpenFreeTierStatus,
   onSignOut,
   onSwitchPortalAccount,
   userName = "Mowleen",
@@ -134,22 +128,6 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Actions: Notifications & User Profile */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        {/* Free Tier Connection Status Pill */}
-        {onOpenFreeTierStatus && (
-          <button
-            type="button"
-            onClick={onOpenFreeTierStatus}
-            className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FAF5EE] hover:bg-[#F2ECE3] border border-[#E7E0D2] text-[11px] font-bold text-zinc-800 transition-colors shadow-2xs cursor-pointer"
-            title="View Supabase Free Tier Auth & Cloudinary Free Media Storage status"
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Free Tier</span>
-            <span className="px-1.5 py-0.5 rounded-md bg-white text-[10px] text-zinc-600 font-semibold border border-zinc-200">
-              Supabase • Cloudinary
-            </span>
-          </button>
-        )}
-
         {/* Mobile portal badge removed: the header cannot fit it alongside logo +
             search + bell + avatar without overflowing the viewport. The full
             "Artist Portal" badge above covers sm and up. */}
@@ -330,23 +308,6 @@ export const Header: React.FC<HeaderProps> = ({
                       Review Audition Pipeline
                     </button>
                   </>
-                )}
-
-                {/* Free Tier Status Modal Trigger */}
-                {onOpenFreeTierStatus && (
-                  <button
-                    onClick={() => {
-                      setShowUserMenu(false);
-                      onOpenFreeTierStatus();
-                    }}
-                    className="w-full text-left px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-[#FAF5EE] hover:text-zinc-900 rounded-lg transition-colors cursor-pointer flex items-center justify-between"
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <Zap className="w-3.5 h-3.5 text-[#E45826]" />
-                      <span>Free Tier Connection Details</span>
-                    </span>
-                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Active</span>
-                  </button>
                 )}
 
                 <div className="pt-1 mt-1 border-t border-zinc-100 space-y-0.5">

@@ -137,7 +137,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
 
   return (
     <div className={`space-y-2 ${className}`}>
-      {/* Label and Free Tier Indicator */}
+      {/* Label and media CDN indicator */}
       <div className="flex items-center justify-between">
         {label && (
           <label className="block text-xs font-bold text-zinc-700">
@@ -148,7 +148,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
           <Cloud className={`w-3.5 h-3.5 ${isCloudinaryConfigured ? 'text-sky-500' : 'text-amber-500'}`} />
           <span className="hidden sm:inline">Cloudinary:</span>
           <span className={isCloudinaryConfigured ? 'text-sky-700' : 'text-amber-700'}>
-            {isCloudinaryConfigured ? 'Free CDN Active' : 'Preview Mode'}
+            {isCloudinaryConfigured ? 'Cloudinary Active' : 'Preview Mode'}
           </span>
         </div>
       </div>
@@ -229,7 +229,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
               </div>
               <div>
                 <p className="text-xs font-bold text-zinc-900">
-                  Uploading to Cloudinary Free Tier... {progress}%
+                  Uploading media... {progress}%
                 </p>
                 <p className="text-[11px] text-zinc-500 mt-0.5">Optimizing media & generating CDN links</p>
               </div>

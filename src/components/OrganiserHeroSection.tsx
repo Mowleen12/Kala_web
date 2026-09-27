@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { Plus, Users, ArrowRight } from 'lucide-react';
 import { KalaStar } from './KalaLogo';
 
@@ -25,11 +26,8 @@ export const OrganiserHeroSection: React.FC<OrganiserHeroSectionProps> = ({
           </div>
 
           {/* Headline */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[46px] font-extrabold text-zinc-950 tracking-tight leading-[1.12] mb-5">
-            Where India’s<br />
-            cultural venues<br />
-            curate exceptional <span className="text-[#E45826]">talent</span>,<br />
-            not just credentials.
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-extrabold text-zinc-950 tracking-tight leading-[1.12] mb-5 max-w-[560px]">
+            Where India’s venues curate <span className="text-[#E45826]">talent</span>, not credentials.
           </h1>
 
           {/* Subtitle */}
@@ -58,14 +56,16 @@ export const OrganiserHeroSection: React.FC<OrganiserHeroSectionProps> = ({
           </div>
         </div>
 
-        {/* Right Dynamic Artistic Collage with Doodle Accents */}
+        {/* Right: Product UI Panel Stack (floats) */}
         <div className="lg:col-span-6 relative flex justify-center lg:justify-end">
           {/* Organic Orange Doodle Vector Strokes */}
-          <svg
-            className="absolute -top-6 -left-6 w-full h-full pointer-events-none z-0 text-[#E45826]/75"
+          <motion.svg
+            className="absolute -top-6 -left-6 w-full h-full pointer-events-none z-0 text-[#E45826]/40"
             viewBox="0 0 500 450"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
+            animate={{ rotate: [0, 2.5, -2.5, 0] }}
+            transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
           >
             <path
               d="M 50 180 C 20 120, 10 300, 120 260 C 240 220, 200 40, 360 45 C 440 48, 480 90, 470 140 C 450 250, 300 420, 180 390 C 80 370, 70 280, 120 260"
@@ -73,62 +73,43 @@ export const OrganiserHeroSection: React.FC<OrganiserHeroSectionProps> = ({
               strokeWidth="1.8"
               strokeLinecap="round"
             />
-          </svg>
+          </motion.svg>
 
-          {/* 4-Image Grid Cluster */}
-          <div className="grid grid-cols-2 gap-3.5 max-w-[460px] w-full relative z-10">
-            {/* Top-Left: Grand Auditorium with Handwritten Overlay */}
-            <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-md group">
-              <img
-                src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=650&q=80"
-                alt="Auditorium lighting"
-                loading="eager"
-                decoding="async"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-end p-3.5">
-                <span className="font-script text-white text-xl sm:text-2xl font-bold leading-tight drop-shadow-md transform -rotate-3 select-none">
-                  Discover<br />
-                  Curate<br />
-                  Produce
-                </span>
+          <div className="relative w-full max-w-[440px] z-10 py-4">
+            {/* Open Call listing card */}
+            <motion.div
+              className="rounded-2xl bg-white border border-[#EDE8E0] shadow-md p-4 sm:p-5"
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold tracking-widest uppercase text-[#E45826]">Open Call</span>
+                <span className="text-xs text-zinc-500">Closes 14 Oct</span>
               </div>
-            </div>
-
-            {/* Top-Right: Sound Engineer & Producer Mixing Console */}
-            <div className="rounded-2xl overflow-hidden aspect-[4/3] shadow-md group">
-              <img
-                src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=650&q=80"
-                alt="Studio sound mixing"
-                loading="eager"
-                decoding="async"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-
-            {/* Bottom-Left: Art Gallery Curatorial Space */}
-            <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-md group bg-[#FCEEE7] flex items-center justify-center p-3 text-center border border-[#F6D7C8]">
-              <div className="absolute inset-0 bg-radial from-[#E45826]/20 via-[#FCEEE7]/90 to-[#FCEEE7]" />
-              <div className="relative z-10">
-                <p className="font-script text-[#E45826] text-xl sm:text-2xl font-bold tracking-wide">
-                  open stage ✦
-                </p>
-                <p className="font-script text-[#C73E0E] text-xl sm:text-2xl font-bold tracking-wide mt-0.5">
-                  exceptional craft
-                </p>
+              <p className="font-bold text-zinc-900 text-[15px] leading-snug">Monsoon Music Fest — Vocalists</p>
+              <div className="mt-3.5 flex items-center gap-2.5">
+                <div className="h-1.5 flex-1 rounded-full bg-[#F3E3D5] overflow-hidden">
+                  <div className="h-full w-2/3 rounded-full bg-[#E45826]" />
+                </div>
+                <span className="text-xs font-semibold text-zinc-600">12 applicants</span>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Bottom-Right: Rehearsal & Theatre Ensemble */}
-            <div className="rounded-2xl overflow-hidden aspect-[4/3] shadow-md group">
-              <img
-                src="https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?auto=format&fit=crop&w=650&q=80"
-                alt="Theatre and dance rehearsal"
-                loading="eager"
-                decoding="async"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-            </div>
+            {/* Applicant row card */}
+            <motion.div
+              className="-mt-3 ml-8 sm:ml-12 rounded-2xl bg-white border border-[#EDE8E0] shadow-md p-4 flex items-center gap-3"
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1.4 }}
+            >
+              <div className="w-9 h-9 shrink-0 rounded-full bg-[#FDEEE7] text-[#E45826] font-bold text-sm flex items-center justify-center">
+                AR
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-zinc-900 truncate">Ananya Rao</p>
+                <p className="text-xs text-zinc-500 truncate">Hindustani vocals · new reel</p>
+              </div>
+              <span className="w-2 h-2 shrink-0 rounded-full bg-[#E45826]" aria-hidden="true" />
+            </motion.div>
           </div>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { ArrowRight, MapPin, Calendar } from 'lucide-react';
 import { KalaStar } from './KalaLogo';
 import { Opportunity } from '../types';
@@ -60,9 +61,14 @@ export const FeaturedOpportunities: React.FC<FeaturedOpportunitiesProps> = ({
       {/* Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {opportunities.slice(0, 3).map((opp) => (
-          <div
+          <motion.div
             key={opp.id}
             id={`opp-card-${opp.id}`}
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            whileHover={{ y: -5 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="group bg-white rounded-2xl overflow-hidden border border-[#EDE8E0] shadow-2xs hover:shadow-md hover:border-[#E0D7CB] transition-all duration-300 flex flex-col justify-between"
           >
             <div>
@@ -138,7 +144,7 @@ export const FeaturedOpportunities: React.FC<FeaturedOpportunitiesProps> = ({
                 Apply Now
               </button>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
     </section>

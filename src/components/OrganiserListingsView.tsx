@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { motion } from 'motion/react';
 import { 
   Plus, 
   Search, 
@@ -431,8 +432,13 @@ export const OrganiserListingsView: React.FC<OrganiserListingsViewProps> = ({
       ) : (
         <div className="space-y-4">
           {filteredOpps.map((opp) => (
-            <div
+            <motion.div
               key={opp.id}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              whileHover={{ y: -5 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
               className="bg-white rounded-3xl border border-[#EDE8E0] p-5 sm:p-6 shadow-xs hover:shadow-md transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-5"
             >
               {/* Left Details */}
@@ -505,7 +511,7 @@ export const OrganiserListingsView: React.FC<OrganiserListingsViewProps> = ({
                   </button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       )}

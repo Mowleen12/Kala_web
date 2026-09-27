@@ -87,24 +87,24 @@ export const OrganiserBrowseCategories: React.FC<OrganiserBrowseCategoriesProps>
   ];
 
   return (
-    <section className="mb-8">
+    <section className="mb-8 rounded-3xl bg-zinc-950 p-6 sm:p-8">
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
         <div>
           <div className="flex items-center gap-2">
             <KalaStar size={18} className="text-[#E45826]" />
-            <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
               Curate by Creative Department
             </h2>
           </div>
-          <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">
+          <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
             Filter calls, audition queues, and auditions across artistic disciplines.
           </p>
         </div>
 
         <button
           onClick={onViewAll}
-          className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#E45826] hover:text-[#C73E0E] transition-colors self-start sm:self-auto cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#F8A97D] hover:text-[#FFC9AC] transition-colors self-start sm:self-auto cursor-pointer"
         >
           <span>All Departments</span>
           <ArrowRight className="w-4 h-4" />
@@ -140,7 +140,7 @@ export const OrganiserBrowseCategories: React.FC<OrganiserBrowseCategoriesProps>
                 <h3 className="text-sm font-bold text-zinc-900 group-hover:text-[#E45826] transition-colors">
                   {dept.name}
                 </h3>
-                <p className="text-xs text-zinc-500 mt-1 line-clamp-2">
+                <p className="text-sm text-zinc-500 mt-1 line-clamp-2">
                   {dept.desc}
                 </p>
               </div>
