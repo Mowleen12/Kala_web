@@ -74,7 +74,7 @@ export const Header: React.FC<HeaderProps> = ({
   const effectiveEmail = userEmail || (portalMode === 'artist' ? 'mowleen2006@gmail.com' : 'auditions@ncpamumbai.com');
 
   return (
-    <header className="sticky top-0 z-30 bg-[#FAF8F5]/90 backdrop-blur-md px-4 sm:px-8 py-3.5 border-b border-[#EFECE6]/80 flex items-center justify-between gap-3 sm:gap-4">
+    <header className="sticky top-0 z-30 bg-[#FAF8F5]/90 backdrop-blur-md px-4 sm:px-8 py-3.5 border-b border-[#EFECE6]/80 flex flex-wrap items-center justify-between gap-y-2.5 gap-x-3 sm:gap-x-4">
       {/* Mobile Logo */}
       <div className="lg:hidden shrink-0 flex items-center gap-2">
         <KalaLogo 
@@ -99,8 +99,8 @@ export const Header: React.FC<HeaderProps> = ({
         )}
       </div>
 
-      {/* Global Search Bar */}
-      <div className="flex-1 min-w-0 max-w-xl mx-auto">
+      {/* Global Search Bar — own full-width row on phones (logo + actions stay on row 1) */}
+      <div className="order-last w-full sm:order-none sm:flex-1 sm:w-auto sm:max-w-xl sm:mx-auto min-w-0">
         <div className="relative flex items-center">
           <Search className="absolute left-4 w-4 h-4 text-zinc-400 pointer-events-none" />
           <input
@@ -110,8 +110,8 @@ export const Header: React.FC<HeaderProps> = ({
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={
               portalMode === 'artist'
-                ? "Search events, audition calls, or venues..."
-                : "Search applicants, portfolios, instruments, or calls..."
+                ? "Search events, auditions, venues..."
+                : "Search applicants, reels, calls..."
             }
             className="w-full bg-[#F2EDE4] hover:bg-[#EFE8DE] focus:bg-white text-zinc-800 text-[14px] rounded-full pl-11 pr-11 py-2.5 outline-none border border-transparent focus:border-[#E45826]/40 transition-all placeholder:text-zinc-500 placeholder:text-sm shadow-2xs"
           />

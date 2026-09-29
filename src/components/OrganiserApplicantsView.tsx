@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { ApplicantReview, Opportunity, Thread } from '../types';
 import { KalaStar } from './KalaLogo';
+import { MediaPreview } from './MediaPreview';
 import { isUnread } from '../lib/threads';
 import { getOptimizedCloudinaryUrl } from '../lib/cloudinary';
 import { isDirectMediaUrl, mediaKind, linkHost } from '../lib/media';
@@ -576,19 +577,20 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                   <div className="p-3 rounded-2xl bg-[#FAF2EB] border border-[#FAD7C8] mb-4 space-y-2.5">
                     {app.reelUrl && isDirectMediaUrl(app.reelUrl) && (
                       mediaKind(app.reelUrl) === 'image' ? (
-                        <img
+                        <MediaPreview
                           src={getOptimizedCloudinaryUrl(app.reelUrl, { width: 800, quality: 'auto' })}
                           alt="Audition reel"
-                          className="w-full h-40 rounded-xl object-cover"
+                          wrapperClassName="relative block w-full h-40 rounded-xl overflow-hidden bg-zinc-100"
+                          mediaClassName="w-full h-full object-cover"
                         />
                       ) : mediaKind(app.reelUrl) === 'audio' ? (
                         <audio controls preload="metadata" src={app.reelUrl} className="w-full" />
                       ) : (
-                        <video
-                          controls
-                          preload="metadata"
+                        <MediaPreview
                           src={getOptimizedCloudinaryUrl(app.reelUrl, { width: 1280, quality: 'auto' })}
-                          className="w-full h-40 rounded-xl bg-black object-contain"
+                          alt="Audition reel"
+                          wrapperClassName="relative block w-full h-40 rounded-xl overflow-hidden bg-black"
+                          mediaClassName="w-full h-full object-contain"
                         />
                       )
                     )}

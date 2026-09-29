@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { OrganiserProfile } from '../types';
 import { KalaStar } from './KalaLogo';
+import { MediaPreview } from './MediaPreview';
 
 interface OrganiserProfileViewProps {
   profile: OrganiserProfile;
@@ -68,26 +69,26 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
       {/* Cover and Header Banner */}
       <div className="bg-white rounded-3xl border border-[#EDE8E0] overflow-hidden shadow-xs">
         {/* Cover Photo */}
-        <div className="h-48 sm:h-64 relative bg-[#FAF2EB]">
-          <img
+        <div className="h-48 sm:h-64 relative bg-[#FAF2EB] overflow-hidden">
+          <MediaPreview
             src={profile.coverImage}
-            alt="NCPA Cover"
-            className="w-full h-full object-cover opacity-90"
+            alt={`${profile.name} cover`}
+            mediaClassName="w-full h-full object-cover opacity-90"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent pointer-events-none" />
         </div>
 
-        {/* Profile Details Container */}
-        <div className="p-6 sm:p-8 relative">
-          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 -mt-16 sm:-mt-20 mb-6">
-            <div className="flex items-end gap-5">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden ring-4 ring-white shadow-lg bg-[#FAF2EB] shrink-0">
-                <img
-                  src={profile.logo}
-                  alt={profile.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+          {/* Profile Details Container */}
+          <div className="p-6 sm:p-8 relative">
+            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 mb-6">
+              <div className="flex items-start sm:items-end gap-5">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden ring-4 ring-white shadow-lg bg-[#FAF2EB] shrink-0">
+                  <MediaPreview
+                    src={profile.logo}
+                    alt={profile.name}
+                    mediaClassName="w-full h-full object-cover"
+                  />
+                </div>
 
               <div className="min-w-0">
                 <div className="flex items-center gap-2">

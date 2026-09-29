@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { FileText, Calendar, MapPin, CheckCircle2, Clock, AlertCircle, MessageSquare, Play, ExternalLink } from 'lucide-react';
 import { KalaStar } from './KalaLogo';
+import { MediaPreview } from './MediaPreview';
 import { Application, Opportunity, Thread } from '../types';
 import { isUnread } from '../lib/threads';
 import { getOptimizedCloudinaryUrl } from '../lib/cloudinary';
@@ -134,19 +135,20 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
                 <div className="pt-1">
                   {isDirectMediaUrl(app.mediaUrl) ? (
                     mediaKind(app.mediaUrl) === 'image' ? (
-                      <img
+                      <MediaPreview
                         src={getOptimizedCloudinaryUrl(app.mediaUrl, { width: 400, quality: 'auto' })}
                         alt="Your submitted work"
-                        className="w-full max-w-xs h-28 rounded-xl object-cover"
+                        wrapperClassName="relative block w-full max-w-xs h-28 rounded-xl overflow-hidden bg-zinc-100"
+                        mediaClassName="w-full h-full object-cover"
                       />
                     ) : mediaKind(app.mediaUrl) === 'audio' ? (
                       <audio controls preload="metadata" src={app.mediaUrl} className="w-full max-w-xs" />
                     ) : (
-                      <video
-                        controls
-                        preload="metadata"
+                      <MediaPreview
                         src={getOptimizedCloudinaryUrl(app.mediaUrl, { width: 640, quality: 'auto' })}
-                        className="w-full max-w-xs h-28 rounded-xl bg-black object-contain"
+                        alt="Your submitted reel"
+                        wrapperClassName="relative block w-full max-w-xs h-28 rounded-xl overflow-hidden bg-black"
+                        mediaClassName="w-full h-full object-contain"
                       />
                     )
                   ) : (

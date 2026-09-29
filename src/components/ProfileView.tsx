@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { KalaStar } from './KalaLogo';
 import { MediaUploader } from './MediaUploader';
+import { MediaPreview } from './MediaPreview';
 import { getDraft, setDraft } from '../lib/drafts';
 
 export interface ProfileMedia {
@@ -358,7 +359,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {galleryImages.map((imgUrl, idx) => (
             <div key={idx} className="relative aspect-4/3 rounded-2xl overflow-hidden border border-[#EDE7DE] group bg-zinc-100">
-              <img src={imgUrl} alt={`Portfolio still ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+              <MediaPreview
+                src={imgUrl}
+                alt={`Portfolio still ${idx + 1}`}
+                mediaClassName="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
             </div>
           ))}
         </div>

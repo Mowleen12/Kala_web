@@ -51,7 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const organiserNavItems = [
     { id: 'overview' as OrganiserNavTab, label: 'Overview', icon: LayoutDashboard },
     { id: 'listings' as OrganiserNavTab, label: 'Manage Calls', icon: CalendarDays },
-    { id: 'applicants' as OrganiserNavTab, label: 'Talent Pipeline', icon: Users },
+    { id: 'applicants' as OrganiserNavTab, label: 'Talent Pipeline', shortLabel: 'Pipeline', icon: Users },
     { id: 'scout' as OrganiserNavTab, label: 'Direct Scout', icon: Search },
     { id: 'org_profile' as OrganiserNavTab, label: 'Venue Profile', icon: Building2 },
   ];
@@ -242,40 +242,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </motion.aside>
 
       {/* Mobile Bottom Navigation Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#EAE6DE] px-3 py-2 flex justify-around items-center">
-        {portalMode === 'artist'
-          ? artistNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onSelectArtistTab(item.id)}
-                  className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-lg text-[11px] font-medium transition-colors ${
-                    isActive ? 'text-[#E45826] font-bold' : 'text-zinc-500 hover:text-zinc-800'
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-[#E45826]' : 'text-zinc-500'}`} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })
-          : organiserNavItems.slice(0, 4).map((item) => {
-              const Icon = item.icon;
-              const isActive = currentOrgTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onSelectOrgTab(item.id)}
-                  className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-lg text-[11px] font-medium transition-colors ${
-                    isActive ? 'text-[#E45826] font-bold' : 'text-zinc-500 hover:text-zinc-800'
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-[#E45826]' : 'text-zinc-500'}`} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#EAE6DE] px-1.5 py-2 flex justify-around items-center">
+        {(portalMode === 'artist' ? artistNavItems : organiserNavItems).map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            portalMode === 'artist'
+              ? currentTab === (item.id as NavTab)
+              : currentOrgTab === (item.id as OrganiserNavTab);
+          return (
+            <button
+              key={item.id}
+              onClick={() =>
+                portalMode === 'artist'
+                  ? onSelectArtistTab(item.id as NavTab)
+                  : onSelectOrgTab(item.id as OrganiserNavTab)
+              }
+              className={`flex-1 min-w-0 flex flex-col items-center gap-1 py-1 px-1 rounded-lg text-[10px] font-medium transition-colors ${
+                isActive ? 'text-[#E45826] font-bold' : 'text-zinc-500 hover:text-zinc-800'
+              }`}
+            >
+              <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#E45826]' : 'text-zinc-500'}`} />
+              <span className="w-full truncate">{'shortLabel' in item && item.shortLabel ? item.shortLabel : item.label}</span>
+            </button>
+          );
+        })}
       </div>
     </>
   );

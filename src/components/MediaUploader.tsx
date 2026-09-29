@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   UploadCloud, 
   Video, 
@@ -45,7 +45,15 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadDetails, setUploadDetails] = useState<CloudinaryUploadResult | null>(null);
+  /** Local pre-upload review: file is validated but NOT sent to Cloudinary
+   *  until the user confirms. Object URL is revoked whenever `pending`
+   *  changes or the component unmounts. */
+  const [pending, setPending] = useState<{ file: File; url: string; video: boolean } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => () => {
+    if (pending) URL.revokeObjectURL(pending.url);
+  }, [pending]);
 
   const isVideo = value && (
     value.includes('/video/') || 
@@ -72,6 +80,21 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
       setError(gateError);
       return;
     }
+
+    // Hold for review instead of uploading immediately.
+    setPending({ file, url: URL.createObjectURL(file), video: isVideoFile(file) });
+  };
+
+  const cancelPending = () => {
+    setPending(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const confirmPending = async () => {
+    if (!pending) return;
+    const { file } = pending;
+    setPending(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
 
     setIsUploading(true);
     setProgress(0);
@@ -153,8 +176,45 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
         </div>
       </div>
 
-      {/* Upload Zone / Media Display */}
-      {value ? (
+      {/* Pre-upload review: nothing has been sent to the CDN yet */}
+      {pending ? (
+        <div className="rounded-2xl overflow-hidden border-2 border-[#E45826]/40 bg-white shadow-xs">
+          <div className="relative bg-zinc-950 flex items-center justify-center max-h-56 overflow-hidden">
+            {pending.video ? (
+              <video src={pending.url} controls muted playsInline className="w-full max-h-56 object-contain" />
+            ) : (
+              <img src={pending.url} alt="Upload preview" className="w-full max-h-56 object-contain" />
+            )}
+            <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-xs px-2.5 py-1 rounded-full text-white text-[11px] font-semibold flex items-center gap-1.5">
+              {pending.video ? <Video className="w-3 h-3 text-red-400" /> : <ImageIcon className="w-3 h-3 text-sky-400" />}
+              <span>Preview — not uploaded yet</span>
+            </div>
+          </div>
+          <div className="p-3 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+            <div className="min-w-0">
+              <p className="truncate font-semibold text-zinc-800">{pending.file.name}</p>
+              <p className="text-[11px] text-zinc-500">{formatMB(pending.file.size)} ready to upload</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={cancelPending}
+                className="px-3 py-1.5 rounded-lg bg-white border border-[#E5E0D6] text-zinc-600 font-semibold hover:bg-zinc-50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmPending}
+                className="px-3.5 py-1.5 rounded-lg bg-[#E45826] hover:bg-[#D44716] text-white font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <UploadCloud className="w-3.5 h-3.5" />
+                <span>Confirm & Upload</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : value ? (
         <div className="relative rounded-2xl overflow-hidden border border-[#E9E4DC] bg-zinc-950 shadow-xs group">
           {isVideo ? (
             <div className="relative aspect-video max-h-56 bg-zinc-950 flex items-center justify-center">

@@ -8,6 +8,7 @@ import {
 import { USER_MONTHLY_BYTES, formatMB, maxBytesFor } from '../lib/limits';
 import { isCloudinaryConfigured, getOptimizedCloudinaryUrl } from '../lib/cloudinary';
 import { MediaUploader } from './MediaUploader';
+import { MediaPreview } from './MediaPreview';
 
 const mergeWithLocal = (prev: Message[], fresh: Message[]): Message[] => {
   const fetchedIds = new Set(fresh.map((m) => m.id));
@@ -286,19 +287,19 @@ export const ThreadModal: React.FC<ThreadModalProps> = ({
                   }`}
                 >
                   {m.mediaUrl && m.mediaType === 'video' && (
-                    <video
+                    <MediaPreview
                       src={getOptimizedCloudinaryUrl(m.mediaUrl, { width: 1280, quality: 'auto' })}
-                      controls
-                      preload="none"
-                      className="w-full max-w-xs rounded-xl mb-2 bg-black"
+                      alt=""
+                      wrapperClassName="relative block w-full max-w-xs rounded-xl mb-2 bg-black overflow-hidden"
+                      mediaClassName="w-full"
                     />
                   )}
                   {m.mediaUrl && m.mediaType === 'image' && (
-                    <img
+                    <MediaPreview
                       src={getOptimizedCloudinaryUrl(m.mediaUrl, { width: 800, quality: 'auto' })}
                       alt=""
-                      loading="lazy"
-                      className="w-full max-w-xs rounded-xl mb-2"
+                      wrapperClassName="relative block w-full max-w-xs rounded-xl mb-2 overflow-hidden bg-zinc-100"
+                      mediaClassName="w-full"
                     />
                   )}
                   {m.body && <p className="whitespace-pre-wrap">{m.body}</p>}
