@@ -40,7 +40,7 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
       case 'submitted':
         return (
           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-200 flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5" /> Application Received
+            <Clock className="w-3.5 h-3.5" /> Submitted
           </span>
         );
       case 'rejected':
@@ -49,9 +49,10 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
             <AlertCircle className="w-3.5 h-3.5" /> Not Selected
           </span>
         );
+      case 'under_review':
       default:
         return (
-          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-600">
+          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-600 border border-zinc-200">
             Under Review
           </span>
         );

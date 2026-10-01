@@ -161,24 +161,6 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
     }
   };
 
-  const handleQuickDemoArtist = () => {
-    onSuccess({
-      name: 'Mowleen',
-      email: 'mowleen2006@gmail.com',
-      role: 'artist',
-      discipline: 'Classical & Contemporary Vocalist',
-    });
-  };
-
-  const handleQuickDemoOrganiser = () => {
-    onSuccess({
-      name: 'Dr. Suvarnalata Rao',
-      email: 'auditions@ncpamumbai.com',
-      role: 'organiser',
-      orgName: 'NCPA Mumbai',
-    });
-  };
-
   const handleGoogleSignIn = async () => {
     setError('');
     setIsGoogleSubmitting(true);
@@ -356,31 +338,6 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                   </div>
                 </>
               )}
-            </div>
-
-            {/* Quick Demo Switcher on Left Side */}
-            <div className="relative z-10 pt-6 mt-6 border-t border-[#EFEBE4]">
-              <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block mb-2">
-                Fast Evaluation Access:
-              </span>
-              <div className="flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={handleQuickDemoArtist}
-                  className="w-full py-2 px-3 rounded-xl bg-white hover:bg-[#FCEEE7] border border-[#E2DBD0] text-[11px] font-bold text-[#E45826] text-left flex items-center justify-between cursor-pointer transition-colors"
-                >
-                  <span>1-Click Demo: Mowleen (Artist)</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleQuickDemoOrganiser}
-                  className="w-full py-2 px-3 rounded-xl bg-white hover:bg-zinc-100 border border-[#E2DBD0] text-[11px] font-bold text-zinc-800 text-left flex items-center justify-between cursor-pointer transition-colors"
-                >
-                  <span>1-Click Demo: NCPA Mumbai (Host)</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
             </div>
           </div>
 
@@ -631,7 +588,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                   <div>
                     <MediaUploader
                       label={role === 'artist' ? "Profile Photo / Artist Avatar" : "Venue / Cultural House Logo"}
-                      description={role === 'artist' ? "Upload a headshot or portrait (stored on Cloudinary)" : "Upload official organization logo (stored on Cloudinary)"}
+                      description={role === 'artist' ? "Upload a headshot or portrait" : "Upload official organization logo"}
                       resourceType="image"
                       folder={role === 'artist' ? "kala-artists/avatars" : "kala-venues/logos"}
                       value={avatarUrl}

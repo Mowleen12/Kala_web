@@ -14,10 +14,13 @@ import {
 } from 'lucide-react';
 import { KalaLogo } from './KalaLogo';
 import { NOTIFICATIONS } from '../data/mockData';
-import { PortalMode } from '../types';
+import { PortalMode, Thread } from '../types';
+import { isUnread } from '../lib/threads';
 
 interface HeaderProps {
   portalMode: PortalMode;
+  threads: Thread[];
+  onMarkThreadsRead?: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onToggleFilters: () => void;
@@ -36,6 +39,8 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   portalMode,
+  threads,
+  onMarkThreadsRead,
   searchQuery,
   onSearchChange,
   onToggleFilters,
@@ -55,10 +60,32 @@ export const Header: React.FC<HeaderProps> = ({
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [notifications, setNotifications] = useState(NOTIFICATIONS);
 
-  const unreadCount = notifications.filter(n => n.unread).length;
+  // Message alerts: unread threads for the active portal surface in the bell.
+  const role = portalMode === 'artist' ? 'artist' : 'organiser';
+  const messageNotifs = threads
+    .filter((t) => isUnread(t, role))
+    .map((t) => ({
+      id: `thread-${t.id}`,
+      title: 'New message',
+      message:
+        role === 'artist'
+          ? `${t.organiserName || 'Organiser'} · ${t.opportunityTitle}`
+          : `${t.artistName || 'Artist'} · ${t.opportunityTitle}`,
+      time: new Date(t.lastMessageAt).toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+      unread: true,
+    }));
+  const allNotifs = [...messageNotifs, ...notifications];
+
+  const unreadCount = allNotifs.filter(n => n.unread).length;
 
   const markAllAsRead = () => {
     setNotifications(notifications.map(n => ({ ...n, unread: false })));
+    onMarkThreadsRead?.();
   };
 
   const handleSwitchClick = () => {
@@ -171,7 +198,7 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
               </div>
               <div className="divide-y divide-zinc-50 max-h-80 overflow-y-auto mt-2">
-                {notifications.map((notif) => (
+                {allNotifs.map((notif) => (
                   <div
                     key={notif.id}
                     className={`py-2.5 px-2 rounded-xl transition-colors ${
@@ -266,7 +293,7 @@ export const Header: React.FC<HeaderProps> = ({
                       }}
                       className="w-full text-left px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-[#FDEEE7] hover:text-[#E45826] rounded-lg transition-colors cursor-pointer"
                     >
-                      View Creator Profile & Cloudinary Media
+                      View Creator Profile & Media
                     </button>
                     <button
                       onClick={() => {

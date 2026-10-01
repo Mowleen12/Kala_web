@@ -125,14 +125,16 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
         opp.category.toLowerCase().includes(search.toLowerCase()) ||
         opp.organizer?.toLowerCase().includes(search.toLowerCase());
 
-      // Honorarium parsing
+      // Honorarium parsing: pull ₹ amounts out of the free-text compensation
+      // string and match on its upper bound (custom prices included).
       let matchesHonorarium = true;
-      if (selectedHonorarium === '15k') {
-        matchesHonorarium = opp.compensation.includes('15,000') || opp.compensation.includes('20,000') || opp.compensation.includes('25,000') || opp.compensation.includes('30,000') || opp.compensation.includes('50,000') || opp.compensation.includes('75,000');
-      } else if (selectedHonorarium === '30k') {
-        matchesHonorarium = opp.compensation.includes('30,000') || opp.compensation.includes('35,000') || opp.compensation.includes('40,000') || opp.compensation.includes('50,000') || opp.compensation.includes('75,000');
-      } else if (selectedHonorarium === '50k') {
-        matchesHonorarium = opp.compensation.includes('50,000') || opp.compensation.includes('75,000') || opp.compensation.includes('60,000') || opp.compensation.includes('80,000');
+      if (selectedHonorarium !== 'All') {
+        const nums = (opp.compensation.match(/[\d,]+/g) || [])
+          .map((n) => Number(n.replace(/,/g, '')))
+          .filter((n) => !Number.isNaN(n) && n > 0);
+        const maxPay = nums.length ? Math.max(...nums) : 0;
+        const threshold = selectedHonorarium === '15k' ? 15000 : selectedHonorarium === '30k' ? 30000 : 50000;
+        matchesHonorarium = maxPay >= threshold;
       }
 
       // Deadline filter

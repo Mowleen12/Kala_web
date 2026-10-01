@@ -167,7 +167,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 type="button"
                 onClick={() => setIsEditingAvatar(!isEditingAvatar)}
                 className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity cursor-pointer"
-                title="Update avatar via Cloudinary"
+                title="Update avatar"
               >
                 <Camera className="w-5 h-5" />
               </button>
@@ -307,7 +307,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               Audition Reel & Performance Video
             </h3>
             <p className="text-xs text-zinc-500 mt-0.5">
-              Streamed through Cloudinary. Directly attached to all your audition callbacks.
+              Streamed securely. Directly attached to all your audition callbacks.
             </p>
           </div>
         </div>
@@ -332,7 +332,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               Visual Portfolio & Stage Stills
             </h3>
             <p className="text-xs text-zinc-500 mt-0.5">
-              High-resolution stage photos, costume stills, and album artwork stored on Cloudinary.
+              High-resolution stage photos, costume stills, and album artwork for your portfolio.
             </p>
           </div>
           <button

@@ -48,7 +48,7 @@ import {
   toPersistableDeep,
   toPersistableUrl,
 } from './lib/localMedia';
-import { ensureArtistThread, findThread, ensureProfile, claimThread, fetchThreads, markRead, isDbReady, subscribeThreads } from './lib/threads';
+import { ensureArtistThread, findThread, ensureProfile, claimThread, fetchThreads, markRead, isDbReady, subscribeThreads, sendMessage, isUnread } from './lib/threads';
 import { ThreadModal } from './components/ThreadModal';
 
 import { 
@@ -162,23 +162,20 @@ const storedOrgName = () => getDraft<Partial<OrganiserProfile>>('kala_org_profil
 export default function App() {
   // Authenticated User State (determines active portal separation).
   // Restored from the last session so sign-out, portal choice and login all
-  // survive reloads; fresh visitors land on the demo artist as before.
+  // survive reloads; fresh visitors land on the portal gateway. Stale demo
+  // sessions from older builds are discarded the same way.
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     try {
       const raw = localStorage.getItem(SESSION_KEY);
-      if (raw === 'signed_out') return null;
-      if (raw) return JSON.parse(raw) as AuthUser;
+      if (raw && raw !== 'signed_out') {
+        const user = JSON.parse(raw) as AuthUser;
+        if (user?.id !== 'user-mowleen' && user?.id !== 'user-ncpa') return user;
+      }
     } catch {}
-    return {
-      id: 'user-mowleen',
-      name: 'Mowleen',
-      email: 'mowleen2006@gmail.com',
-      role: 'artist',
-      discipline: 'Classical & Contemporary Vocalist',
-    };
+    return null;
   });
 
-  // Persist every login/logout (including demo and Google) so the next visit
+  // Persist every login/logout (including Google) so the next visit
   // lands exactly where this one left off.
   useEffect(() => {
     try {
@@ -378,7 +375,7 @@ export default function App() {
 
   // Profile row (RLS needs it for role checks) + the caller's thread list, which
   // is what both unread pills read. Keyed on the user id so it covers every login
-  // path: initial demo user, quick demo login, and the Supabase auth callback.
+  // path: login via the gateway, and the Supabase auth callback.
   useEffect(() => {
     if (!currentUser) return;
     let active = true;
@@ -488,35 +485,6 @@ export default function App() {
     setIsLoadingScreenOpen(true);
   };
 
-  const handleQuickDemoLogin = (role: PortalMode) => {
-    if (role === 'artist') {
-      const artistUser: AuthUser = applyStoredArtistName({
-        id: 'user-mowleen',
-        name: 'Mowleen',
-        email: 'mowleen2006@gmail.com',
-        role: 'artist',
-        discipline: 'Classical & Contemporary Vocalist',
-        avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=140&q=80',
-      });
-      setCurrentUser(artistUser);
-      setUserName(artistUser.name);
-      setCurrentArtistTab('home');
-      showToast(`Logged in to Artist Portal as ${artistUser.name}`);
-    } else {
-      const orgUser: AuthUser = {
-        id: 'user-ncpa',
-        name: 'Dr. Suvarnalata Rao',
-        email: 'auditions@ncpamumbai.com',
-        role: 'organiser',
-        orgName: 'NCPA Mumbai',
-        avatarUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=140&q=80',
-      };
-      setCurrentUser(orgUser);
-      setCurrentOrgTab('overview');
-      showToast("Logged in to Organiser & Venue Portal as NCPA Mumbai");
-    }
-  };
-
   const handleSignOut = async () => {
     const prevRole = currentUser?.role;
     try {
@@ -528,8 +496,10 @@ export default function App() {
     showToast(`Signed out of ${prevRole === 'artist' ? 'Artist' : 'Organiser'} Portal. Select a portal to log in.`);
   };
 
-  const handleSwitchPortalAccount = (targetPortal: PortalMode) => {
-    handleQuickDemoLogin(targetPortal);
+  const handleSwitchPortalAccount = (_targetPortal: PortalMode) => {
+    // Demo logins are gone: switching portals means signing out and logging
+    // in again on the other side.
+    handleSignOut();
   };
 
   const handleLoadingComplete = () => {
@@ -597,6 +567,7 @@ export default function App() {
     const newApp: Application = {
       id: `app-${Date.now().toString().slice(-4)}`,
       opportunityId: opp.id,
+      artistId: currentUser?.id,
       opportunityTitle: opp.title,
       category: opp.category,
       location: opp.location.split('•')[0].trim(),
@@ -665,10 +636,24 @@ export default function App() {
     setCurrentOrgTab('listings');
   };
 
-  const handleUpdateApplicantStatus = (reviewId: string, newStatus: ApplicantReview['status']) => {
+  const handleUpdateApplicantStatus = async (reviewId: string, newStatus: ApplicantReview['status']) => {
+    const review = applicantReviews.find(r => r.id === reviewId);
+    const changed = review && review.status !== newStatus;
+
     setApplicantReviews(prev =>
       prev.map(rev => (rev.id === reviewId ? { ...rev, status: newStatus } : rev))
     );
+
+    // Sync the artist's own application card (matched on opportunity + artist).
+    if (review?.artistId) {
+      setApplications(prev =>
+        prev.map(app =>
+          app.opportunityId === review.opportunityId && app.artistId === review.artistId
+            ? { ...app, status: newStatus }
+            : app
+        )
+      );
+    }
 
     const statusLabels: Record<ApplicantReview['status'], string> = {
       under_review: 'marked as Under Review',
@@ -676,6 +661,41 @@ export default function App() {
       selected: 'selected for performance commission',
       rejected: 'archived',
     };
+
+    // Selection lands in the artist's thread as an organiser message — it then
+    // lights the bell + unread pill through the normal thread unread path.
+    if (changed && newStatus === 'selected' && review.artistId && currentUser) {
+      // Ensure the thread exists (local mode starts with none) — synthetic
+      // artist identity built from the review, since the organiser is acting here.
+      const { thread } = await ensureArtistThread({
+        opportunityId: review.opportunityId,
+        opportunityTitle: review.opportunityTitle,
+        user: {
+          id: review.artistId,
+          name: review.artistName,
+          email: '',
+          role: 'artist',
+          avatarUrl: review.artistAvatar,
+        },
+        organiserName: currentUser.orgName || currentUser.name,
+        organiserAvatar: currentUser.avatarUrl || currentUser.avatar,
+      });
+      if (thread) {
+        const body = `Congratulations, ${review.artistName}! You've been selected for "${review.opportunityTitle}". Our team will reach out with the schedule and next steps soon.`;
+        const { error } = await sendMessage({
+          threadId: thread.id,
+          sender: currentUser,
+          senderRole: 'organiser',
+          body,
+          clientId: `msg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+        });
+        if (!error) {
+          // Sender's own message must not light their bell.
+          await markRead(thread.id, 'organiser');
+          setThreads(await fetchThreads());
+        }
+      }
+    }
 
     showToast(`Applicant status updated: ${statusLabels[newStatus] || newStatus}`);
   };
@@ -707,7 +727,6 @@ export default function App() {
         <PortalGateway
           onSelectPortal={(portal) => handleOpenSignIn(portal)}
           onOpenRegister={(portal) => handleOpenSignUp(portal)}
-          onQuickDemoLogin={(portal) => handleQuickDemoLogin(portal)}
           onGoogleLogin={(portal, isSignUp) => handleGoogleAuth(portal, isSignUp)}
         />
         <SignInModal
@@ -715,7 +734,6 @@ export default function App() {
           initialRole={signInInitialRole}
           onClose={() => setIsSignInOpen(false)}
           onSuccess={handleSignInSuccess}
-          onDemoLogin={handleQuickDemoLogin}
           onSwitchToSignUp={(role?: PortalMode) => {
             setIsSignInOpen(false);
             handleOpenSignUp(role || 'artist');
@@ -760,6 +778,14 @@ export default function App() {
         {/* Top Header Bar with Scoped Portal Indicator and User Menu */}
         <Header
           portalMode={portalMode}
+          threads={threads}
+          onMarkThreadsRead={async () => {
+            const role = currentUser?.role === 'organiser' ? 'organiser' : 'artist';
+            await Promise.all(
+              threads.filter(t => isUnread(t, role)).map(t => markRead(t.id, role))
+            );
+            setThreads(await fetchThreads());
+          }}
           searchQuery={searchQuery}
           onSearchChange={(q) => {
             setSearchQuery(q);
@@ -1044,7 +1070,6 @@ export default function App() {
         initialRole={signInInitialRole}
         onClose={() => setIsSignInOpen(false)}
         onSuccess={handleSignInSuccess}
-        onDemoLogin={handleQuickDemoLogin}
         onSwitchToSignUp={(role?: PortalMode) => {
           setIsSignInOpen(false);
           handleOpenSignUp(role || 'artist');

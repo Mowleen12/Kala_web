@@ -137,7 +137,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
             <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200 flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-zinc-900">{userName}</p>
-                <p className="text-[11px] text-zinc-500">{userEmail} â€¢ Verified Artist</p>
+                <p className="text-[11px] text-zinc-500">{userEmail} • Verified Artist</p>
               </div>
               <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3" /> Ready
@@ -149,7 +149,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
           <div>
             <MediaUploader
               label="Audition Video Reel or Work Sample"
-              description="Upload your live performance video (MP4/MOV/WEBM) or artwork still (JPG/PNG). Stored securely on Cloudinary."
+              description="Upload your live performance video (MP4/MOV/WEBM) or artwork still (JPG/PNG)."
               folder="kala-auditions"
               resourceType="auto"
               value={mediaUrl}

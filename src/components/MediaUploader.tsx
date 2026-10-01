@@ -8,11 +8,10 @@ import {
   Loader2, 
   Play, 
   AlertCircle,
-  Cloud,
   FileText
 } from 'lucide-react';
-import { uploadToCloudinary, isCloudinaryConfigured, CloudinaryUploadResult } from '../lib/cloudinary';
-import { maxBytesFor, isVideoFile, IMAGE_MAX_BYTES, VIDEO_MAX_BYTES, formatMB } from '../lib/limits';
+import { uploadToCloudinary, CloudinaryUploadResult } from '../lib/cloudinary';
+import { maxBytesFor, isVideoFile, formatMB } from '../lib/limits';
 
 interface MediaUploaderProps {
   label?: string;
@@ -160,21 +159,11 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
 
   return (
     <div className={`space-y-2 ${className}`}>
-      {/* Label and media CDN indicator */}
-      <div className="flex items-center justify-between">
-        {label && (
-          <label className="block text-xs font-bold text-zinc-700">
-            {label}
-          </label>
-        )}
-        <div className="flex items-center gap-1 text-[11px] font-semibold text-zinc-500">
-          <Cloud className={`w-3.5 h-3.5 ${isCloudinaryConfigured ? 'text-sky-500' : 'text-amber-500'}`} />
-          <span className="hidden sm:inline">Cloudinary:</span>
-          <span className={isCloudinaryConfigured ? 'text-sky-700' : 'text-amber-700'}>
-            {isCloudinaryConfigured ? 'Cloudinary Active' : 'Preview Mode'}
-          </span>
-        </div>
-      </div>
+      {label && (
+        <label className="block text-xs font-bold text-zinc-700">
+          {label}
+        </label>
+      )}
 
       {/* Pre-upload review: nothing has been sent to the CDN yet */}
       {pending ? (
@@ -324,8 +313,6 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                 <span>MP4 • MOV • WEBM</span>
                 <span>•</span>
                 <span>JPG • PNG • WEBP</span>
-                <span>•</span>
-                <span>Up to {formatMB(IMAGE_MAX_BYTES)} image · {formatMB(VIDEO_MAX_BYTES)} video</span>
               </div>
             </div>
           )}

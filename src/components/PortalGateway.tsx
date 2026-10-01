@@ -16,14 +16,12 @@ import { PortalMode } from '../types';
 interface PortalGatewayProps {
   onSelectPortal: (portal: PortalMode) => void;
   onOpenRegister: (portal: PortalMode) => void;
-  onQuickDemoLogin: (portal: PortalMode) => void;
   onGoogleLogin?: (portal: PortalMode, isSignUp?: boolean) => void;
 }
 
 export const PortalGateway: React.FC<PortalGatewayProps> = ({
   onSelectPortal,
   onOpenRegister,
-  onQuickDemoLogin,
   onGoogleLogin,
 }) => {
   return (
@@ -133,20 +131,13 @@ export const PortalGateway: React.FC<PortalGatewayProps> = ({
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
 
-              <div className="pt-1 flex items-center justify-between text-[11px] text-zinc-500">
+              <div className="pt-1 flex items-center text-[11px] text-zinc-500">
                 <button
                   type="button"
                   onClick={() => onOpenRegister('artist')}
                   className="font-bold text-[#E45826] hover:underline cursor-pointer"
                 >
                   + Sign up as new Artist
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onQuickDemoLogin('artist')}
-                  className="text-zinc-500 hover:text-zinc-800 underline cursor-pointer"
-                >
-                  Quick Demo (Mowleen)
                 </button>
               </div>
             </div>
@@ -231,20 +222,13 @@ export const PortalGateway: React.FC<PortalGatewayProps> = ({
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
 
-              <div className="pt-1 flex items-center justify-between text-[11px] text-zinc-500">
+              <div className="pt-1 flex items-center text-[11px] text-zinc-500">
                 <button
                   type="button"
                   onClick={() => onOpenRegister('organiser')}
                   className="font-bold text-[#E45826] hover:underline cursor-pointer"
                 >
                   + Register Cultural Venue
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onQuickDemoLogin('organiser')}
-                  className="text-zinc-500 hover:text-zinc-800 underline cursor-pointer"
-                >
-                  Quick Demo (NCPA)
                 </button>
               </div>
             </div>

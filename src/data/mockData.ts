@@ -186,6 +186,7 @@ export const INITIAL_APPLICATIONS: Application[] = [
   {
     id: 'app-1',
     opportunityId: 'opp-1',
+    artistId: 'user-mowleen',
     opportunityTitle: 'National Creative Fest 2026',
     category: 'Music & Dance',
     location: 'NCPA • Mumbai',
@@ -196,6 +197,7 @@ export const INITIAL_APPLICATIONS: Application[] = [
   {
     id: 'app-2',
     opportunityId: 'opp-2',
+    artistId: 'user-mowleen',
     opportunityTitle: 'Short Film Festival – India',
     category: 'Film & Photography',
     location: 'Tata Theatre • Mumbai',

@@ -39,6 +39,8 @@ export interface Category {
 export interface Application {
   id: string;
   opportunityId: string;
+  /** Owner — links the card to the organiser's ApplicantReview for status sync. */
+  artistId?: string;
   opportunityTitle: string;
   category: string;
   location: string;
@@ -109,7 +111,7 @@ export interface AuthUser {
   avatarUrl?: string;
   orgName?: string;
   discipline?: string;
-  authProvider?: 'google' | 'email' | 'demo';
+  authProvider?: 'google' | 'email';
 }
 
 export type MessageSenderRole = 'artist' | 'organiser';

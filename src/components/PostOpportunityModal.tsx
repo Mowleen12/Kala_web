@@ -17,14 +17,19 @@ import { KalaStar, KalaLogo } from './KalaLogo';
 import { MediaUploader } from './MediaUploader';
 import { getDraft, setDraft, clearDraft } from '../lib/drafts';
 import { isLocalMediaUrl, resolveMediaUrl } from '../lib/localMedia';
+import { buildDateRange, buildCompensation, PRICE_PRESETS } from '../lib/offer';
 
 interface PostOpportunityDraft {
   title?: string;
   category?: string;
   venue?: string;
   city?: string;
-  dateRange?: string;
-  compensation?: string;
+  startDate?: string;
+  endDate?: string;
+  eventTime?: string;
+  priceChoice?: string;
+  customMin?: string;
+  customMax?: string;
   deadlineDays?: string;
   selectedImage?: string;
   description?: string;
@@ -64,8 +69,12 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
   const [category, setCategory] = useState(savedDraft?.category ?? 'Music & Dance');
   const [venue, setVenue] = useState(savedDraft?.venue ?? 'NCPA Tata Theatre');
   const [city, setCity] = useState(savedDraft?.city ?? 'Mumbai, Maharashtra');
-  const [dateRange, setDateRange] = useState(savedDraft?.dateRange ?? '18 Nov â€“ 22 Nov 2026');
-  const [compensation, setCompensation] = useState(savedDraft?.compensation ?? 'â‚¹15,000 â€“ â‚¹30,000');
+  const [startDate, setStartDate] = useState(savedDraft?.startDate ?? '2026-11-18');
+  const [endDate, setEndDate] = useState(savedDraft?.endDate ?? '2026-11-22');
+  const [eventTime, setEventTime] = useState(savedDraft?.eventTime ?? '');
+  const [priceChoice, setPriceChoice] = useState(savedDraft?.priceChoice ?? 'custom');
+  const [customMin, setCustomMin] = useState(savedDraft?.customMin ?? '15000');
+  const [customMax, setCustomMax] = useState(savedDraft?.customMax ?? '30000');
   const [deadlineDays, setDeadlineDays] = useState(savedDraft?.deadlineDays ?? '7');
   const [selectedImage, setSelectedImage] = useState(savedDraft?.selectedImage || PRESET_IMAGES[0].url);
   const [description, setDescription] = useState(savedDraft?.description ?? DEFAULT_DESCRIPTION);
@@ -79,8 +88,12 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
       category,
       venue,
       city,
-      dateRange,
-      compensation,
+      startDate,
+      endDate,
+      eventTime,
+      priceChoice,
+      customMin,
+      customMax,
       deadlineDays,
       // setDraft swaps live blob: previews for stable IndexedDB refs, so a
       // custom cover survives reloads; unknown dead blobs fall back to preset.
@@ -88,7 +101,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
       description,
       requirements,
     });
-  }, [title, category, venue, city, dateRange, compensation, deadlineDays, selectedImage, description, requirements]);
+  }, [title, category, venue, city, startDate, endDate, eventTime, priceChoice, customMin, customMax, deadlineDays, selectedImage, description, requirements]);
 
   // Resolve a locally-stored cover ref (kala-idb:) into a live object URL
   // while the modal is open; fall back to the preset if the blob is gone.
@@ -123,11 +136,11 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
         label: `Closes in ${deadlineDays} days`,
         variant: 'countdown',
       },
-      location: `${venue} â€¢ ${city}`,
+      location: `${venue} • ${city}`,
       venue: venue,
       city: city,
-      dateRange: dateRange,
-      compensation: compensation,
+      dateRange: buildDateRange(startDate, endDate, eventTime),
+      compensation: buildCompensation(priceChoice, customMin, customMax),
       imageUrl: selectedImage,
       organizer: organizerName,
       description: description,
@@ -162,7 +175,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
             <div className="relative z-10">
               <div className="inline-flex items-center gap-2 mb-6">
                 <KalaStar size={24} className="text-[#E45826]" />
-                <span className="font-brand font-black text-2xl text-zinc-900">kalÄ</span>
+                <span className="font-brand font-black text-2xl text-zinc-900">kalā</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FDEEE7] text-[#E45826] ml-1">
                   ORGANISER
                 </span>
@@ -300,34 +313,103 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                 </div>
               </div>
 
-              {/* Dates & Compensation */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-zinc-700 block mb-1">Event Dates</label>
+              {/* Dates & Time */}
+              <div>
+                <label className="text-xs font-bold text-zinc-700 block mb-1">Event Dates & Time</label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <input
-                    type="text"
-                    value={dateRange}
-                    onChange={(e) => setDateRange(e.target.value)}
-                    placeholder="e.g. 18 Nov â€“ 22 Nov"
+                    type="date"
+                    aria-label="Event start date"
+                    value={startDate}
+                    onChange={(e) => {
+                      setStartDate(e.target.value);
+                      if (endDate && e.target.value && endDate < e.target.value) setEndDate(e.target.value);
+                    }}
+                    className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
+                  />
+                  <input
+                    type="date"
+                    aria-label="Event end date"
+                    value={endDate}
+                    min={startDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
+                  />
+                  <input
+                    type="time"
+                    aria-label="Event start time"
+                    value={eventTime}
+                    onChange={(e) => setEventTime(e.target.value)}
                     className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
                   />
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-zinc-700 block mb-1">Honorarium / Compensation</label>
-                  <input
-                    type="text"
-                    value={compensation}
-                    onChange={(e) => setCompensation(e.target.value)}
-                    placeholder="e.g. â‚¹15,000 â€“ â‚¹30,000"
-                    className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
-                  />
+                <p className="text-[11px] text-zinc-400 mt-1">
+                  Preview: {buildDateRange(startDate, endDate, eventTime) || '—'}
+                </p>
+              </div>
+
+              {/* Honorarium */}
+              <div>
+                <label className="text-xs font-bold text-zinc-700 block mb-1">Honorarium / Compensation</label>
+                <div className="flex flex-wrap gap-2">
+                  {Object.keys(PRICE_PRESETS).map((label) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => setPriceChoice(label)}
+                      className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border cursor-pointer transition-all ${
+                        priceChoice === label
+                          ? 'bg-[#FCEEE7] border-[#E45826] text-[#E45826]'
+                          : 'bg-[#FAF8F5] border-[#E0D9CD] text-zinc-600 hover:border-zinc-400'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setPriceChoice('custom')}
+                    className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border cursor-pointer transition-all ${
+                      priceChoice === 'custom'
+                        ? 'bg-[#FCEEE7] border-[#E45826] text-[#E45826]'
+                        : 'bg-[#FAF8F5] border-[#E0D9CD] text-zinc-600 hover:border-zinc-400'
+                    }`}
+                  >
+                    Your own price
+                  </button>
                 </div>
+                {priceChoice === 'custom' && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <input
+                      type="number"
+                      min="0"
+                      aria-label="Minimum honorarium"
+                      value={customMin}
+                      onChange={(e) => setCustomMin(e.target.value)}
+                      placeholder="Min ₹"
+                      className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
+                    />
+                    <span className="text-xs text-zinc-400 shrink-0">–</span>
+                    <input
+                      type="number"
+                      min="0"
+                      aria-label="Maximum honorarium"
+                      value={customMax}
+                      onChange={(e) => setCustomMax(e.target.value)}
+                      placeholder="Max ₹"
+                      className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
+                    />
+                  </div>
+                )}
+                <p className="text-[11px] text-zinc-400 mt-1">
+                  Preview: {buildCompensation(priceChoice, customMin, customMax)}
+                </p>
               </div>
 
               {/* Cover Image Preset Selector & Cloudinary Upload */}
               <div className="space-y-3">
                 <MediaUploader
-                  label="Opportunity Banner (Stored on Cloudinary)"
+                  label="Opportunity Banner"
                   description="Upload a custom stage banner, production poster or venue photo"
                   resourceType="image"
                   folder="kala-opportunities"
