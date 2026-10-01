@@ -4,6 +4,8 @@
  * and videos (audition reels, stage performances, venue tours).
  */
 
+import { storeLocalMedia } from './localMedia';
+
 const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
@@ -124,7 +126,9 @@ async function simulateLocalUpload(
   detectedType: 'image' | 'video',
   onProgress?: (percent: number) => void
 ): Promise<CloudinaryUploadResult> {
-  const objectUrl = URL.createObjectURL(file);
+  // Store the blob in IndexedDB first so the upload survives reloads and
+  // re-logins even without Cloudinary credentials.
+  const objectUrl = await storeLocalMedia(file);
 
   // Smooth simulated progress
   if (onProgress) {

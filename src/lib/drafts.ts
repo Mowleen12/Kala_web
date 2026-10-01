@@ -1,3 +1,5 @@
+import { toPersistableDeep } from './localMedia';
+
 export function getDraft<T>(key: string): T | null {
   try {
     const raw = localStorage.getItem(key);
@@ -9,7 +11,9 @@ export function getDraft<T>(key: string): T | null {
 
 export function setDraft(key: string, value: unknown): void {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    // Swap live blob: object URLs for their stable IndexedDB refs so drafts
+    // (uploaded media included) survive reloads and re-logins.
+    localStorage.setItem(key, JSON.stringify(toPersistableDeep(value)));
   } catch {}
 }
 

@@ -41,6 +41,13 @@ import {
 } from './lib/supabase';
 import { isCloudinaryConfigured } from './lib/cloudinary';
 import { getDraft, setDraft } from './lib/drafts';
+import {
+  isLocalMediaUrl,
+  resolveMediaUrl,
+  resolveMediaUrlDeep,
+  toPersistableDeep,
+  toPersistableUrl,
+} from './lib/localMedia';
 import { ensureArtistThread, findThread, ensureProfile, claimThread, fetchThreads, markRead, isDbReady, subscribeThreads } from './lib/threads';
 import { ThreadModal } from './components/ThreadModal';
 
@@ -67,9 +74,7 @@ import {
 } from './types';
 
 const profileMediaKey = (userId: string) => `kala_profile_media_${userId}`;
-
-// blob: URLs only live in the current tab — never persist them.
-const persistableUrl = (url?: string) => (url && url.startsWith('blob:') ? undefined : url);
+const SESSION_KEY = 'kala_session';
 
 function loadProfileMedia(userId: string): ProfileMedia {
   try {
@@ -85,12 +90,63 @@ function saveProfileMedia(userId: string, media: ProfileMedia) {
     localStorage.setItem(
       profileMediaKey(userId),
       JSON.stringify({
-        avatar: persistableUrl(media.avatar),
-        reel: persistableUrl(media.reel),
-        gallery: (media.gallery || []).filter((u) => !u.startsWith('blob:')),
+        avatar: toPersistableUrl(media.avatar) || undefined,
+        reel: toPersistableUrl(media.reel) || undefined,
+        gallery: (media.gallery || [])
+          .map((u) => toPersistableUrl(u))
+          .filter((u): u is string => Boolean(u)),
       })
     );
   } catch {}
+}
+
+/**
+ * React state that survives logout/login and reloads. Media fields holding
+ * live blob: URLs are written back as stable IndexedDB refs and re-resolved
+ * into object URLs when the app boots.
+ */
+function usePersistedState<T>(key: string, initial: T) {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) return JSON.parse(raw) as T;
+    } catch {}
+    return initial;
+  });
+
+  // Turn stored kala-idb: media refs into live object URLs once on boot.
+  useEffect(() => {
+    let alive = true;
+    resolveMediaUrlDeep(value).then((resolved) => {
+      if (!alive) return;
+      setValue((prev) =>
+        JSON.stringify(prev) === JSON.stringify(resolved) ? prev : (resolved as T)
+      );
+    });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(key, JSON.stringify(toPersistableDeep(value)));
+    } catch {}
+  }, [key, value]);
+
+  return [value, setValue] as const;
+}
+
+/** Human copy for Supabase OAuth callback errors (they are silent otherwise). */
+function oauthErrorMessage(code: string, description: string): string {
+  if (code === 'access_denied') {
+    return 'Google sign-in was cancelled or denied. Please try again and approve the requested access.';
+  }
+  if (code === 'interaction_required') {
+    return 'Google needs you to confirm your account — please try signing in again.';
+  }
+  return `Google sign-in failed${description ? `: ${description}` : ` (${code})`}. Please try again.`;
 }
 
 const storedArtistName = (email?: string) =>
@@ -104,14 +160,34 @@ function applyStoredArtistName(user: AuthUser): AuthUser {
 const storedOrgName = () => getDraft<Partial<OrganiserProfile>>('kala_org_profile_text')?.name;
 
 export default function App() {
-  // Authenticated User State (determines active portal separation)
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>({
-    id: 'user-mowleen',
-    name: 'Mowleen',
-    email: 'mowleen2006@gmail.com',
-    role: 'artist',
-    discipline: 'Classical & Contemporary Vocalist',
+  // Authenticated User State (determines active portal separation).
+  // Restored from the last session so sign-out, portal choice and login all
+  // survive reloads; fresh visitors land on the demo artist as before.
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (raw === 'signed_out') return null;
+      if (raw) return JSON.parse(raw) as AuthUser;
+    } catch {}
+    return {
+      id: 'user-mowleen',
+      name: 'Mowleen',
+      email: 'mowleen2006@gmail.com',
+      role: 'artist',
+      discipline: 'Classical & Contemporary Vocalist',
+    };
   });
+
+  // Persist every login/logout (including demo and Google) so the next visit
+  // lands exactly where this one left off.
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        SESSION_KEY,
+        currentUser ? JSON.stringify(toPersistableDeep(currentUser)) : 'signed_out'
+      );
+    } catch {}
+  }, [currentUser]);
 
   // Current active portal mode is strictly driven by currentUser's role
   const portalMode: PortalMode = currentUser?.role || 'artist';
@@ -141,19 +217,35 @@ export default function App() {
   const [isApplyOpen, setIsApplyOpen] = useState(false);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
 
-  // Artist User State
+  // Artist User State — persisted so applications, calls and stats made in one
+  // session are still there after logout/login or a reload.
   const [userName, setUserName] = useState('Mowleen');
-  const [userStats, setUserStats] = useState<UserStats>(INITIAL_USER_STATS);
-  const [applications, setApplications] = useState<Application[]>(INITIAL_APPLICATIONS);
-  const [opportunities, setOpportunities] = useState<Opportunity[]>(FEATURED_OPPORTUNITIES);
-  
+  const [userStats, setUserStats] = usePersistedState<UserStats>(
+    'kala_user_stats',
+    INITIAL_USER_STATS
+  );
+  const [applications, setApplications] = usePersistedState<Application[]>(
+    'kala_applications',
+    INITIAL_APPLICATIONS
+  );
+  const [opportunities, setOpportunities] = usePersistedState<Opportunity[]>(
+    'kala_opportunities',
+    FEATURED_OPPORTUNITIES
+  );
+
   // Organiser State
   const [organiserProfile, setOrganiserProfile] = useState<OrganiserProfile>(() => ({
     ...INITIAL_ORGANISER_PROFILE,
     ...getDraft<Partial<OrganiserProfile>>('kala_org_profile_text'),
   }));
-  const [organiserStats, setOrganiserStats] = useState<OrganiserStats>(INITIAL_ORGANISER_STATS);
-  const [applicantReviews, setApplicantReviews] = useState<ApplicantReview[]>(INITIAL_APPLICANT_REVIEWS);
+  const [organiserStats, setOrganiserStats] = usePersistedState<OrganiserStats>(
+    'kala_organiser_stats',
+    INITIAL_ORGANISER_STATS
+  );
+  const [applicantReviews, setApplicantReviews] = usePersistedState<ApplicantReview[]>(
+    'kala_applicant_reviews',
+    INITIAL_APPLICANT_REVIEWS
+  );
 
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeThread, setActiveThread] = useState<Thread | null>(null);
@@ -179,8 +271,26 @@ export default function App() {
       });
     }
 
-    // 2. Clean URL hash and search query once Supabase processes OAuth tokens
-    if (window.location.hash.includes('access_token=') || window.location.search.includes('code=')) {
+    // 2. Surface OAuth callback failures — without this a failed Google
+    //    sign-in dies silently and the user just sees the app unchanged.
+    const hashParams = new URLSearchParams(window.location.hash.slice(1));
+    const oauthError =
+      hashParams.get('error') ||
+      new URLSearchParams(window.location.search).get('error') ||
+      new URLSearchParams(window.location.search).get('error_code');
+    if (oauthError) {
+      showToast(
+        oauthErrorMessage(oauthError, hashParams.get('error_description') || '')
+      );
+    }
+
+    // 3. Clean URL hash and search query once Supabase processes OAuth tokens
+    if (
+      window.location.hash.includes('access_token=') ||
+      window.location.hash.includes('error=') ||
+      window.location.search.includes('code=') ||
+      oauthError
+    ) {
       setTimeout(() => {
         try {
           window.history.replaceState({}, document.title, window.location.pathname);
@@ -188,7 +298,7 @@ export default function App() {
       }, 1000);
     }
 
-    // 3. Check existing session on load
+    // 4. Check existing session on load
     supabaseGetCurrentUser().then((rawUser) => {
       const user = rawUser && applyStoredArtistName(rawUser);
       if (user) {
@@ -199,7 +309,7 @@ export default function App() {
       }
     });
 
-    // 4. Subscribe to realtime auth state changes from Supabase
+    // 5. Subscribe to realtime auth state changes from Supabase
     const unsubscribe = onSupabaseAuthStateChange((rawUser, event) => {
       const user = rawUser && applyStoredArtistName(rawUser);
       if (user) {
@@ -218,17 +328,39 @@ export default function App() {
   }, []);
 
   // Restore persisted profile media (avatar / reel / gallery) whenever the
-  // signed-in user changes, and mirror a stored avatar into the header.
+  // signed-in user changes, resolving stored IndexedDB refs into live object
+  // URLs and mirroring the avatar into the header / organiser logo.
   useEffect(() => {
     if (!currentUser) {
       setProfileMedia({});
       return;
     }
-    const stored = loadProfileMedia(currentUser.id);
-    setProfileMedia(stored);
-    if (stored.avatar && stored.avatar !== (currentUser.avatarUrl || currentUser.avatar)) {
-      setCurrentUser((prev) => (prev ? { ...prev, avatarUrl: stored.avatar } : prev));
-    }
+    let alive = true;
+    (async () => {
+      const stored = await resolveMediaUrlDeep(loadProfileMedia(currentUser.id));
+      const rawAvatar = currentUser.avatarUrl || currentUser.avatar;
+      const resolvedAvatar =
+        ((await resolveMediaUrl(rawAvatar)) as string | undefined) || rawAvatar;
+      if (!alive) return;
+      setProfileMedia(stored);
+      setCurrentUser((prev) => {
+        if (!prev || prev.id !== currentUser.id) return prev;
+        const mirrorAvatar = stored.avatar || resolvedAvatar;
+        if (mirrorAvatar && mirrorAvatar !== (prev.avatarUrl || prev.avatar)) {
+          return { ...prev, avatar: mirrorAvatar, avatarUrl: mirrorAvatar };
+        }
+        return prev;
+      });
+      if (currentUser.role === 'organiser') {
+        const logo = stored.avatar || resolvedAvatar;
+        if (logo) {
+          setOrganiserProfile((prev) => (prev.logo === logo ? prev : { ...prev, logo }));
+        }
+      }
+    })();
+    return () => {
+      alive = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id]);
 

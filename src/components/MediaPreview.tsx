@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Maximize2, X, Image as ImageIcon, Video } from 'lucide-react';
+import { localMediaKind } from '../lib/localMedia';
 
 const isVideoSrc = (src: string) =>
-  /\.(mp4|webm|mov|m4v)(\?|$)/i.test(src) || src.includes('/video/');
+  localMediaKind(src) === 'video' ||
+  /\.(mp4|webm|mov|m4v)(\?|$)/i.test(src) ||
+  src.includes('/video/');
 
 interface MediaPreviewProps {
   src: string;

@@ -24,6 +24,7 @@ import {
 import { KalaLogo, KalaStar } from './KalaLogo';
 import { PortalMode } from '../types';
 import { supabaseSignUp, supabaseSignIn, supabaseSignInWithGoogle, isSupabaseConfigured } from '../lib/supabase';
+import { toPersistableUrl } from '../lib/localMedia';
 import { MediaUploader } from './MediaUploader';
 
 interface CreateAccountModalProps {
@@ -133,7 +134,9 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
           role,
           orgName: role === 'organiser' ? orgName.trim() : undefined,
           discipline: role === 'artist' ? discipline : undefined,
-          avatarUrl: avatarUrl || undefined,
+          // Stable IndexedDB ref instead of a session-only blob: preview, so
+          // the avatar set during sign-up is still there on the next login.
+          avatarUrl: toPersistableUrl(avatarUrl) || undefined,
         });
 
         if (signUpErr || !user) {

@@ -5,6 +5,7 @@ import { supabase as supabaseClient, isSupabaseConfigured } from './supabase';
 const supabase = supabaseClient!;
 import { AuthUser, Message, MessageSenderRole, Thread } from '../types';
 import { USER_MONTHLY_BYTES, remaining } from './limits';
+import { resolveMediaUrl, toPersistableUrl } from './localMedia';
 
 export interface SendMessageInput {
   threadId: string;
@@ -341,7 +342,16 @@ export async function fetchMessages(
     console.warn('[threads]', 'fetchMessages', error);
     return { messages: [], error: friendlyError(error?.message) };
   }
-  return { messages: data.map(rowToMessage), error: null };
+  // Local-only uploads are stored as stable kala-idb: refs — turn them back
+  // into live object URLs for this session before anything renders them.
+  const messages = await Promise.all(
+    data.map(async (r: any) => {
+      const m = rowToMessage(r);
+      if (m.mediaUrl) m.mediaUrl = ((await resolveMediaUrl(m.mediaUrl)) as string) || m.mediaUrl;
+      return m;
+    })
+  );
+  return { messages, error: null };
 }
 
 export async function sendMessage(
@@ -357,7 +367,8 @@ export async function sendMessage(
     sender_id: sender.id,
     sender_role: senderRole,
     body: trimmed || null,
-    media_url: media?.url || null,
+    // Live blob: URLs die with the tab — persist the stable IndexedDB ref.
+    media_url: (media?.url ? toPersistableUrl(media.url) : null) || null,
     media_public_id: media?.publicId || null,
     media_type: media?.type || null,
     media_bytes: media?.bytes || null,
@@ -371,7 +382,9 @@ export async function sendMessage(
       senderId: sender.id,
       senderRole,
       body: row.body,
-      mediaUrl: row.media_url,
+      // In-memory store dies with the tab anyway — keep the live object URL
+      // so the message renders in this session.
+      mediaUrl: media?.url || null,
       mediaPublicId: row.media_public_id,
       mediaType: row.media_type,
       mediaBytes: row.media_bytes,
@@ -419,7 +432,11 @@ export function subscribeThread(
     .on(
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'messages', filter: `thread_id=eq.${threadId}` },
-      (payload) => onMessage(rowToMessage(payload.new))
+      async (payload) => {
+        const m = rowToMessage(payload.new);
+        if (m.mediaUrl) m.mediaUrl = ((await resolveMediaUrl(m.mediaUrl)) as string) || m.mediaUrl;
+        onMessage(m);
+      }
     )
     .subscribe((status) => {
       // TIMED_OUT is a dead socket with no event — surfacing it as an error is

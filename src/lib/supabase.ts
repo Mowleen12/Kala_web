@@ -348,6 +348,13 @@ export async function supabaseSignIn(
  * Sign out of active Supabase session
  */
 export async function supabaseSignOut(): Promise<void> {
+  // A pending role belongs to an OAuth attempt that never finished — drop it
+  // so a later sign-in can't inherit the wrong portal.
+  try {
+    localStorage.removeItem('kala_pending_auth_role');
+    localStorage.removeItem('kala_pending_auth_org');
+    localStorage.removeItem('kala_pending_auth_discipline');
+  } catch {}
   if (isSupabaseConfigured && supabase) {
     try {
       await supabase.auth.signOut();
@@ -355,6 +362,49 @@ export async function supabaseSignOut(): Promise<void> {
       console.warn('[Supabase] Error signing out:', err);
     }
   }
+}
+
+/**
+ * The portal the user just picked on the gateway/sign-in UI, if any.
+ * Survives the OAuth redirect via localStorage; consumed once the session
+ * lands so Google login works on BOTH portals (the clicked portal always
+ * wins over whatever role is already in user_metadata).
+ */
+function takePendingAuthRole(): {
+  role: PortalMode | null;
+  orgName?: string;
+  discipline?: string;
+} {
+  let role: PortalMode | null = null;
+  let orgName: string | undefined;
+  let discipline: string | undefined;
+  try {
+    role = (localStorage.getItem('kala_pending_auth_role') as PortalMode) || null;
+    orgName = localStorage.getItem('kala_pending_auth_org') || undefined;
+    discipline = localStorage.getItem('kala_pending_auth_discipline') || undefined;
+  } catch {}
+  return { role, orgName, discipline };
+}
+
+function clearPendingAuthRole(): void {
+  try {
+    localStorage.removeItem('kala_pending_auth_role');
+    localStorage.removeItem('kala_pending_auth_org');
+    localStorage.removeItem('kala_pending_auth_discipline');
+  } catch {}
+}
+
+/** Local (pre-flush) view of the user: pending portal choice overrides metadata. */
+function withPendingPortal(user: AuthUser): AuthUser {
+  const pending = takePendingAuthRole();
+  if (!pending.role || pending.role === user.role) return user;
+  return {
+    ...user,
+    role: pending.role,
+    orgName: pending.role === 'organiser' ? pending.orgName || user.orgName : user.orgName,
+    discipline:
+      pending.role === 'artist' ? pending.discipline || user.discipline : user.discipline,
+  };
 }
 
 /**
@@ -372,32 +422,45 @@ export async function supabaseGetCurrentUser(): Promise<AuthUser | null> {
     }
 
     const user = session.user;
-    // Check if user has no role assigned yet (common for fresh Google OAuth users in Supabase)
-    if (!user.user_metadata?.role) {
-      const pendingRole = (localStorage.getItem('kala_pending_auth_role') as PortalMode) || 'artist';
-      const pendingOrg = localStorage.getItem('kala_pending_auth_org') || undefined;
-      const pendingDiscipline = localStorage.getItem('kala_pending_auth_discipline') || undefined;
+    const pending = takePendingAuthRole();
+    const metaRole = user.user_metadata?.role as PortalMode | undefined;
+    // Flush the clicked portal into metadata whenever it differs from what is
+    // stored (first Google login, and every portal switch afterwards).
+    const roleToFlush = pending.role ?? (!metaRole ? 'artist' : null);
+    const needsFlush =
+      roleToFlush !== null &&
+      (roleToFlush !== metaRole || Boolean(pending.orgName) || Boolean(pending.discipline));
 
+    if (needsFlush && roleToFlush) {
       try {
         const { data: updated } = await supabase.auth.updateUser({
           data: {
-            role: pendingRole,
-            org_name: pendingRole === 'organiser' ? (pendingOrg || 'NCPA Mumbai') : undefined,
-            discipline: pendingRole === 'artist' ? (pendingDiscipline || 'Classical & Contemporary Arts') : undefined,
+            role: roleToFlush,
+            org_name:
+              roleToFlush === 'organiser'
+                ? pending.orgName || user.user_metadata?.org_name || 'NCPA Mumbai'
+                : undefined,
+            discipline:
+              roleToFlush === 'artist'
+                ? pending.discipline ||
+                  user.user_metadata?.discipline ||
+                  'Classical & Contemporary Arts'
+                : undefined,
           },
         });
         if (updated?.user) {
-          localStorage.removeItem('kala_pending_auth_role');
-          localStorage.removeItem('kala_pending_auth_org');
-          localStorage.removeItem('kala_pending_auth_discipline');
+          clearPendingAuthRole();
           return mapSupabaseUserToAuthUser(updated.user);
         }
       } catch (err) {
-        console.warn('[Supabase] Failed to write initial role metadata to user profile:', err);
+        console.warn('[Supabase] Failed to write role metadata to user profile:', err);
       }
+    } else {
+      clearPendingAuthRole();
     }
 
-    return mapSupabaseUserToAuthUser(session.user);
+    // Even if the metadata flush failed, honour the portal the user clicked.
+    return withPendingPortal(mapSupabaseUserToAuthUser(session.user));
   } catch {
     return null;
   }
@@ -415,7 +478,9 @@ export function onSupabaseAuthStateChange(
 
   const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session: Session | null) => {
     if (session?.user) {
-      callback(mapSupabaseUserToAuthUser(session.user), event);
+      // Apply the clicked portal immediately — the metadata flush above is
+      // async, and this event is what boots the portal on the OAuth return.
+      callback(withPendingPortal(mapSupabaseUserToAuthUser(session.user)), event);
     } else {
       callback(null, event);
     }

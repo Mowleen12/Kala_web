@@ -16,6 +16,7 @@ import { Opportunity } from '../types';
 import { KalaStar, KalaLogo } from './KalaLogo';
 import { MediaUploader } from './MediaUploader';
 import { getDraft, setDraft, clearDraft } from '../lib/drafts';
+import { isLocalMediaUrl, resolveMediaUrl } from '../lib/localMedia';
 
 interface PostOpportunityDraft {
   title?: string;
@@ -81,12 +82,28 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
       dateRange,
       compensation,
       deadlineDays,
-      // blob: previews die on reload â€” fall back to the default preset.
-      selectedImage: selectedImage.startsWith('blob:') ? undefined : selectedImage,
+      // setDraft swaps live blob: previews for stable IndexedDB refs, so a
+      // custom cover survives reloads; unknown dead blobs fall back to preset.
+      selectedImage,
       description,
       requirements,
     });
   }, [title, category, venue, city, dateRange, compensation, deadlineDays, selectedImage, description, requirements]);
+
+  // Resolve a locally-stored cover ref (kala-idb:) into a live object URL
+  // while the modal is open; fall back to the preset if the blob is gone.
+  useEffect(() => {
+    if (!isOpen || !isLocalMediaUrl(selectedImage)) return;
+    let alive = true;
+    resolveMediaUrl(selectedImage).then((resolved) => {
+      if (!alive) return;
+      setSelectedImage((resolved as string) || PRESET_IMAGES[0].url);
+    });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

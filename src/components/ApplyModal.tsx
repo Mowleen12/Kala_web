@@ -4,6 +4,7 @@ import { X, MapPin, Calendar, CheckCircle2, Link2, Sparkles } from 'lucide-react
 import { Opportunity } from '../types';
 import { MediaUploader } from './MediaUploader';
 import { getDraft, setDraft, clearDraft } from '../lib/drafts';
+import { isLocalMediaUrl, resolveMediaUrl } from '../lib/localMedia';
 
 interface ApplyDraft {
   portfolioUrl?: string;
@@ -39,20 +40,34 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
   // Restore a saved draft when this opportunity's form opens...
   useEffect(() => {
     if (!isOpen || !opportunity) return;
+    // Read synchronously so the save effect below can't clobber the stored
+    // draft before we have it; resolve any stored media ref afterwards.
     const draft = getDraft<ApplyDraft>(applyDraftKey(opportunity.id));
     setPortfolioUrl(draft?.portfolioUrl ?? '');
     setStatement(draft?.statement ?? '');
-    setMediaUrl(draft?.mediaUrl ?? '');
+    const draftMedia = draft?.mediaUrl ?? '';
+    if (!isLocalMediaUrl(draftMedia)) {
+      setMediaUrl(draftMedia);
+      return;
+    }
+    let alive = true;
+    resolveMediaUrl(draftMedia).then((resolved) => {
+      if (alive) setMediaUrl((resolved as string) || '');
+    });
+    return () => {
+      alive = false;
+    };
   }, [isOpen, opportunity?.id]);
 
   // ...and keep it saved while the artist types, so work survives
-  // logout/login and reloads. Cleared on submit below.
+  // logout/login and reloads. Cleared on submit below. setDraft swaps live
+  // blob: previews for their stable IndexedDB refs automatically.
   useEffect(() => {
     if (!isOpen || !opportunity) return;
     setDraft(applyDraftKey(opportunity.id), {
       portfolioUrl,
       statement,
-      mediaUrl: mediaUrl.startsWith('blob:') ? '' : mediaUrl,
+      mediaUrl,
     });
   }, [isOpen, opportunity?.id, portfolioUrl, statement, mediaUrl]);
 
