@@ -2,18 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { 
   X, 
-  Calendar, 
-  MapPin, 
-  IndianRupee, 
-  Clock, 
   Sparkles, 
-  Image as ImageIcon,
-  CheckCircle2,
-  Plus,
-  Cloud
+  CheckCircle2
 } from 'lucide-react';
 import { Opportunity } from '../types';
-import { KalaStar, KalaLogo } from './KalaLogo';
+import { KalaStar } from './KalaLogo';
 import { MediaUploader } from './MediaUploader';
 import { getDraft, setDraft, clearDraft } from '../lib/drafts';
 import { isLocalMediaUrl, resolveMediaUrl } from '../lib/localMedia';
@@ -33,20 +26,16 @@ interface PostOpportunityDraft {
   deadlineDays?: string;
   selectedImage?: string;
   description?: string;
-  requirements?: string;
 }
 
 const DRAFT_KEY = 'kala_draft_post';
 
-const DEFAULT_DESCRIPTION =
-  'Seeking innovative performers and emerging creative voices for our curated seasonal spotlight. Open to solo artists and ensemble troupes.';
-const DEFAULT_REQUIREMENTS =
-  'Original portfolio or video reel (2-5 mins)\nAvailable for on-stage technical soundcheck\nOpen to artists aged 18-35';
+const DEFAULT_DESCRIPTION = '';
 
 interface PostOpportunityModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onPublish: (opp: Opportunity) => void;
+  onPublish: (opp: Opportunity) => Promise<{ ok: boolean; error?: string }>;
   organizerName?: string;
 }
 
@@ -62,24 +51,24 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
   isOpen,
   onClose,
   onPublish,
-  organizerName = "National Centre for the Performing Arts (NCPA)",
+  organizerName = '',
 }) => {
   const savedDraft = useRef(getDraft<PostOpportunityDraft>(DRAFT_KEY)).current;
   const [title, setTitle] = useState(savedDraft?.title ?? '');
   const [category, setCategory] = useState(savedDraft?.category ?? 'Music & Dance');
-  const [venue, setVenue] = useState(savedDraft?.venue ?? 'NCPA Tata Theatre');
-  const [city, setCity] = useState(savedDraft?.city ?? 'Mumbai, Maharashtra');
-  const [startDate, setStartDate] = useState(savedDraft?.startDate ?? '2026-11-18');
-  const [endDate, setEndDate] = useState(savedDraft?.endDate ?? '2026-11-22');
+  const [venue, setVenue] = useState(savedDraft?.venue ?? '');
+  const [city, setCity] = useState(savedDraft?.city ?? '');
+  const [startDate, setStartDate] = useState(savedDraft?.startDate ?? '');
+  const [endDate, setEndDate] = useState(savedDraft?.endDate ?? '');
   const [eventTime, setEventTime] = useState(savedDraft?.eventTime ?? '');
   const [priceChoice, setPriceChoice] = useState(savedDraft?.priceChoice ?? 'custom');
-  const [customMin, setCustomMin] = useState(savedDraft?.customMin ?? '15000');
-  const [customMax, setCustomMax] = useState(savedDraft?.customMax ?? '30000');
+  const [customMin, setCustomMin] = useState(savedDraft?.customMin ?? '');
+  const [customMax, setCustomMax] = useState(savedDraft?.customMax ?? '');
   const [deadlineDays, setDeadlineDays] = useState(savedDraft?.deadlineDays ?? '7');
-  const [selectedImage, setSelectedImage] = useState(savedDraft?.selectedImage || PRESET_IMAGES[0].url);
+  const [selectedImage, setSelectedImage] = useState(savedDraft?.selectedImage || '');
   const [description, setDescription] = useState(savedDraft?.description ?? DEFAULT_DESCRIPTION);
-  const [requirements, setRequirements] = useState(savedDraft?.requirements ?? DEFAULT_REQUIREMENTS);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   // Persist the in-progress call so it survives logout/login and reloads.
   useEffect(() => {
@@ -99,9 +88,8 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
       // custom cover survives reloads; unknown dead blobs fall back to preset.
       selectedImage,
       description,
-      requirements,
     });
-  }, [title, category, venue, city, startDate, endDate, eventTime, priceChoice, customMin, customMax, deadlineDays, selectedImage, description, requirements]);
+  }, [title, category, venue, city, startDate, endDate, eventTime, priceChoice, customMin, customMax, deadlineDays, selectedImage, description]);
 
   // Resolve a locally-stored cover ref (kala-idb:) into a live object URL
   // while the modal is open; fall back to the preset if the blob is gone.
@@ -110,7 +98,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
     let alive = true;
     resolveMediaUrl(selectedImage).then((resolved) => {
       if (!alive) return;
-      setSelectedImage((resolved as string) || PRESET_IMAGES[0].url);
+      setSelectedImage((resolved as string) || '');
     });
     return () => {
       alive = false;
@@ -120,12 +108,18 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
       setError('Please provide a title for the opportunity');
       return;
     }
+    if (submitting) return;
+    setError('');
+
+    const deadlineIso = new Date(
+      Date.now() + parseInt(deadlineDays || '7', 10) * 86_400_000
+    ).toISOString();
 
     const newOpp: Opportunity = {
       id: `opp-${Date.now().toString().slice(-4)}`,
@@ -136,7 +130,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
         label: `Closes in ${deadlineDays} days`,
         variant: 'countdown',
       },
-      location: `${venue} • ${city}`,
+      location: [venue, city].filter(Boolean).join(' • '),
       venue: venue,
       city: city,
       dateRange: buildDateRange(startDate, endDate, eventTime),
@@ -144,12 +138,19 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
       imageUrl: selectedImage,
       organizer: organizerName,
       description: description,
-      requirements: requirements.split('\n').filter(r => r.trim().length > 0),
+      requirements: [],
       applicantCount: 0,
       status: 'active',
+      deadline: deadlineIso,
     };
 
-    onPublish(newOpp);
+    setSubmitting(true);
+    const res = await onPublish(newOpp);
+    setSubmitting(false);
+    if (!res.ok) {
+      setError(res.error || 'Could not publish the call. Please try again.');
+      return;
+    }
     clearDraft(DRAFT_KEY);
   };
 
@@ -185,7 +186,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                 Publish a Curated Audition Call
               </h2>
               <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed mb-6">
-                Your open call will be broadcasted to over 12,400+ verified creators across 50 Indian cities.
+                Your call goes live instantly for every artist signed in to kalā — applications arrive with skills, experience and reels attached.
               </p>
 
               <div className="space-y-3.5">
@@ -214,20 +215,26 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-zinc-900">Verified Portfolios</h4>
-                    <p className="text-[11px] text-zinc-500">Every submission includes identity verification and performance history.</p>
+                    <h4 className="text-xs font-bold text-zinc-900">Complete Applications</h4>
+                    <p className="text-[11px] text-zinc-500">Every submission arrives with skills, experience, and portfolio links attached.</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Selected Image Preview Pill */}
-            <div className="relative rounded-2xl overflow-hidden aspect-[16/9] border border-[#EDE8E0] shadow-2xs mt-6">
-              <img src={selectedImage} alt="Selected preview" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/40 flex items-end p-3">
-                <span className="text-[11px] font-bold text-white">Call Cover Preview</span>
+            {selectedImage ? (
+              <div className="relative rounded-2xl overflow-hidden aspect-[16/9] border border-[#EDE8E0] shadow-2xs mt-6">
+                <img src={selectedImage} alt="Selected preview" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/40 flex items-end p-3">
+                  <span className="text-[11px] font-bold text-white">Call Cover Preview</span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="relative rounded-2xl overflow-hidden aspect-[16/9] border border-dashed border-[#DED6CA] shadow-2xs mt-6 flex items-center justify-center bg-white/60">
+                <span className="text-[11px] font-semibold text-zinc-400">No cover selected — upload one or pick a preset</span>
+              </div>
+            )}
           </div>
 
           {/* Right Form Column */}
@@ -415,7 +422,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                   folder="kala-opportunities"
                   value={selectedImage}
                   onChange={(url) => setSelectedImage(url)}
-                  onRemove={() => setSelectedImage(PRESET_IMAGES[0].url)}
+                  onRemove={() => setSelectedImage('')}
                 />
 
                 <div>
@@ -444,6 +451,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                   rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Describe the call: who you're looking for, the production, and what makes it worth applying for."
                   className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl p-3 text-xs text-zinc-900 outline-none focus:border-[#E45826]"
                 />
               </div>
@@ -452,10 +460,11 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
               <div className="pt-3">
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-full bg-[#E45826] hover:bg-[#D44716] text-white text-xs font-bold shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2"
+                  disabled={submitting}
+                  className="w-full py-3 rounded-full bg-[#E45826] hover:bg-[#D44716] disabled:opacity-60 text-white text-xs font-bold shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
                   <Sparkles className="w-4 h-4" />
-                  <span>Publish Call to 12,400+ Artists</span>
+                  <span>{submitting ? 'Publishing…' : 'Publish Call'}</span>
                 </button>
               </div>
             </form>

@@ -1,11 +1,19 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import { OrganiserStats } from '../types';
 
 interface OrganiserStatsCardProps {
+  stats: OrganiserStats;
   onPostCall: () => void;
 }
 
-export const OrganiserStatsCard: React.FC<OrganiserStatsCardProps> = ({ onPostCall }) => {
+export const OrganiserStatsCard: React.FC<OrganiserStatsCardProps> = ({ stats, onPostCall }) => {
+  const rows = [
+    { value: stats.activeListings.toLocaleString('en-IN'), label: 'Active Calls' },
+    { value: stats.totalApplicants.toLocaleString('en-IN'), label: 'Applicants Received' },
+    { value: stats.underReview.toLocaleString('en-IN'), label: 'Awaiting Your Review' },
+  ];
+
   return (
     <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FFF5EE] to-[#FCEEE3] p-6 sm:p-7 border border-[#F3E3D5] shadow-sm flex flex-col justify-between h-full">
       {/* Soft abstract background glow circle */}
@@ -17,32 +25,16 @@ export const OrganiserStatsCard: React.FC<OrganiserStatsCardProps> = ({ onPostCa
         </h3>
 
         <div className="space-y-5">
-          <div>
-            <div className="text-3xl sm:text-4xl font-extrabold text-[#E45826] tracking-tight">
-              12.4K+
+          {rows.map((row) => (
+            <div key={row.label}>
+              <div className="text-3xl sm:text-4xl font-extrabold text-[#E45826] tracking-tight">
+                {row.value}
+              </div>
+              <div className="text-xs sm:text-sm font-medium text-zinc-600 mt-0.5">
+                {row.label}
+              </div>
             </div>
-            <div className="text-xs sm:text-sm font-medium text-zinc-600 mt-0.5">
-              Verified Portfolios & Reels
-            </div>
-          </div>
-
-          <div>
-            <div className="text-3xl sm:text-4xl font-extrabold text-[#E45826] tracking-tight">
-              94%
-            </div>
-            <div className="text-xs sm:text-sm font-medium text-zinc-600 mt-0.5">
-              Audition Attendance Rate
-            </div>
-          </div>
-
-          <div>
-            <div className="text-3xl sm:text-4xl font-extrabold text-[#E45826] tracking-tight">
-              &lt; 48h
-            </div>
-            <div className="text-xs sm:text-sm font-medium text-zinc-600 mt-0.5">
-              Average Time to Shortlist
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 

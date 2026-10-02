@@ -6,6 +6,7 @@ import { Opportunity } from '../types';
 
 interface FeaturedOpportunitiesProps {
   opportunities: Opportunity[];
+  appliedIds: Set<string>;
   onApply: (opp: Opportunity) => void;
   onViewDetails: (opp: Opportunity) => void;
   onViewAll: () => void;
@@ -13,6 +14,7 @@ interface FeaturedOpportunitiesProps {
 
 export const FeaturedOpportunities: React.FC<FeaturedOpportunitiesProps> = ({
   opportunities,
+  appliedIds,
   onApply,
   onViewDetails,
   onViewAll,
@@ -59,6 +61,14 @@ export const FeaturedOpportunities: React.FC<FeaturedOpportunitiesProps> = ({
       </div>
 
       {/* Cards Grid */}
+      {opportunities.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-[#E0D7CB] bg-white p-8 text-center">
+          <p className="text-sm font-semibold text-zinc-700">No open calls yet</p>
+          <p className="text-xs text-zinc-500 mt-1">
+            Fresh opportunities will appear here as soon as organisers publish them.
+          </p>
+        </div>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {opportunities.slice(0, 3).map((opp) => (
           <motion.div
@@ -139,14 +149,20 @@ export const FeaturedOpportunities: React.FC<FeaturedOpportunitiesProps> = ({
               <button
                 id={`apply-btn-${opp.id}`}
                 onClick={() => onApply(opp)}
-                className="px-4 py-1.5 rounded-full bg-[#E45826] hover:bg-[#D44716] active:scale-95 text-white text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                disabled={appliedIds.has(opp.id)}
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold shadow-2xs transition-all ${
+                  appliedIds.has(opp.id)
+                    ? 'bg-zinc-100 text-zinc-500 border border-zinc-200 cursor-default'
+                    : 'bg-[#E45826] hover:bg-[#D44716] active:scale-95 text-white cursor-pointer'
+                }`}
               >
-                Apply Now
+                {appliedIds.has(opp.id) ? 'Applied' : 'Apply Now'}
               </button>
             </div>
           </motion.div>
         ))}
       </div>
+      )}
     </section>
   );
 };

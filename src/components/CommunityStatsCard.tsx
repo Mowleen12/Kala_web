@@ -1,11 +1,21 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import { PlatformStats } from '../types';
 
 interface CommunityStatsCardProps {
+  stats: PlatformStats | null;
   onJoin: () => void;
 }
 
-export const CommunityStatsCard: React.FC<CommunityStatsCardProps> = ({ onJoin }) => {
+const n = (value: number | undefined) => (value ?? 0).toLocaleString('en-IN');
+
+export const CommunityStatsCard: React.FC<CommunityStatsCardProps> = ({ stats, onJoin }) => {
+  const rows: { value: string; label: string }[] = [
+    { value: stats ? n(stats.artists) : '—', label: 'Artists & Creators' },
+    { value: stats ? n(stats.opportunities) : '—', label: 'Opportunities Listed' },
+    { value: stats ? n(stats.cities) : '—', label: 'Cities Across India' },
+  ];
+
   return (
     <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FFF5EE] to-[#FCEEE3] p-6 sm:p-7 border border-[#F3E3D5] shadow-sm flex flex-col justify-between h-full">
       {/* Soft abstract background glow circle */}
@@ -17,32 +27,16 @@ export const CommunityStatsCard: React.FC<CommunityStatsCardProps> = ({ onJoin }
         </h3>
 
         <div className="space-y-5">
-          <div>
-            <div className="text-3xl sm:text-4xl font-extrabold text-[#E45826] tracking-tight">
-              10K+
+          {rows.map((row) => (
+            <div key={row.label}>
+              <div className="text-3xl sm:text-4xl font-extrabold text-[#E45826] tracking-tight">
+                {row.value}
+              </div>
+              <div className="text-xs sm:text-sm font-medium text-zinc-600 mt-0.5">
+                {row.label}
+              </div>
             </div>
-            <div className="text-xs sm:text-sm font-medium text-zinc-600 mt-0.5">
-              Artists & Creators
-            </div>
-          </div>
-
-          <div>
-            <div className="text-3xl sm:text-4xl font-extrabold text-[#E45826] tracking-tight">
-              500+
-            </div>
-            <div className="text-xs sm:text-sm font-medium text-zinc-600 mt-0.5">
-              Opportunities Listed
-            </div>
-          </div>
-
-          <div>
-            <div className="text-3xl sm:text-4xl font-extrabold text-[#E45826] tracking-tight">
-              50+
-            </div>
-            <div className="text-xs sm:text-sm font-medium text-zinc-600 mt-0.5">
-              Cities Across India
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 

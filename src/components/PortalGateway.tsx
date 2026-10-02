@@ -85,7 +85,7 @@ export const PortalGateway: React.FC<PortalGatewayProps> = ({
               <div className="mt-6 space-y-3 pt-5 border-t border-zinc-100">
                 <div className="flex items-start gap-2.5 text-xs text-zinc-700">
                   <CheckCircle2 className="w-4 h-4 text-[#E45826] shrink-0 mt-0.5" />
-                  <span>Discover 450+ verified casting & audition calls across India</span>
+                  <span>Browse live audition calls and track every application you submit</span>
                 </div>
                 <div className="flex items-start gap-2.5 text-xs text-zinc-700">
                   <CheckCircle2 className="w-4 h-4 text-[#E45826] shrink-0 mt-0.5" />
@@ -180,7 +180,7 @@ export const PortalGateway: React.FC<PortalGatewayProps> = ({
                 </div>
                 <div className="flex items-start gap-2.5 text-xs text-zinc-700">
                   <CheckCircle2 className="w-4 h-4 text-[#E45826] shrink-0 mt-0.5" />
-                  <span>Direct talent scouting across 12,400+ vetted Indian creators</span>
+                  <span>Scout and message artists directly from your applicant pipeline</span>
                 </div>
               </div>
             </div>
@@ -275,7 +275,7 @@ export const PortalGateway: React.FC<PortalGatewayProps> = ({
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-[#E45826]" />
-            End-to-end credential isolation
+            Role-scoped artist &amp; organiser portals
           </span>
         </div>
       </footer>

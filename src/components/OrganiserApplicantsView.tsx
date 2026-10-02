@@ -32,6 +32,7 @@ interface OrganiserApplicantsViewProps {
   applicants: ApplicantReview[];
   opportunities: Opportunity[];
   onUpdateApplicantStatus: (applicantId: string, newStatus: ApplicantReview['status']) => void;
+  onRateApplicant: (applicantId: string, rating: number) => void;
   threads: Thread[];
   onOpenThread?: (opportunityId: string, artistId: string) => void;
   selectedOpportunityId?: string;
@@ -41,6 +42,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
   applicants,
   opportunities,
   onUpdateApplicantStatus,
+  onRateApplicant,
   threads,
   onOpenThread,
   selectedOpportunityId: initialOppId,
@@ -58,8 +60,6 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
 
   // Modal / Play state
   const [inspectApplicant, setInspectApplicant] = useState<ApplicantReview | null>(null);
-
-  const cityOptions = ['all', 'Mumbai', 'Bengaluru', 'Delhi', 'Pune', 'Chennai'];
 
   // Count active filters
   const activeFilterCount = [
@@ -95,31 +95,32 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
       const matchesSearch = 
         !searchQuery.trim() ||
         app.artistName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        app.artistRole.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (app.artistRole || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         app.skills.some(s => s.toLowerCase().includes(searchQuery.toLowerCase())) ||
         app.pitch.toLowerCase().includes(searchQuery.toLowerCase());
 
       // Experience filter
+      const exp = app.experienceYears ?? 0;
       let matchesExp = true;
       if (experienceFilter === 'emerging') {
-        matchesExp = app.experienceYears <= 3;
+        matchesExp = exp <= 3;
       } else if (experienceFilter === 'mid') {
-        matchesExp = app.experienceYears >= 4 && app.experienceYears <= 7;
+        matchesExp = exp >= 4 && exp <= 7;
       } else if (experienceFilter === 'senior') {
-        matchesExp = app.experienceYears >= 8;
+        matchesExp = exp >= 8;
       }
 
       // City filter
       const matchesCity = 
         cityFilter === 'all' || 
-        app.artistLocation.toLowerCase().includes(cityFilter.toLowerCase());
+        (app.artistLocation || '').toLowerCase().includes(cityFilter.toLowerCase());
 
       // Rating filter
       let matchesRating = true;
-      if (ratingFilter === '4.5') {
-        matchesRating = (app.rating || 0) >= 4.5;
-      } else if (ratingFilter === '4.8') {
-        matchesRating = (app.rating || 0) >= 4.8;
+      if (ratingFilter === '4') {
+        matchesRating = (app.rating || 0) >= 4;
+      } else if (ratingFilter === '5') {
+        matchesRating = (app.rating || 0) >= 5;
       }
 
       // Has reel
@@ -132,7 +133,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
     if (sortBy === 'rating') {
       list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
     } else if (sortBy === 'experience') {
-      list.sort((a, b) => b.experienceYears - a.experienceYears);
+      list.sort((a, b) => (b.experienceYears || 0) - (a.experienceYears || 0));
     }
 
     return list;
@@ -376,8 +377,8 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                 className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3 py-2 text-xs font-semibold text-zinc-800 outline-none focus:border-[#E45826]"
               >
                 <option value="all">All Ratings</option>
-                <option value="4.5">4.5+ Stars (Highly Rated)</option>
-                <option value="4.8">4.8+ Stars (Exceptional)</option>
+                <option value="4">4+ Stars (Recommended)</option>
+                <option value="5">5 Stars (Top Pick)</option>
               </select>
             </div>
           </div>
@@ -479,14 +480,23 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
       {filteredApplicants.length === 0 ? (
         <div className="bg-white rounded-3xl p-12 text-center border border-[#EDE8E0]">
           <Users className="w-10 h-10 text-zinc-300 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-zinc-800 mb-1">No applicants match your filter criteria</h3>
-          <p className="text-xs text-zinc-500 mb-4">Try clearing stage filters or search by another instrument/genre.</p>
-          <button
-            onClick={resetAllFilters}
-            className="px-5 py-2 rounded-full bg-[#E45826] text-white text-xs font-semibold cursor-pointer shadow-xs hover:bg-[#D44716]"
-          >
-            Clear All Filters
-          </button>
+          {applicants.length === 0 ? (
+            <>
+              <h3 className="text-base font-bold text-zinc-800 mb-1">No applicants yet</h3>
+              <p className="text-xs text-zinc-500 mb-4">Applications to your calls will show up here for review.</p>
+            </>
+          ) : (
+            <>
+              <h3 className="text-base font-bold text-zinc-800 mb-1">No applicants match your filter criteria</h3>
+              <p className="text-xs text-zinc-500 mb-4">Try clearing stage filters or search by another instrument/genre.</p>
+              <button
+                onClick={resetAllFilters}
+                className="px-5 py-2 rounded-full bg-[#E45826] text-white text-xs font-semibold cursor-pointer shadow-xs hover:bg-[#D44716]"
+              >
+                Clear All Filters
+              </button>
+            </>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -506,27 +516,46 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                 {/* Header */}
                 <div className="flex items-start justify-between gap-3 mb-4">
                   <div className="flex items-start gap-3.5">
-                    <img
-                      src={app.artistAvatar}
-                      alt={app.artistName}
-                      className="w-14 h-14 rounded-2xl object-cover ring-2 ring-[#FCEEE3] shrink-0"
-                    />
+                    {app.artistAvatar ? (
+                      <img
+                        src={app.artistAvatar}
+                        alt={app.artistName}
+                        className="w-14 h-14 rounded-2xl object-cover ring-2 ring-[#FCEEE3] shrink-0"
+                      />
+                    ) : (
+                      <span className="w-14 h-14 rounded-2xl bg-[#FDEEE7] text-[#E45826] text-xl font-extrabold flex items-center justify-center ring-2 ring-[#FCEEE3] shrink-0">
+                        {app.artistName.charAt(0).toUpperCase()}
+                      </span>
+                    )}
                     <div>
                       <h3 className="text-base font-bold text-zinc-900 flex items-center gap-1.5">
                         {app.artistName}
-                        {app.rating && (
-                          <span className="flex items-center gap-0.5 text-xs font-bold text-amber-500 ml-1">
-                            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                            {app.rating}
-                          </span>
-                        )}
                       </h3>
+                      <div className="flex items-center gap-0.5 mt-0.5" title={app.rating ? `Rated ${app.rating}/5` : 'Rate this applicant'}>
+                        {[1, 2, 3, 4, 5].map((v) => (
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => onRateApplicant(app.id, v)}
+                            className="cursor-pointer hover:scale-110 transition-transform"
+                            title={`Rate ${v} star${v > 1 ? 's' : ''}`}
+                          >
+                            <Star className={`w-3.5 h-3.5 ${app.rating && app.rating >= v ? 'fill-amber-400 text-amber-400' : 'text-zinc-300'}`} />
+                          </button>
+                        ))}
+                        {app.rating ? (
+                          <span className="text-xs font-bold text-amber-500 ml-1">{app.rating}</span>
+                        ) : (
+                          <span className="text-[11px] text-zinc-400 ml-1">Unrated</span>
+                        )}
+                      </div>
                       <p className="text-xs font-medium text-zinc-600 mt-0.5">
-                        {app.artistRole} • {app.experienceYears} yrs exp
+                        {app.artistRole || 'Artist'}
+                        {app.experienceYears != null && ` • ${app.experienceYears} yrs exp`}
                       </p>
                       <p className="text-xs text-zinc-400 flex items-center gap-1 mt-0.5">
                         <MapPin className="w-3 h-3" />
-                        {app.artistLocation}
+                        {app.artistLocation || 'Location not specified'}
                       </p>
                     </div>
                   </div>

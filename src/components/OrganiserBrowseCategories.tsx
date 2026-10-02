@@ -14,12 +14,16 @@ import { KalaStar } from './KalaLogo';
 
 interface OrganiserBrowseCategoriesProps {
   selectedCategory?: string;
+  counts: Record<string, number>;
+  applicantCounts: Record<string, number>;
   onSelectCategory: (categoryName: string) => void;
   onViewAll: () => void;
 }
 
 export const OrganiserBrowseCategories: React.FC<OrganiserBrowseCategoriesProps> = ({
   selectedCategory,
+  counts,
+  applicantCounts,
   onSelectCategory,
   onViewAll,
 }) => {
@@ -27,8 +31,6 @@ export const OrganiserBrowseCategories: React.FC<OrganiserBrowseCategoriesProps>
     {
       id: 'music-dance',
       name: 'Music & Dance',
-      count: 14,
-      applicants: 184,
       icon: Music,
       desc: 'Orchestras, Classical Recitals & Contemporary Dance',
       color: 'from-orange-500/10 to-amber-500/10 border-orange-200 text-[#E45826]',
@@ -37,8 +39,6 @@ export const OrganiserBrowseCategories: React.FC<OrganiserBrowseCategoriesProps>
     {
       id: 'theatre-drama',
       name: 'Theatre & Performance',
-      count: 8,
-      applicants: 96,
       icon: Theater,
       desc: 'Experimental Plays, Solos & Regional Dramas',
       color: 'from-orange-500/15 to-[#E45826]/10 border-orange-200 text-[#C73E0E]',
@@ -47,8 +47,6 @@ export const OrganiserBrowseCategories: React.FC<OrganiserBrowseCategoriesProps>
     {
       id: 'visual-installations',
       name: 'Visual Arts',
-      count: 6,
-      applicants: 72,
       icon: Palette,
       desc: 'Gallery Exhibitions, Murals & Sculptures',
       color: 'from-rose-500/10 to-orange-500/10 border-rose-200 text-rose-700',
@@ -57,8 +55,6 @@ export const OrganiserBrowseCategories: React.FC<OrganiserBrowseCategoriesProps>
     {
       id: 'film-multimedia',
       name: 'Film & Photography',
-      count: 5,
-      applicants: 58,
       icon: Camera,
       desc: 'Documentaries, Live Projections & Scoring',
       color: 'from-purple-500/10 to-pink-500/10 border-purple-200 text-purple-700',
@@ -67,8 +63,6 @@ export const OrganiserBrowseCategories: React.FC<OrganiserBrowseCategoriesProps>
     {
       id: 'heritage-craft',
       name: 'Writing & Content',
-      count: 4,
-      applicants: 42,
       icon: Layers,
       desc: 'Playwriting, Librettos & Cultural Journalism',
       color: 'from-emerald-500/10 to-teal-500/10 border-emerald-200 text-emerald-700',
@@ -77,8 +71,6 @@ export const OrganiserBrowseCategories: React.FC<OrganiserBrowseCategoriesProps>
     {
       id: 'design-scenography',
       name: 'Design & Fashion',
-      count: 7,
-      applicants: 64,
       icon: Sparkles,
       desc: 'Stage Scenography, Costume & Spatial Design',
       color: 'from-blue-500/10 to-cyan-500/10 border-blue-200 text-blue-700',
@@ -116,6 +108,8 @@ export const OrganiserBrowseCategories: React.FC<OrganiserBrowseCategoriesProps>
         {departments.map((dept) => {
           const IconComponent = dept.icon;
           const isSelected = selectedCategory === dept.name;
+          const count = counts[dept.name] || 0;
+          const applicants = applicantCounts[dept.name] || 0;
 
           return (
             <div
@@ -133,7 +127,7 @@ export const OrganiserBrowseCategories: React.FC<OrganiserBrowseCategoriesProps>
                     <IconComponent className="w-5 h-5" />
                   </div>
                   <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${dept.badgeBg}`}>
-                    {dept.count} Active Calls
+                    {count} Active Call{count === 1 ? '' : 's'}
                   </span>
                 </div>
 
@@ -148,7 +142,7 @@ export const OrganiserBrowseCategories: React.FC<OrganiserBrowseCategoriesProps>
               <div className="pt-3 mt-3 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold">
                 <span className="text-zinc-500 flex items-center gap-1">
                   <Users className="w-3.5 h-3.5 text-[#E45826]" />
-                  {dept.applicants} Applicants
+                  {applicants} Applicant{applicants === 1 ? '' : 's'}
                 </span>
                 <span className="text-[#E45826] group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
                   Filter <ArrowRight className="w-3.5 h-3.5" />

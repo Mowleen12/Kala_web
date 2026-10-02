@@ -1,136 +1,10 @@
-import { Opportunity, Category, Application, UserStats, OrganiserProfile, OrganiserStats, ApplicantReview } from '../types';
+import { Category } from '../types';
 
-export const INITIAL_USER_STATS: UserStats = {
-  applications: 2,
-  interviews: 1,
-  selected: 0,
-  rejected: 0,
-  profileCompletion: 82,
-};
-
-export const FEATURED_OPPORTUNITIES: Opportunity[] = [
-  {
-    id: 'opp-1',
-    title: 'National Creative Fest 2026',
-    category: 'Music & Dance',
-    categorySlug: 'music-dance',
-    statusBadge: {
-      label: 'Closes in 4 days',
-      variant: 'countdown',
-    },
-    location: 'NCPA, Auditorium, Nariman Point • Mumbai, Maharashtra',
-    venue: 'NCPA, Auditorium, Nariman Point',
-    city: 'Mumbai, Maharashtra',
-    dateRange: '29 Sep – 1 Oct',
-    compensation: '₹2,000 – ₹10,000',
-    // High performance concert lighting stage image
-    imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=700&q=80',
-    featured: true,
-    organizer: 'National Creative Council of India',
-    description: 'Looking for emerging vocalists, instrumentalists, and contemporary dance troupes to headline regional breakout stages at the National Creative Fest.',
-    requirements: ['Original portfolio or reel (2-5 mins)', 'Available for live rehearsal on 28 Sep', 'Open to artists aged 18-35'],
-  },
-  {
-    id: 'opp-2',
-    title: 'Short Film Festival – India',
-    category: 'Film & Photography',
-    categorySlug: 'film-photography',
-    statusBadge: {
-      label: 'Open',
-      variant: 'open',
-    },
-    location: 'Tata Theatre, NCPA • Mumbai, Maharashtra',
-    venue: 'Tata Theatre, NCPA',
-    city: 'Mumbai, Maharashtra',
-    dateRange: '15 Oct – 17 Oct',
-    compensation: '₹5,000 – ₹20,000',
-    // High performance cinema camera filmmaker on set image
-    imageUrl: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=700&q=80',
-    featured: true,
-    organizer: 'Indie Cinema Collective',
-    description: 'Annual showcase of visionary short cinema. Official selection grants production completion stipends, distributor screenings, and jury mentorship.',
-    requirements: ['Short film screener link (max 25 mins)', 'Director treatment notes', 'English subtitles enabled'],
-  },
-  {
-    id: 'opp-3',
-    title: 'Young Artists Residency',
-    category: 'Visual Arts',
-    categorySlug: 'visual-arts',
-    statusBadge: {
-      label: 'Open',
-      variant: 'open',
-    },
-    location: 'Kochi Biennale Foundation • Kochi, Kerala',
-    venue: 'Kochi Biennale Foundation',
-    city: 'Kochi, Kerala',
-    dateRange: '1 Nov – 30 Nov',
-    compensation: '₹10,000 + stipend',
-    // High performance artist painting with studio canvas image
-    imageUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=700&q=80',
-    featured: true,
-    organizer: 'Kochi Biennale Studio Program',
-    description: 'A 4-week immersive creative residency including dedicated studio space, masterclasses with international curators, living stipend, and final group gallery exhibit.',
-    requirements: ['5-10 artwork portfolio images', 'Residency proposal note (300 words)', 'Commitment for full month in Kochi'],
-  },
-  {
-    id: 'opp-4',
-    title: 'Contemporary Street Theatre Auditions',
-    category: 'Theatre & Performance',
-    categorySlug: 'theatre-performance',
-    statusBadge: {
-      label: 'Open',
-      variant: 'open',
-    },
-    location: 'Prithvi Theatre • Mumbai, Maharashtra',
-    venue: 'Prithvi Theatre',
-    city: 'Mumbai, Maharashtra',
-    dateRange: '5 Nov – 12 Nov',
-    compensation: '₹15,000 per show run',
-    imageUrl: 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?auto=format&fit=crop&w=700&q=80',
-    organizer: 'Prithvi Workshop Guild',
-    description: 'Auditions for physical theatre actors and spoken word storytellers for a new Hindi-English bilingual touring ensemble.',
-    requirements: ['Physical acting monologue (3 mins)', 'Comfortable with improvisational staging'],
-  },
-  {
-    id: 'opp-5',
-    title: 'Indian Indie Record Label Demo Call',
-    category: 'Music & Dance',
-    categorySlug: 'music-dance',
-    statusBadge: {
-      label: 'Closes in 6 days',
-      variant: 'countdown',
-    },
-    location: 'Offbeat Studios • Bengaluru, Karnataka',
-    venue: 'Offbeat Studios',
-    city: 'Bengaluru, Karnataka',
-    dateRange: '20 Oct – 25 Oct',
-    compensation: '₹25,000 advance + royalties',
-    imageUrl: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=700&q=80',
-    organizer: 'Awaaz Music Label',
-    description: 'Open demo submission call for indie songwriters, electronic producers, and acoustic folk fusion artists looking for album production and distribution.',
-    requirements: ['1-3 unreleased audio demos', 'Artist bio & previous streaming links'],
-  },
-  {
-    id: 'opp-6',
-    title: 'Sustainable Textile & Wearable Design Fellowship',
-    category: 'Design & Fashion',
-    categorySlug: 'design-fashion',
-    statusBadge: {
-      label: 'Open',
-      variant: 'open',
-    },
-    location: 'NID Campus • Ahmedabad, Gujarat',
-    venue: 'National Institute of Design',
-    city: 'Ahmedabad, Gujarat',
-    dateRange: '15 Nov – 15 Dec',
-    compensation: '₹30,000 fellowship grant',
-    imageUrl: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=700&q=80',
-    organizer: 'Heritage & Craft Design Lab',
-    description: 'A prestigious fellowship matching contemporary garment and textile designers with indigenous master weavers across western India.',
-    requirements: ['Design portfolio (PDF)', 'Material sustainability statement'],
-  }
-];
-
+/**
+ * Static display configuration only — category tiles (name, icon, palette).
+ * No demo opportunities, applications, users or stats live here: every count
+ * and listing shown in the app is derived from Supabase.
+ */
 export const CATEGORIES: Category[] = [
   {
     id: 'cat-1',
@@ -138,7 +12,6 @@ export const CATEGORIES: Category[] = [
     icon: 'Music2',
     bgColor: 'bg-[#FFF3EC]',
     iconColor: 'text-[#E45826]',
-    opportunityCount: 142,
   },
   {
     id: 'cat-2',
@@ -146,7 +19,6 @@ export const CATEGORIES: Category[] = [
     icon: 'Camera',
     bgColor: 'bg-[#F5EFFB]',
     iconColor: 'text-[#8B5CF6]',
-    opportunityCount: 98,
   },
   {
     id: 'cat-3',
@@ -154,7 +26,6 @@ export const CATEGORIES: Category[] = [
     icon: 'Palette',
     bgColor: 'bg-[#EFFBF2]',
     iconColor: 'text-[#10B981]',
-    opportunityCount: 84,
   },
   {
     id: 'cat-4',
@@ -162,7 +33,6 @@ export const CATEGORIES: Category[] = [
     icon: 'Drama',
     bgColor: 'bg-[#FFF9EC]',
     iconColor: 'text-[#F59E0B]',
-    opportunityCount: 65,
   },
   {
     id: 'cat-5',
@@ -170,7 +40,6 @@ export const CATEGORIES: Category[] = [
     icon: 'Feather',
     bgColor: 'bg-[#EFF6FE]',
     iconColor: 'text-[#3B82F6]',
-    opportunityCount: 52,
   },
   {
     id: 'cat-6',
@@ -178,217 +47,5 @@ export const CATEGORIES: Category[] = [
     icon: 'Sparkles',
     bgColor: 'bg-[#F9EFFE]',
     iconColor: 'text-[#D946EF]',
-    opportunityCount: 77,
   },
-];
-
-export const INITIAL_APPLICATIONS: Application[] = [
-  {
-    id: 'app-1',
-    opportunityId: 'opp-1',
-    artistId: 'user-mowleen',
-    opportunityTitle: 'National Creative Fest 2026',
-    category: 'Music & Dance',
-    location: 'NCPA • Mumbai',
-    appliedDate: '12 Sep 2026',
-    status: 'interview',
-    compensation: '₹2,000 – ₹10,000',
-  },
-  {
-    id: 'app-2',
-    opportunityId: 'opp-2',
-    artistId: 'user-mowleen',
-    opportunityTitle: 'Short Film Festival – India',
-    category: 'Film & Photography',
-    location: 'Tata Theatre • Mumbai',
-    appliedDate: '16 Sep 2026',
-    status: 'submitted',
-    compensation: '₹5,000 – ₹20,000',
-  }
-];
-
-export const NOTIFICATIONS = [
-  {
-    id: 'notif-1',
-    title: 'Interview Scheduled',
-    message: 'National Creative Fest 2026 committee reviewed your portfolio and invited you for a virtual soundcheck.',
-    time: '2 hours ago',
-    unread: true,
-  },
-  {
-    id: 'notif-2',
-    title: 'Application Received',
-    message: 'Short Film Festival – India acknowledged receipt of your directorial treatment.',
-    time: 'Yesterday',
-    unread: false,
-  },
-  {
-    id: 'notif-3',
-    title: 'New Opportunity in Visual Arts',
-    message: 'Young Artists Residency opened applications for November 2026.',
-    time: '2 days ago',
-    unread: false,
-  }
-];
-
-export const INITIAL_ORGANISER_STATS: OrganiserStats = {
-  activeListings: 3,
-  totalApplicants: 48,
-  underReview: 19,
-  interviewScheduled: 6,
-  selectedArtists: 3,
-};
-
-export const INITIAL_ORGANISER_PROFILE: OrganiserProfile = {
-  id: 'org-ncpa',
-  name: 'National Centre for the Performing Arts (NCPA)',
-  handle: '@ncpamumbai',
-  tagline: "India's premier cultural destination dedicated to preserving and promoting classical, traditional and contemporary music, dance, and theatre.",
-  logo: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=200&q=80',
-  coverImage: 'https://images.unsplash.com/photo-1469488865564-c2de10f69f96?auto=format&fit=crop&w=1200&q=80',
-  city: 'Mumbai',
-  state: 'Maharashtra',
-  verified: true,
-  establishedYear: 1969,
-  totalEventsHosted: 1420,
-  about: "The National Centre for the Performing Arts (NCPA), Mumbai, is India's first multi-venue, multi-genre cultural centre. Over five decades, it has hosted the finest creative minds from around the world and continues to pioneer open access residency fellowships and youth performance commissions.",
-  focusDisciplines: ['Music & Dance', 'Theatre & Performance', 'Film & Photography', 'Literature & Spoken Word'],
-};
-
-export const INITIAL_APPLICANT_REVIEWS: ApplicantReview[] = [
-  {
-    id: 'rev-1',
-    opportunityId: 'opp-1',
-    opportunityTitle: 'National Creative Fest 2026',
-    artistId: 'user-mowleen',
-    artistName: 'Mowleen',
-    artistAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=240&q=80',
-    artistRole: 'Vocal Performance & Sound Production',
-    artistLocation: 'Mumbai, Maharashtra',
-    appliedDate: '12 Sep 2026',
-    experienceYears: 4,
-    skills: ['Vocal Performance', 'Acoustic Guitar', 'Music Production', 'Sound Design'],
-    pitch: "I blend traditional Indian acoustic arrangements with indie ambient soundscapes. I have prepared a 4-piece stage set with live acoustic guitar and vocal loops tailored for the NCPA Auditorium.",
-    reelUrl: 'https://soundcloud.com/mowleen/acoustic-session-preview',
-    portfolioUrl: 'https://kala.art/mowleen',
-    status: 'interview',
-    rating: 5,
-  },
-  {
-    id: 'rev-2',
-    opportunityId: 'opp-1',
-    opportunityTitle: 'National Creative Fest 2026',
-    artistName: 'Aisha Sharma',
-    artistAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=240&q=80',
-    artistRole: 'Contemporary Kathak Ensemble Lead',
-    artistLocation: 'Pune, Maharashtra',
-    appliedDate: '14 Sep 2026',
-    experienceYears: 6,
-    skills: ['Kathak Classical', 'Contemporary Choreography', 'Stage Lighting Design'],
-    pitch: "We explore the dialogue between Sufi poetry and classical footwork. Our ensemble of 5 dancers has previously performed at Serendipity Arts Festival.",
-    reelUrl: 'https://youtube.com/watch?v=demo-kathak',
-    portfolioUrl: 'https://kala.art/aishasharma',
-    status: 'under_review',
-    rating: 4,
-  },
-  {
-    id: 'rev-3',
-    opportunityId: 'opp-2',
-    opportunityTitle: 'Short Film Festival – India',
-    artistName: 'Rohan Verma',
-    artistAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=240&q=80',
-    artistRole: 'Independent Director & Cinematographer',
-    artistLocation: 'Bengaluru, Karnataka',
-    appliedDate: '15 Sep 2026',
-    experienceYears: 3,
-    skills: ['Directing', 'Arri Alexa Cinematography', 'Color Grading', 'DaVinci Resolve'],
-    pitch: "'The Salt Harvest' is a 18-minute narrative short shot entirely on 16mm film examining generational coastal folklore. Looking for festival premiere and distributor engagement.",
-    reelUrl: 'https://vimeo.com/71239821',
-    portfolioUrl: 'https://kala.art/rohanverma',
-    status: 'selected',
-    rating: 5,
-  },
-  {
-    id: 'rev-4',
-    opportunityId: 'opp-3',
-    opportunityTitle: 'Young Artists Residency',
-    artistName: 'Priya Nair',
-    artistAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=240&q=80',
-    artistRole: 'Mixed Media & Natural Pigment Artist',
-    artistLocation: 'Kochi, Kerala',
-    appliedDate: '17 Sep 2026',
-    experienceYears: 5,
-    skills: ['Oil on Canvas', 'Natural Pigments', 'Sculptural Installation', 'Curatorial Research'],
-    pitch: "My practice investigates indigenous plant dyes and tidal erosion along the Malabar coast. The Kochi residency will allow me to build large-scale canvas installations using locally harvested river silt.",
-    portfolioUrl: 'https://kala.art/priyanair',
-    status: 'under_review',
-    rating: 4,
-  },
-  {
-    id: 'rev-5',
-    opportunityId: 'opp-1',
-    opportunityTitle: 'National Creative Fest 2026',
-    artistName: 'Kabir Sen',
-    artistAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=240&q=80',
-    artistRole: 'Spoken Word Poet & Physical Actor',
-    artistLocation: 'New Delhi',
-    appliedDate: '18 Sep 2026',
-    experienceYears: 4,
-    skills: ['Spoken Word', 'Physical Theatre', 'Hindi-Urdu Monologue', 'Voice Modulation'],
-    pitch: "Performed at over 40 nationwide slams. My new 15-minute piece 'Shahjahanabad' addresses rapid urban displacement through rhythmic poetry and physical movement.",
-    portfolioUrl: 'https://kala.art/kabirsen',
-    status: 'interview',
-    rating: 5,
-  }
-];
-
-export const TALENT_POOL = [
-  {
-    id: 'artist-1',
-    name: 'Ananya Rao',
-    role: 'Carnatic Vocalist & Violinist',
-    location: 'Chennai, Tamil Nadu',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=240&q=80',
-    followers: '14.2K',
-    tags: ['Carnatic', 'Electric Violin', 'Fusion Composition'],
-    rating: 4.9,
-    bio: 'Bridging South Indian ragas with contemporary ambient synthscapes.',
-    verified: true,
-  },
-  {
-    id: 'artist-2',
-    name: 'Dev Malik',
-    role: 'Sound Designer & Foley Artist',
-    location: 'Mumbai, Maharashtra',
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=240&q=80',
-    followers: '9.8K',
-    tags: ['Sound Design', 'Dolby Atmos', 'Game Audio', 'Modular Synth'],
-    rating: 4.8,
-    bio: 'Crafting immersive acoustic environments for indie films and interactive media.',
-    verified: true,
-  },
-  {
-    id: 'artist-3',
-    name: 'Meera Deshmukh',
-    role: 'Textile Sculptor & Visual Artist',
-    location: 'Ahmedabad, Gujarat',
-    avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=240&q=80',
-    followers: '18.5K',
-    tags: ['Weaving', 'Botanical Dyes', 'Fiber Art'],
-    rating: 5.0,
-    bio: 'Exploring traditional Gujarati weaving techniques transformed into 3D suspended gallery installations.',
-    verified: true,
-  },
-  {
-    id: 'artist-4',
-    name: 'Tenzin Norbu',
-    role: 'Documentary Filmmaker & Drone Pilot',
-    location: 'Dharamshala, Himachal Pradesh',
-    avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=240&q=80',
-    followers: '11.3K',
-    tags: ['High-Altitude Cinematography', 'Editing', 'Wildlife'],
-    rating: 4.9,
-    bio: 'Documenting Himalayan ecologies and high-altitude pastoralist traditions on 4K cinema cameras.',
-    verified: true,
-  }
 ];

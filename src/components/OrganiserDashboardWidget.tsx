@@ -64,14 +64,11 @@ export const OrganiserDashboardWidget: React.FC<OrganiserDashboardWidgetProps> =
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <h4 className="text-sm font-bold text-zinc-900 truncate group-hover:text-[#E45826] transition-colors">
-                NCPA Mumbai
+                {profile.name || 'Your venue'}
               </h4>
-              {profile.verified && (
-                <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0 fill-blue-50" />
-              )}
             </div>
             <p className="text-xs text-zinc-500 truncate mt-0.5">
-              Cultural Institution • Nariman Point
+              {[profile.tagline || 'Venue', profile.city].filter(Boolean).join(' • ')}
             </p>
           </div>
         </div>
@@ -193,7 +190,7 @@ export const OrganiserDashboardWidget: React.FC<OrganiserDashboardWidgetProps> =
             onClick={onScoutTalent}
             className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[#E45826] hover:text-[#C73E0E] transition-colors cursor-pointer"
           >
-            <span>Browse 12,400+ artists</span>
+            <span>Scout talent for your next call</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>

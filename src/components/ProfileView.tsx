@@ -21,6 +21,7 @@ import { KalaStar } from './KalaLogo';
 import { MediaUploader } from './MediaUploader';
 import { MediaPreview } from './MediaPreview';
 import { getDraft, setDraft } from '../lib/drafts';
+import { computeProfileCompletion, ProfileFields } from '../lib/profile';
 
 export interface ProfileMedia {
   avatar?: string;
@@ -37,6 +38,7 @@ interface ProfileText {
 interface ProfileViewProps {
   completion: number;
   onUpdateCompletion: (newVal: number) => void;
+  profileKey: string;
   userName?: string;
   userEmail?: string;
   avatarUrl?: string;
@@ -45,49 +47,50 @@ interface ProfileViewProps {
   onProfileTextSaved?: (name: string) => void;
 }
 
-const DEFAULT_GALLERY = [
-  'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?auto=format&fit=crop&w=600&q=80'
-];
-
-const DEFAULT_SKILLS = [
-  'Vocal Performance',
-  'Acoustic Guitar',
-  'Music Production',
-  'Sound Design',
-  'Audio Mixing',
-  'Songwriting'
-];
-
-const DEFAULT_BIO =
-  'Emerging multidisciplinary artist & music producer based in Mumbai. Crafting sonic landscapes bridging traditional Indian acoustic instruments with contemporary indie textures.';
-
 export const ProfileView: React.FC<ProfileViewProps> = ({
   completion,
   onUpdateCompletion,
-  userName = "Mowleen Mukherjee",
-  userEmail = "mowleen2006@gmail.com",
-  avatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=240&q=80",
+  profileKey,
+  userName = '',
+  userEmail = '',
+  avatarUrl = '',
   profileMedia,
   onProfileMediaChange,
   onProfileTextSaved,
 }) => {
-  const profileTextKey = `kala_profile_text_${userEmail}`;
+  const profileTextDraftKey = `kala_profile_text_${profileKey}`;
+  const skillsKey = `kala_skills_${profileKey}`;
   const currentAvatar = profileMedia?.avatar || avatarUrl;
   const reelUrl = profileMedia?.reel || '';
-  const galleryImages = profileMedia?.gallery || DEFAULT_GALLERY;
+  const galleryImages = profileMedia?.gallery || [];
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
   const [newGalleryImage, setNewGalleryImage] = useState('');
   const [showAddGallery, setShowAddGallery] = useState(false);
 
+  // Completion is always recomputed from what actually exists — never +9 or
+  // a hardcoded 100.
+  const recomputeCompletion = (over: Partial<ProfileFields> = {}) => {
+    const fields: ProfileFields = {
+      name: displayName,
+      location,
+      bio,
+      skills,
+      avatar: currentAvatar,
+      reel: reelUrl,
+      gallery: galleryImages,
+      ...over,
+    };
+    onUpdateCompletion(computeProfileCompletion(fields));
+  };
+
   const [displayName, setDisplayName] = useState<string>(
-    () => getDraft<ProfileText>(`kala_profile_text_${userEmail}`)?.name || userName
+    () => getDraft<ProfileText>(profileTextDraftKey)?.name || userName || 'Your name'
   );
   const [location, setLocation] = useState<string>(
-    () => getDraft<ProfileText>(`kala_profile_text_${userEmail}`)?.location || 'Mumbai, Maharashtra'
+    () => getDraft<ProfileText>(profileTextDraftKey)?.location || ''
   );
   const [bio, setBio] = useState<string>(
-    () => getDraft<ProfileText>(`kala_profile_text_${userEmail}`)?.bio || DEFAULT_BIO
+    () => getDraft<ProfileText>(profileTextDraftKey)?.bio || ''
   );
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -113,14 +116,19 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     setDisplayName(name);
     setLocation(next.location || location);
     setBio(next.bio || bio);
-    setDraft(profileTextKey, next);
+    setDraft(profileTextDraftKey, next);
     setIsEditingProfile(false);
+    recomputeCompletion({
+      name,
+      location: next.location || location,
+      bio: next.bio || bio,
+    });
     onProfileTextSaved?.(name);
   };
 
   const [skills, setSkills] = useState<string[]>(() => {
-    const stored = getDraft<string[]>(`kala_skills_${userEmail}`);
-    return stored && stored.length > 0 ? stored : DEFAULT_SKILLS;
+    const stored = getDraft<string[]>(skillsKey);
+    return stored && stored.length > 0 ? stored : [];
   });
   const [newSkill, setNewSkill] = useState('');
 
@@ -128,26 +136,24 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     if (newSkill.trim() && !skills.includes(newSkill.trim())) {
       const next = [...skills, newSkill.trim()];
       setSkills(next);
-      setDraft(`kala_skills_${userEmail}`, next);
+      setDraft(skillsKey, next);
       setNewSkill('');
-      if (completion < 100) {
-        onUpdateCompletion(Math.min(100, completion + 9));
-      }
+      recomputeCompletion({ skills: next });
     }
   };
 
   const handleReelUploaded = (url: string) => {
     onProfileMediaChange?.({ reel: url });
-    if (completion < 100) {
-      onUpdateCompletion(100);
-    }
+    recomputeCompletion({ reel: url });
   };
 
   const handleAddGalleryImage = (url: string) => {
     if (url) {
-      onProfileMediaChange?.({ gallery: [url, ...galleryImages] });
+      const next = [url, ...galleryImages];
+      onProfileMediaChange?.({ gallery: next });
       setShowAddGallery(false);
       setNewGalleryImage('');
+      recomputeCompletion({ gallery: next });
     }
   };
 
@@ -158,11 +164,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
             <div className="relative group">
-              <img
-                src={currentAvatar}
-                alt="Profile Avatar"
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover ring-4 ring-[#FDEEE7]"
-              />
+              {currentAvatar ? (
+                <img
+                  src={currentAvatar}
+                  alt="Profile Avatar"
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover ring-4 ring-[#FDEEE7]"
+                />
+              ) : (
+                <span className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#FDEEE7] text-[#E45826] text-3xl font-extrabold flex items-center justify-center ring-4 ring-[#FDEEE7]">
+                  {(displayName || '?').charAt(0).toUpperCase()}
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => setIsEditingAvatar(!isEditingAvatar)}
@@ -171,7 +183,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               >
                 <Camera className="w-5 h-5" />
               </button>
-              <span className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-emerald-500 ring-2 ring-white" />
             </div>
 
             <div className="min-w-0">
@@ -202,7 +213,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                       className="w-44 bg-[#FAF8F5] border border-[#E5E0D6] rounded-lg px-2 py-1 text-xs outline-none focus:border-[#E45826]"
                     />
                   ) : (
-                    location
+                    location || 'Location not set'
                   )}
                 </span>
                 <span>•</span>
@@ -270,6 +281,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               value={currentAvatar}
               onChange={(url) => {
                 onProfileMediaChange?.({ avatar: url });
+                recomputeCompletion({ avatar: url });
                 setIsEditingAvatar(false);
               }}
             />
@@ -292,7 +304,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             />
           ) : (
             <p className="text-xs sm:text-sm text-zinc-700 leading-relaxed max-w-3xl">
-              {bio}
+              {bio || 'No artist statement yet — add one in Edit Profile.'}
             </p>
           )}
         </div>
@@ -319,7 +331,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           resourceType="video"
           value={reelUrl}
           onChange={handleReelUploaded}
-          onRemove={() => onProfileMediaChange?.({ reel: '' })}
+          onRemove={() => {
+            onProfileMediaChange?.({ reel: '' });
+            recomputeCompletion({ reel: '' });
+          }}
         />
       </div>
 
@@ -357,6 +372,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         )}
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {galleryImages.length === 0 && (
+            <p className="col-span-2 sm:col-span-3 text-xs text-zinc-400 text-center py-6 border border-dashed border-zinc-200 rounded-2xl">
+              No work added yet — upload stage stills to build your visual portfolio.
+            </p>
+          )}
           {galleryImages.map((imgUrl, idx) => (
             <div key={idx} className="relative aspect-4/3 rounded-2xl overflow-hidden border border-[#EDE7DE] group bg-zinc-100">
               <MediaPreview
@@ -377,6 +397,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </h3>
 
         <div className="flex flex-wrap gap-2 mb-4">
+          {skills.length === 0 && (
+            <p className="text-xs text-zinc-400">No skills listed yet — add your first one below.</p>
+          )}
           {skills.map((skill) => (
             <motion.span
               key={skill}

@@ -6,6 +6,7 @@ import { Opportunity } from '../types';
 interface OpportunityDetailModalProps {
   opportunity: Opportunity | null;
   isOpen: boolean;
+  isApplied: boolean;
   onClose: () => void;
   onApply: (opp: Opportunity) => void;
 }
@@ -13,6 +14,7 @@ interface OpportunityDetailModalProps {
 export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
   opportunity,
   isOpen,
+  isApplied,
   onClose,
   onApply,
 }) => {
@@ -85,7 +87,7 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
           <div>
             <h4 className="text-sm font-bold text-zinc-900 mb-2">About this opportunity</h4>
             <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
-              {opportunity.description || "Join fellow creative peers and showcase your work to nationwide curators and industry veterans."}
+              {opportunity.description || 'No description has been provided for this call yet.'}
             </p>
           </div>
 
@@ -132,16 +134,22 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
             >
               Back
             </button>
-            <button
-              onClick={() => {
-                onClose();
-                onApply(opportunity);
-              }}
-              className="px-6 py-2.5 rounded-full bg-[#E45826] hover:bg-[#D44716] active:scale-95 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer flex items-center gap-2"
-            >
-              <span>Apply Now</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            {isApplied ? (
+              <span className="px-6 py-2.5 rounded-full bg-zinc-100 border border-zinc-200 text-zinc-500 text-xs font-semibold flex items-center gap-2">
+                Applied
+              </span>
+            ) : (
+              <button
+                onClick={() => {
+                  onClose();
+                  onApply(opportunity);
+                }}
+                className="px-6 py-2.5 rounded-full bg-[#E45826] hover:bg-[#D44716] active:scale-95 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer flex items-center gap-2"
+              >
+                <span>Apply Now</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
       </motion.div>

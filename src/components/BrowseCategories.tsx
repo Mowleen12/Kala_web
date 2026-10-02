@@ -14,12 +14,14 @@ import { Category } from '../types';
 
 interface BrowseCategoriesProps {
   selectedCategory?: string;
+  counts: Record<string, number>;
   onSelectCategory: (categoryName: string) => void;
   onViewAll: () => void;
 }
 
 export const BrowseCategories: React.FC<BrowseCategoriesProps> = ({
   selectedCategory,
+  counts,
   onSelectCategory,
   onViewAll,
 }) => {
@@ -73,6 +75,7 @@ export const BrowseCategories: React.FC<BrowseCategoriesProps> = ({
         {CATEGORIES.map((cat: Category) => {
           const Icon = getCategoryIcon(cat.name);
           const isSelected = selectedCategory === cat.name;
+          const count = counts[cat.name] || 0;
 
           return (
             <button
@@ -95,6 +98,9 @@ export const BrowseCategories: React.FC<BrowseCategoriesProps> = ({
               {/* Category Name */}
               <span className="text-xs font-semibold text-zinc-800 leading-tight">
                 {cat.name}
+              </span>
+              <span className="text-[11px] text-zinc-500 mt-0.5">
+                {count} open {count === 1 ? 'call' : 'calls'}
               </span>
             </button>
           );

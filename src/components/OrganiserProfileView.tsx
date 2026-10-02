@@ -20,20 +20,15 @@ import { MediaPreview } from './MediaPreview';
 
 interface OrganiserProfileViewProps {
   profile: OrganiserProfile;
+  userEmail: string;
   onUpdateProfile?: (updated: OrganiserProfile) => void;
 }
 
 export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
   profile,
+  userEmail,
   onUpdateProfile,
 }) => {
-  const venues = [
-    { name: 'Jamshed Bhabha Theatre', capacity: '1,109 seats', type: 'Opera & Symphony Stage' },
-    { name: 'Tata Theatre', capacity: '1,010 seats', type: 'Acoustic Fan Auditorium' },
-    { name: 'Experimental Theatre', capacity: '300 seats', type: 'Black Box & Avant-Garde' },
-    { name: 'Godrej Dance Academy Theatre', capacity: '185 seats', type: 'Classical & Contemporary Dance' },
-  ];
-
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editCity, setEditCity] = useState('');
@@ -102,16 +97,10 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
                     />
                   ) : (
                     <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight">
-                      {profile.name}
+                      {profile.name || 'Your venue'}
                     </h1>
                   )}
-                  {profile.verified && (
-                    <CheckCircle2 className="w-5 h-5 text-blue-500 fill-blue-50 shrink-0" />
-                  )}
                 </div>
-                <p className="text-xs sm:text-sm font-semibold text-[#E45826] mt-0.5">
-                  {profile.handle} • Est. {profile.establishedYear}
-                </p>
                 <p className="text-xs text-zinc-500 flex flex-wrap items-center gap-2 mt-1">
                   <span className="flex items-center gap-1">
                     <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
@@ -135,11 +124,9 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
                         />
                       </span>
                     ) : (
-                      `${profile.city}, ${profile.state}`
+                      [profile.city, profile.state].filter(Boolean).join(', ') || 'Location not set'
                     )}
                   </span>
-                  <span>•</span>
-                  <span>{profile.totalEventsHosted}+ Productions Hosted</span>
                 </p>
               </div>
             </div>
@@ -186,7 +173,7 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
               />
             ) : (
               <p className="text-xs sm:text-sm text-zinc-700 leading-relaxed max-w-3xl font-medium">
-                {profile.tagline}
+                {profile.tagline || 'Add a tagline in Edit Profile.'}
               </p>
             )}
           </div>
@@ -213,30 +200,9 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
               />
             ) : (
               <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
-                {profile.about}
+                {profile.about || 'Add a short description of your programming vision in Edit Profile.'}
               </p>
             )}
-          </div>
-
-          {/* Venues Grid */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EDE8E0] shadow-xs">
-            <h3 className="text-base font-bold text-zinc-900 mb-4 flex items-center gap-2">
-              <Award className="w-4 h-4 text-[#E45826]" />
-              Performance Auditoriums & Stages
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {venues.map((venue) => (
-                <div
-                  key={venue.name}
-                  className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#EDE8E0]"
-                >
-                  <h4 className="text-xs font-bold text-zinc-900">{venue.name}</h4>
-                  <div className="text-[11px] text-[#E45826] font-semibold mt-0.5">{venue.capacity}</div>
-                  <div className="text-[11px] text-zinc-500 mt-1">{venue.type}</div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
 
@@ -248,6 +214,9 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
               Programming Focus
             </h3>
             <div className="flex flex-wrap gap-2">
+              {profile.focusDisciplines.length === 0 && (
+                <span className="text-xs text-zinc-400">No focus disciplines set yet.</span>
+              )}
               {profile.focusDisciplines.map((d) => (
                 <span
                   key={d}
@@ -266,15 +235,11 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
             <div className="space-y-3 text-xs text-zinc-600">
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-zinc-400" />
-                <span>auditions@ncpamumbai.com</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-zinc-400" />
-                <span>+91 22 6622 3737</span>
+                <span className="truncate">{userEmail}</span>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-zinc-400" />
-                <span>Nariman Point, Mumbai 400021</span>
+                <span>{[profile.city, profile.state].filter(Boolean).join(', ') || 'Location not set'}</span>
               </div>
             </div>
           </div>

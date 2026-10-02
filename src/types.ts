@@ -3,6 +3,9 @@ export type PortalMode = 'artist' | 'organiser';
 export type NavTab = 'home' | 'discover' | 'applications' | 'profile';
 export type OrganiserNavTab = 'overview' | 'listings' | 'applicants' | 'scout' | 'org_profile';
 
+export type OpportunityStatus = 'active' | 'closed';
+export type ApplicationStatus = 'under_review' | 'interview' | 'selected' | 'rejected';
+
 export interface Opportunity {
   id: string;
   title: string;
@@ -20,11 +23,15 @@ export interface Opportunity {
   imageUrl: string;
   featured?: boolean;
   description?: string;
-  deadline?: string;
+  /** ISO timestamp — the real source for deadline filters, sorts and badges. */
+  deadline?: string | null;
   requirements?: string[];
   organizer?: string;
+  organiserId?: string;
+  organiserAvatar?: string | null;
   applicantCount?: number;
-  status?: 'active' | 'reviewing' | 'closed' | 'draft';
+  status?: OpportunityStatus;
+  createdAt?: string;
 }
 
 export interface Category {
@@ -33,23 +40,36 @@ export interface Category {
   icon: string;
   bgColor: string;
   iconColor: string;
-  opportunityCount: number;
 }
 
 export interface Application {
   id: string;
   opportunityId: string;
-  /** Owner — links the card to the organiser's ApplicantReview for status sync. */
-  artistId?: string;
+  /** Owner — links the card to the organiser's review list for status sync. */
+  artistId: string;
   opportunityTitle: string;
   category: string;
   location: string;
   appliedDate: string;
-  status: 'submitted' | 'under_review' | 'interview' | 'selected' | 'rejected';
+  createdAt: string;
+  status: ApplicationStatus;
   compensation: string;
-  mediaUrl?: string;
-  fileName?: string;
+  artistName: string;
+  artistAvatar?: string | null;
+  artistRole?: string | null;
+  artistLocation?: string | null;
+  experienceYears?: number | null;
+  skills: string[];
+  pitch: string;
+  portfolioUrl?: string | null;
+  reelUrl?: string | null;
+  mediaUrl?: string | null;
+  fileName?: string | null;
+  rating?: number | null;
 }
+
+/** The organiser-side review card is the same record, joined to its call. */
+export type ApplicantReview = Application;
 
 export interface UserStats {
   applications: number;
@@ -67,23 +87,12 @@ export interface OrganiserStats {
   selectedArtists: number;
 }
 
-export interface ApplicantReview {
-  id: string;
-  opportunityId: string;
-  opportunityTitle: string;
-  artistId?: string;
-  artistName: string;
-  artistAvatar: string;
-  artistRole: string;
-  artistLocation: string;
-  appliedDate: string;
-  experienceYears: number;
-  skills: string[];
-  pitch: string;
-  reelUrl?: string;
-  portfolioUrl?: string;
-  status: 'under_review' | 'interview' | 'selected' | 'rejected';
-  rating?: number;
+export interface PlatformStats {
+  artists: number;
+  organisers: number;
+  opportunities: number;
+  applications: number;
+  cities: number;
 }
 
 export interface OrganiserProfile {
@@ -95,9 +104,6 @@ export interface OrganiserProfile {
   coverImage: string;
   city: string;
   state: string;
-  verified: boolean;
-  establishedYear: number;
-  totalEventsHosted: number;
   about: string;
   focusDisciplines: string[];
 }
@@ -148,4 +154,3 @@ export interface Message {
   /** Client-only: send failed, retry offered. Never dropped silently. */
   failed?: boolean;
 }
-

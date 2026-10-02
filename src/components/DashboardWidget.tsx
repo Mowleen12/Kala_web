@@ -22,7 +22,7 @@ interface DashboardWidgetProps {
 
 export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
   stats,
-  userName = "Mowleen",
+  userName = '',
   onViewAll,
   onFindAuditions,
   onContinueApplications,
@@ -53,7 +53,7 @@ export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
           </div>
           <div>
             <h4 className="text-sm font-bold text-zinc-900">
-              Good morning, {userName}
+              Good morning{userName ? `, ${userName}` : ''}
             </h4>
             <p className="text-xs text-zinc-500 mt-0.5">
               Keep creating, keep moving.

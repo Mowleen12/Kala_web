@@ -18,6 +18,7 @@ import { Opportunity } from '../types';
 
 interface DiscoverViewProps {
   opportunities: Opportunity[];
+  appliedIds: Set<string>;
   initialCategory?: string;
   initialSearch?: string;
   isOpenFiltersInitially?: boolean;
@@ -27,6 +28,7 @@ interface DiscoverViewProps {
 
 export const DiscoverView: React.FC<DiscoverViewProps> = ({
   opportunities,
+  appliedIds,
   initialCategory,
   initialSearch = '',
   isOpenFiltersInitially = false,
@@ -427,14 +429,24 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
       {filteredOpportunities.length === 0 ? (
         <div className="bg-white rounded-3xl p-12 text-center border border-[#EDE7DE]">
           <KalaStar size={32} className="text-zinc-300 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-zinc-800 mb-1">No opportunities match your filter criteria</h3>
-          <p className="text-xs text-zinc-500 mb-4">Try broadening your parameters, clearing tags, or selecting "All" categories.</p>
-          <button
-            onClick={resetAllFilters}
-            className="px-5 py-2 rounded-full bg-[#E45826] text-white text-xs font-semibold cursor-pointer shadow-xs hover:bg-[#D44716]"
-          >
-            Clear All Filters
-          </button>
+          <h3 className="text-base font-bold text-zinc-800 mb-1">
+            {opportunities.length === 0
+              ? 'No open calls published yet'
+              : 'No opportunities match your filter criteria'}
+          </h3>
+          <p className="text-xs text-zinc-500 mb-4">
+            {opportunities.length === 0
+              ? 'New calls from venues and organisers will appear here as soon as they are published.'
+              : 'Try broadening your parameters, clearing tags, or selecting "All" categories.'}
+          </p>
+          {opportunities.length > 0 && (
+            <button
+              onClick={resetAllFilters}
+              className="px-5 py-2 rounded-full bg-[#E45826] text-white text-xs font-semibold cursor-pointer shadow-xs hover:bg-[#D44716]"
+            >
+              Clear All Filters
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -495,9 +507,14 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                 </span>
                 <button
                   onClick={() => onApply(opp)}
-                  className="px-4 py-1.5 rounded-full bg-[#E45826] hover:bg-[#D44716] active:scale-95 text-white text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                  disabled={appliedIds.has(opp.id)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold shadow-2xs transition-all ${
+                    appliedIds.has(opp.id)
+                      ? 'bg-zinc-100 text-zinc-500 border border-zinc-200 cursor-default'
+                      : 'bg-[#E45826] hover:bg-[#D44716] active:scale-95 text-white cursor-pointer'
+                  }`}
                 >
-                  Apply Now
+                  {appliedIds.has(opp.id) ? 'Applied' : 'Apply Now'}
                 </button>
               </div>
             </motion.div>

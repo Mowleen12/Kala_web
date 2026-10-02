@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
@@ -49,16 +49,19 @@ import {
   toPersistableUrl,
 } from './lib/localMedia';
 import { ensureArtistThread, findThread, ensureProfile, claimThread, fetchThreads, markRead, isDbReady, subscribeThreads, sendMessage, isUnread } from './lib/threads';
+import {
+  fetchOpportunities,
+  fetchApplications,
+  applyToOpportunity,
+  createOpportunity,
+  updateApplicationStatus,
+  fetchPlatformStats,
+  fetchCategoryCounts,
+  schemaMissing,
+} from './lib/listings';
+import { computeProfileCompletion, initialProfileCompletion, loadProfileSkills, loadProfileText } from './lib/profile';
 import { ThreadModal } from './components/ThreadModal';
 
-import { 
-  FEATURED_OPPORTUNITIES, 
-  INITIAL_APPLICATIONS, 
-  INITIAL_USER_STATS,
-  INITIAL_ORGANISER_PROFILE,
-  INITIAL_ORGANISER_STATS,
-  INITIAL_APPLICANT_REVIEWS
-} from './data/mockData';
 import { 
   NavTab, 
   OrganiserNavTab, 
@@ -70,11 +73,27 @@ import {
   OrganiserStats,
   ApplicantReview,
   AuthUser,
+  PlatformStats,
   Thread
 } from './types';
 
 const profileMediaKey = (userId: string) => `kala_profile_media_${userId}`;
-const SESSION_KEY = 'kala_session';
+const orgProfileKey = (userId: string) => `kala_org_profile_${userId}`;
+const profileTextKey = (userId: string) => `kala_profile_text_${userId}`;
+const profileSkillsKey = (userId: string) => `kala_skills_${userId}`;
+
+const EMPTY_ORGANISER_PROFILE: OrganiserProfile = {
+  id: '',
+  name: '',
+  handle: '',
+  tagline: '',
+  logo: '',
+  coverImage: '',
+  city: '',
+  state: '',
+  about: '',
+  focusDisciplines: [],
+};
 
 function loadProfileMedia(userId: string): ProfileMedia {
   try {
@@ -100,44 +119,6 @@ function saveProfileMedia(userId: string, media: ProfileMedia) {
   } catch {}
 }
 
-/**
- * React state that survives logout/login and reloads. Media fields holding
- * live blob: URLs are written back as stable IndexedDB refs and re-resolved
- * into object URLs when the app boots.
- */
-function usePersistedState<T>(key: string, initial: T) {
-  const [value, setValue] = useState<T>(() => {
-    try {
-      const raw = localStorage.getItem(key);
-      if (raw) return JSON.parse(raw) as T;
-    } catch {}
-    return initial;
-  });
-
-  // Turn stored kala-idb: media refs into live object URLs once on boot.
-  useEffect(() => {
-    let alive = true;
-    resolveMediaUrlDeep(value).then((resolved) => {
-      if (!alive) return;
-      setValue((prev) =>
-        JSON.stringify(prev) === JSON.stringify(resolved) ? prev : (resolved as T)
-      );
-    });
-    return () => {
-      alive = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(key, JSON.stringify(toPersistableDeep(value)));
-    } catch {}
-  }, [key, value]);
-
-  return [value, setValue] as const;
-}
-
 /** Human copy for Supabase OAuth callback errors (they are silent otherwise). */
 function oauthErrorMessage(code: string, description: string): string {
   if (code === 'access_denied') {
@@ -149,42 +130,17 @@ function oauthErrorMessage(code: string, description: string): string {
   return `Google sign-in failed${description ? `: ${description}` : ` (${code})`}. Please try again.`;
 }
 
-const storedArtistName = (email?: string) =>
-  email ? getDraft<{ name?: string }>(`kala_profile_text_${email}`)?.name : undefined;
-
-function applyStoredArtistName(user: AuthUser): AuthUser {
-  const stored = storedArtistName(user.email);
-  return user.role === 'artist' && stored ? { ...user, name: stored } : user;
+/** A profile name the user edited locally wins over signup metadata on reload. */
+function applyStoredProfileName(user: AuthUser): AuthUser {
+  const stored = user.role === 'artist' ? loadProfileText(user.id).name : undefined;
+  return stored ? { ...user, name: stored } : user;
 }
 
-const storedOrgName = () => getDraft<Partial<OrganiserProfile>>('kala_org_profile_text')?.name;
-
 export default function App() {
-  // Authenticated User State (determines active portal separation).
-  // Restored from the last session so sign-out, portal choice and login all
-  // survive reloads; fresh visitors land on the portal gateway. Stale demo
-  // sessions from older builds are discarded the same way.
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
-    try {
-      const raw = localStorage.getItem(SESSION_KEY);
-      if (raw && raw !== 'signed_out') {
-        const user = JSON.parse(raw) as AuthUser;
-        if (user?.id !== 'user-mowleen' && user?.id !== 'user-ncpa') return user;
-      }
-    } catch {}
-    return null;
-  });
-
-  // Persist every login/logout (including Google) so the next visit
-  // lands exactly where this one left off.
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        SESSION_KEY,
-        currentUser ? JSON.stringify(toPersistableDeep(currentUser)) : 'signed_out'
-      );
-    } catch {}
-  }, [currentUser]);
+  // Supabase is the only source of a session — localStorage cannot log you in.
+  // authReady keeps the gateway from flashing while the session is resolved.
+  const [authReady, setAuthReady] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
 
   // Current active portal mode is strictly driven by currentUser's role
   const portalMode: PortalMode = currentUser?.role || 'artist';
@@ -214,41 +170,41 @@ export default function App() {
   const [isApplyOpen, setIsApplyOpen] = useState(false);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
 
-  // Artist User State — persisted so applications, calls and stats made in one
-  // session are still there after logout/login or a reload.
-  const [userName, setUserName] = useState('Mowleen');
-  const [userStats, setUserStats] = usePersistedState<UserStats>(
-    'kala_user_stats',
-    INITIAL_USER_STATS
-  );
-  const [applications, setApplications] = usePersistedState<Application[]>(
-    'kala_applications',
-    INITIAL_APPLICATIONS
-  );
-  const [opportunities, setOpportunities] = usePersistedState<Opportunity[]>(
-    'kala_opportunities',
-    FEATURED_OPPORTUNITIES
-  );
-
-  // Organiser State
-  const [organiserProfile, setOrganiserProfile] = useState<OrganiserProfile>(() => ({
-    ...INITIAL_ORGANISER_PROFILE,
-    ...getDraft<Partial<OrganiserProfile>>('kala_org_profile_text'),
-  }));
-  const [organiserStats, setOrganiserStats] = usePersistedState<OrganiserStats>(
-    'kala_organiser_stats',
-    INITIAL_ORGANISER_STATS
-  );
-  const [applicantReviews, setApplicantReviews] = usePersistedState<ApplicantReview[]>(
-    'kala_applicant_reviews',
-    INITIAL_APPLICANT_REVIEWS
-  );
+  // Domain data — always loaded from Supabase (RLS-scoped to this user),
+  // never from localStorage seeds. Empty until the first fetch resolves.
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [platformStats, setPlatformStats] = useState<PlatformStats | null>(null);
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
+  const [dataError, setDataError] = useState<string | null>(null);
+  const [listingsLoaded, setListingsLoaded] = useState(false);
 
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeThread, setActiveThread] = useState<Thread | null>(null);
 
   // Per-user profile media (avatar / reel / gallery) persisted across sessions
   const [profileMedia, setProfileMedia] = useState<ProfileMedia>({});
+
+  // Profile completion is recomputed from real fields; the override only
+  // exists so ProfileView edits reflect instantly without a refetch.
+  const [profileCompletionOverride, setProfileCompletionOverride] = useState<number | null>(null);
+
+  // Organiser venue profile is a localStorage draft keyed by user id,
+  // re-derived whenever the draft version bumps.
+  const [orgProfileVersion, setOrgProfileVersion] = useState(0);
+  const organiserProfile = useMemo<OrganiserProfile>(() => {
+    if (!currentUser) return EMPTY_ORGANISER_PROFILE;
+    const draft = getDraft<Partial<OrganiserProfile>>(orgProfileKey(currentUser.id)) || {};
+    const logo =
+      draft.logo || profileMedia.avatar || currentUser.avatarUrl || currentUser.avatar || '';
+    return {
+      ...EMPTY_ORGANISER_PROFILE,
+      id: currentUser.id,
+      name: currentUser.orgName || '',
+      ...draft,
+      logo,
+    };
+  }, [currentUser, profileMedia, orgProfileVersion]);
 
   // Supabase Auth State Synchronization & OAuth Callback Handling
   useEffect(() => {
@@ -295,25 +251,18 @@ export default function App() {
       }, 1000);
     }
 
-    // 4. Check existing session on load
+    // 4. Check existing session on load — the Supabase session is the only
+    //    source of truth; no localStorage fallback, no fabricated user.
     supabaseGetCurrentUser().then((rawUser) => {
-      const user = rawUser && applyStoredArtistName(rawUser);
-      if (user) {
-        setCurrentUser(user);
-        if (user.role === 'artist' && user.name) {
-          setUserName(user.name);
-        }
-      }
+      setCurrentUser(rawUser ? applyStoredProfileName(rawUser) : null);
+      setAuthReady(true);
     });
 
     // 5. Subscribe to realtime auth state changes from Supabase
     const unsubscribe = onSupabaseAuthStateChange((rawUser, event) => {
-      const user = rawUser && applyStoredArtistName(rawUser);
+      const user = rawUser && applyStoredProfileName(rawUser);
       if (user) {
         setCurrentUser(user);
-        if (user.role === 'artist' && user.name) {
-          setUserName(user.name);
-        }
       } else if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
       }
@@ -348,12 +297,7 @@ export default function App() {
         }
         return prev;
       });
-      if (currentUser.role === 'organiser') {
-        const logo = stored.avatar || resolvedAvatar;
-        if (logo) {
-          setOrganiserProfile((prev) => (prev.logo === logo ? prev : { ...prev, logo }));
-        }
-      }
+      // Organiser logo derives from the avatar inside organiserProfile memo.
     })();
     return () => {
       alive = false;
@@ -372,6 +316,107 @@ export default function App() {
       );
     }
   };
+
+  // Domain data — keyed on the signed-in user, cleared on logout. Failures
+  // surface as a dismissible warning rather than fabricating content.
+  useEffect(() => {
+    if (!currentUser) {
+      setOpportunities([]);
+      setApplications([]);
+      setPlatformStats(null);
+      setCategoryCounts({});
+      setDataError(null);
+      setListingsLoaded(false);
+      setProfileCompletionOverride(null);
+      return;
+    }
+    let alive = true;
+    (async () => {
+      const [opps, apps, stats, cats] = await Promise.all([
+        fetchOpportunities(),
+        fetchApplications(),
+        fetchPlatformStats(),
+        fetchCategoryCounts(),
+      ]);
+      if (!alive) return;
+      setOpportunities(opps.data);
+      setApplications(apps.data);
+      setPlatformStats(stats);
+      setCategoryCounts(cats);
+      setDataError(
+        opps.error ||
+          apps.error ||
+          (schemaMissing()
+            ? 'Database tables missing — run section 5 of supabase/schema.sql in the Supabase SQL editor.'
+            : null)
+      );
+      setListingsLoaded(true);
+    })();
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id]);
+
+  // Completion is derived from real profile fields; ProfileView reports live
+  // edits into profileCompletionOverride so changes show without a refetch.
+  const profileCompletion =
+    profileCompletionOverride ??
+    (currentUser ? initialProfileCompletion(currentUser.id, profileMedia, currentUser.name) : 0);
+
+  // RLS returns: an artist's own applications, plus applications to an
+  // organiser's own calls. Split them by ownership before deriving stats.
+  const myApplications = useMemo(
+    () => (currentUser ? applications.filter((a) => a.artistId === currentUser.id) : []),
+    [applications, currentUser]
+  );
+  const appliedOppIds = useMemo(
+    () => new Set(myApplications.map((a) => a.opportunityId)),
+    [myApplications]
+  );
+  const myOpportunities = useMemo(
+    () => (currentUser ? opportunities.filter((o) => o.organiserId === currentUser.id) : []),
+    [opportunities, currentUser]
+  );
+  const myOppIds = useMemo(() => new Set(myOpportunities.map((o) => o.id)), [myOpportunities]);
+  const myApplicants = useMemo(
+    () => applications.filter((a) => myOppIds.has(a.opportunityId)),
+    [applications, myOppIds]
+  );
+
+  const userStats: UserStats = useMemo(
+    () => ({
+      applications: myApplications.length,
+      interviews: myApplications.filter((a) => a.status === 'interview').length,
+      selected: myApplications.filter((a) => a.status === 'selected').length,
+      rejected: myApplications.filter((a) => a.status === 'rejected').length,
+      profileCompletion,
+    }),
+    [myApplications, profileCompletion]
+  );
+
+  const organiserStats: OrganiserStats = useMemo(
+    () => ({
+      activeListings: myOpportunities.filter((o) => o.status === 'active').length,
+      totalApplicants: myApplicants.length,
+      underReview: myApplicants.filter((a) => a.status === 'under_review').length,
+      interviewScheduled: myApplicants.filter((a) => a.status === 'interview').length,
+      selectedArtists: myApplicants.filter((a) => a.status === 'selected').length,
+    }),
+    [myOpportunities, myApplicants]
+  );
+
+  const orgCategoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const o of myOpportunities) counts[o.category] = (counts[o.category] || 0) + 1;
+    return counts;
+  }, [myOpportunities]);
+
+  const orgCategoryApplicantCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const a of myApplicants) counts[a.category] = (counts[a.category] || 0) + 1;
+    return counts;
+  }, [myApplicants]);
 
   // Profile row (RLS needs it for role checks) + the caller's thread list, which
   // is what both unread pills read. Keyed on the user id so it covers every login
@@ -419,19 +464,13 @@ export default function App() {
 
   const handleSignInSuccess = (user: AuthUser) => {
     setIsSignInOpen(false);
-    const resolved = applyStoredArtistName(user);
+    const resolved = applyStoredProfileName(user);
     setCurrentUser(resolved);
 
     if (resolved.role === 'artist') {
-      setUserName(resolved.name);
       setCurrentArtistTab('home');
       showToast(`Welcome back, ${resolved.name}! Logged into Artist Portal.`);
     } else {
-      setOrganiserProfile(prev => ({
-        ...prev,
-        name: storedOrgName() || resolved.orgName || prev.name,
-        logo: resolved.avatarUrl || resolved.avatar || prev.logo,
-      }));
       setCurrentOrgTab('overview');
       showToast(`Welcome back! Logged into Organiser Portal for ${resolved.orgName || 'your venue'}.`);
     }
@@ -450,7 +489,7 @@ export default function App() {
     setIsSignUpOpen(false);
 
     const effectiveAvatar = userData.avatarUrl || userData.avatar;
-    const newUser: AuthUser = applyStoredArtistName({
+    const newUser: AuthUser = applyStoredProfileName({
       id: userData.id || `user-${Date.now()}`,
       name: userData.name,
       email: userData.email,
@@ -463,18 +502,12 @@ export default function App() {
     setCurrentUser(newUser);
 
     if (userData.role === 'artist') {
-      setUserName(newUser.name);
       setLoadingScreenMessage({
         title: "Almost there...",
         subtitle: `Welcome to the Artist Portal, ${newUser.name}! We're preparing your audition portfolio.`
       });
       setCurrentArtistTab('home');
     } else {
-      setOrganiserProfile(prev => ({
-        ...prev,
-        name: storedOrgName() || userData.orgName || prev.name,
-        logo: effectiveAvatar || prev.logo,
-      }));
       setLoadingScreenMessage({
         title: "Configuring curatorial desk...",
         subtitle: `Welcome, ${userData.name}! Preparing production pipeline for ${userData.orgName || 'your venue'}.`
@@ -563,54 +596,41 @@ export default function App() {
     setIsDetailOpen(true);
   };
 
-  const handleSubmitApplication = (opp: Opportunity, appData: any) => {
-    const newApp: Application = {
-      id: `app-${Date.now().toString().slice(-4)}`,
+  const handleSubmitApplication = async (
+    opp: Opportunity,
+    appData: {
+      statement?: string;
+      reelUrl?: string | null;
+      fileName?: string | null;
+      portfolioUrl?: string | null;
+      experienceYears?: number;
+      skills?: string[];
+      city?: string;
+    }
+  ): Promise<{ ok: boolean; error?: string }> => {
+    if (!currentUser) return { ok: false, error: 'Please sign in to apply.' };
+    if (appliedOppIds.has(opp.id)) {
+      return { ok: false, error: 'You have already applied to this opportunity.' };
+    }
+    const { data, error } = await applyToOpportunity({
       opportunityId: opp.id,
-      artistId: currentUser?.id,
-      opportunityTitle: opp.title,
-      category: opp.category,
-      location: opp.location.split('•')[0].trim(),
-      appliedDate: 'Just now',
-      status: 'submitted',
-      compensation: opp.compensation,
-      mediaUrl: appData?.reelUrl,
-      fileName: appData?.fileName,
-    };
-
-    setApplications([newApp, ...applications]);
-    setUserStats(prev => ({
-      ...prev,
-      applications: prev.applications + 1
-    }));
-
-    // If applied, also simulate adding to Organiser pipeline
-    const newReview: ApplicantReview = {
-      id: `rev-${Date.now().toString().slice(-4)}`,
-      opportunityId: opp.id,
-      opportunityTitle: opp.title,
-      artistId: currentUser?.id,
-      artistName: userName,
-      artistAvatar: currentUser?.avatarUrl || currentUser?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=140&q=80',
-      artistRole: currentUser?.discipline || 'Contemporary Vocalist & Composer',
-      artistLocation: 'Mumbai, Maharashtra',
-      appliedDate: 'Just now',
-      experienceYears: 4,
-      skills: ['Carnatic Vocals', 'Sitar', 'Live Improvisation'],
-      pitch: appData?.statement || 'Eager to perform on the prestigious stage.',
-      status: 'under_review',
-      rating: 4.8,
-      reelUrl: appData?.reelUrl,
-      portfolioUrl: appData?.portfolioUrl || undefined,
-    };
-    setApplicantReviews(prev => [newReview, ...prev]);
-    setOrganiserStats(prev => ({
-      ...prev,
-      totalApplicants: prev.totalApplicants + 1,
-      underReview: prev.underReview + 1,
-    }));
-
-    showToast(`Application successfully sent to ${opp.title}!`);
+      artistName: currentUser.name,
+      artistAvatar: currentUser.avatarUrl || currentUser.avatar,
+      artistRole: currentUser.discipline || null,
+      artistLocation: appData.city || null,
+      experienceYears: appData.experienceYears ?? null,
+      skills: appData.skills,
+      statement: appData.statement,
+      portfolioUrl: appData.portfolioUrl,
+      reelUrl: appData.reelUrl,
+      fileName: appData.fileName,
+    });
+    if (error || !data) {
+      return { ok: false, error: error || 'Could not submit your application.' };
+    }
+    setApplications((prev) => [data, ...prev]);
+    showToast(`Application sent to ${opp.title} — track it under Applications.`);
+    return { ok: true };
   };
 
   const handleSelectCategory = (catName: string) => {
@@ -625,35 +645,56 @@ export default function App() {
   };
 
   // Organiser Handlers
-  const handlePublishOpportunity = (newOpp: Opportunity) => {
-    setOpportunities([newOpp, ...opportunities]);
-    setOrganiserStats(prev => ({
-      ...prev,
-      activeListings: prev.activeListings + 1,
-    }));
+  const handlePublishOpportunity = async (
+    newOpp: Opportunity
+  ): Promise<{ ok: boolean; error?: string }> => {
+    if (!currentUser) return { ok: false, error: 'Please sign in again.' };
+    const { data, error } = await createOpportunity(
+      {
+        title: newOpp.title,
+        category: newOpp.category,
+        description: newOpp.description,
+        requirements: newOpp.requirements,
+        location: newOpp.location,
+        venue: newOpp.venue,
+        city: newOpp.city,
+        dateRange: newOpp.dateRange,
+        deadline: newOpp.deadline,
+        compensation: newOpp.compensation,
+        imageUrl: newOpp.imageUrl,
+      },
+      {
+        id: currentUser.id,
+        name: currentUser.orgName || organiserProfile.name || currentUser.name,
+        avatar: currentUser.avatarUrl || currentUser.avatar,
+      }
+    );
+    if (error || !data) {
+      return { ok: false, error: error || 'Could not publish the call.' };
+    }
+    setOpportunities((prev) => [data, ...prev]);
     setIsPostModalOpen(false);
-    showToast(`Call published! "${newOpp.title}" is now live for all creators.`);
+    showToast(`Call published! "${data.title}" is now live for all creators.`);
     setCurrentOrgTab('listings');
+    return { ok: true };
   };
 
-  const handleUpdateApplicantStatus = async (reviewId: string, newStatus: ApplicantReview['status']) => {
-    const review = applicantReviews.find(r => r.id === reviewId);
+  const handleUpdateApplicantStatus = async (
+    reviewId: string,
+    newStatus: ApplicantReview['status']
+  ) => {
+    const review = applications.find((r) => r.id === reviewId);
     const changed = review && review.status !== newStatus;
 
-    setApplicantReviews(prev =>
-      prev.map(rev => (rev.id === reviewId ? { ...rev, status: newStatus } : rev))
-    );
-
-    // Sync the artist's own application card (matched on opportunity + artist).
-    if (review?.artistId) {
-      setApplications(prev =>
-        prev.map(app =>
-          app.opportunityId === review.opportunityId && app.artistId === review.artistId
-            ? { ...app, status: newStatus }
-            : app
-        )
-      );
+    const { error } = await updateApplicationStatus(reviewId, { status: newStatus });
+    if (error) {
+      showToast(error);
+      return;
     }
+
+    setApplications((prev) =>
+      prev.map((app) => (app.id === reviewId ? { ...app, status: newStatus } : app))
+    );
 
     const statusLabels: Record<ApplicantReview['status'], string> = {
       under_review: 'marked as Under Review',
@@ -664,32 +705,30 @@ export default function App() {
 
     // Selection lands in the artist's thread as an organiser message — it then
     // lights the bell + unread pill through the normal thread unread path.
-    if (changed && newStatus === 'selected' && review.artistId && currentUser) {
-      // Ensure the thread exists (local mode starts with none) — synthetic
-      // artist identity built from the review, since the organiser is acting here.
+    if (changed && newStatus === 'selected' && review?.artistId && currentUser) {
       const { thread } = await ensureArtistThread({
         opportunityId: review.opportunityId,
         opportunityTitle: review.opportunityTitle,
         user: {
           id: review.artistId,
-          name: review.artistName,
+          name: review.artistName || 'Artist',
           email: '',
           role: 'artist',
-          avatarUrl: review.artistAvatar,
+          avatarUrl: review.artistAvatar || undefined,
         },
         organiserName: currentUser.orgName || currentUser.name,
         organiserAvatar: currentUser.avatarUrl || currentUser.avatar,
       });
       if (thread) {
-        const body = `Congratulations, ${review.artistName}! You've been selected for "${review.opportunityTitle}". Our team will reach out with the schedule and next steps soon.`;
-        const { error } = await sendMessage({
+        const body = `Congratulations, ${review.artistName || 'artist'}! You've been selected for "${review.opportunityTitle}". Our team will reach out with the schedule and next steps soon.`;
+        const { error: sendError } = await sendMessage({
           threadId: thread.id,
           sender: currentUser,
           senderRole: 'organiser',
           body,
           clientId: `msg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
         });
-        if (!error) {
+        if (!sendError) {
           // Sender's own message must not light their bell.
           await markRead(thread.id, 'organiser');
           setThreads(await fetchThreads());
@@ -700,8 +739,22 @@ export default function App() {
     showToast(`Applicant status updated: ${statusLabels[newStatus] || newStatus}`);
   };
 
-  const handleInviteArtist = (artistName: string, oppTitle: string) => {
-    showToast(`Audition invitation dispatched to ${artistName} for "${oppTitle}"!`);
+  const handleRateApplicant = async (reviewId: string, rating: number) => {
+    const { error } = await updateApplicationStatus(reviewId, { rating });
+    if (error) {
+      showToast(error);
+      return;
+    }
+    setApplications((prev) =>
+      prev.map((app) => (app.id === reviewId ? { ...app, rating } : app))
+    );
+  };
+
+  const handleSaveOrganiserProfile = (updated: OrganiserProfile) => {
+    if (!currentUser) return;
+    setDraft(orgProfileKey(currentUser.id), updated);
+    setOrgProfileVersion((v) => v + 1);
+    showToast('Venue profile updated successfully!');
   };
 
   const handleGoogleAuth = async (portal: PortalMode, isSignUp: boolean = false) => {
@@ -717,6 +770,19 @@ export default function App() {
       showToast(e?.message || 'Google authentication failed');
     }
   };
+
+  // Wait for the real Supabase session before choosing gateway vs workspace —
+  // no localStorage restore, so a stored object can never fake a login.
+  if (!authReady) {
+    return (
+      <div className="min-h-screen bg-[#FAF8F5] text-zinc-900 flex flex-col items-center justify-center gap-4">
+        <div className="text-3xl font-serif tracking-[0.3em]">KALĀ</div>
+        <div className="text-[11px] uppercase tracking-[0.35em] text-zinc-500">
+          Restoring your session
+        </div>
+      </div>
+    );
+  }
 
   // =========================================================================
   // IF USER IS NOT LOGGED IN: SHOW DEDICATED PORTAL SELECTION / SIGN-IN GATEWAY
@@ -819,8 +885,28 @@ export default function App() {
           authProvider={currentUser.authProvider}
         />
 
+        {/* Data warning — schema not migrated or a query failed */}
+        {dataError && (
+          <div className="mx-auto max-w-[1580px] w-full px-4 sm:px-6 lg:px-8 pt-4">
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs sm:text-sm rounded-xl px-4 py-3 flex items-start justify-between gap-4">
+              <span>{dataError}</span>
+              <button
+                onClick={() => setDataError(null)}
+                className="text-amber-600 hover:text-amber-900 font-medium shrink-0"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Dynamic Main Body Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1580px] w-full mx-auto">
+          {!listingsLoaded ? (
+            <div className="flex items-center justify-center py-32 text-sm text-zinc-500 tracking-wide">
+              Loading your workspace…
+            </div>
+          ) : (
           <AnimatePresence mode="wait">
             <motion.div
               key={`${portalMode}-${portalMode === 'artist' ? currentArtistTab : currentOrgTab}`}
@@ -849,6 +935,7 @@ export default function App() {
                     {/* Community Metrics Card (4 cols on XL) */}
                     <div className="xl:col-span-4">
                       <CommunityStatsCard
+                        stats={platformStats}
                         onJoin={() => setCurrentArtistTab('discover')}
                       />
                     </div>
@@ -861,6 +948,7 @@ export default function App() {
                       {/* Featured Opportunities Section */}
                       <FeaturedOpportunities
                         opportunities={opportunities}
+                        appliedIds={appliedOppIds}
                         onApply={handleApplyClick}
                         onViewDetails={handleViewDetails}
                         onViewAll={() => setCurrentArtistTab('discover')}
@@ -869,6 +957,7 @@ export default function App() {
                       {/* Browse Categories Section */}
                       <BrowseCategories
                         selectedCategory={selectedCategory}
+                        counts={categoryCounts}
                         onSelectCategory={handleSelectCategory}
                         onViewAll={() => setCurrentArtistTab('discover')}
                       />
@@ -892,6 +981,7 @@ export default function App() {
               {currentArtistTab === 'discover' && (
                 <DiscoverView
                   opportunities={opportunities}
+                  appliedIds={appliedOppIds}
                   initialCategory={selectedCategory}
                   isOpenFiltersInitially={openFiltersInitially}
                   onApply={handleApplyClick}
@@ -901,7 +991,7 @@ export default function App() {
 
               {currentArtistTab === 'applications' && (
                 <ApplicationsView
-                  applications={applications}
+                  applications={myApplications}
                   opportunities={opportunities}
                   threads={threads}
                   onOpenThread={openArtistThread}
@@ -911,7 +1001,8 @@ export default function App() {
 
               {currentArtistTab === 'profile' && (
                 <ProfileView
-                  completion={userStats.profileCompletion}
+                  completion={profileCompletion}
+                  profileKey={currentUser.id}
                   userName={currentUser.name}
                   userEmail={currentUser.email}
                   avatarUrl={currentUser.avatarUrl || currentUser.avatar}
@@ -919,12 +1010,10 @@ export default function App() {
                   onProfileMediaChange={handleProfileMediaChange}
                   onProfileTextSaved={(name) => {
                     setCurrentUser(prev => (prev ? { ...prev, name } : prev));
-                    setUserName(name);
                     showToast('Profile updated!');
                   }}
                   onUpdateCompletion={(newVal: number) => {
-                    setUserStats(prev => ({ ...prev, profileCompletion: newVal }));
-                    showToast('Profile completion updated!');
+                    setProfileCompletionOverride(newVal);
                   }}
                 />
               )}
@@ -945,12 +1034,17 @@ export default function App() {
                       <OrganiserHeroSection
                         onPostOpportunity={() => setIsPostModalOpen(true)}
                         onReviewApplicants={() => setCurrentOrgTab('applicants')}
+                        activeCalls={organiserStats.activeListings}
+                        totalApplicants={organiserStats.totalApplicants}
+                        underReview={organiserStats.underReview}
+                        latest={myOpportunities[0] || null}
                       />
                     </div>
 
                     {/* Organiser Stats Card (4 cols on XL) */}
                     <div className="xl:col-span-4">
                       <OrganiserStatsCard
+                        stats={organiserStats}
                         onPostCall={() => setIsPostModalOpen(true)}
                       />
                     </div>
@@ -962,7 +1056,7 @@ export default function App() {
                     <div className="xl:col-span-8 space-y-6">
                       {/* Active Production Calls Section */}
                       <OrganiserFeaturedCalls
-                        opportunities={opportunities}
+                        opportunities={myOpportunities}
                         onReviewOpportunityApplicants={(opp) => {
                           setCurrentOrgTab('applicants');
                         }}
@@ -976,6 +1070,8 @@ export default function App() {
                       {/* Browse by Curatorial Department Section */}
                       <OrganiserBrowseCategories
                         selectedCategory={selectedOrgCategory}
+                        counts={orgCategoryCounts}
+                        applicantCounts={orgCategoryApplicantCounts}
                         onSelectCategory={handleSelectOrgCategory}
                         onViewAll={() => setCurrentOrgTab('listings')}
                       />
@@ -999,7 +1095,7 @@ export default function App() {
 
               {currentOrgTab === 'listings' && (
                 <OrganiserListingsView
-                  opportunities={opportunities}
+                  opportunities={myOpportunities}
                   initialCategory={selectedOrgCategory}
                   isOpenFiltersInitially={openOrgFiltersInitially}
                   onPostOpportunity={() => setIsPostModalOpen(true)}
@@ -1015,35 +1111,34 @@ export default function App() {
 
               {currentOrgTab === 'applicants' && (
                 <OrganiserApplicantsView
-                  applicants={applicantReviews}
+                  applicants={myApplicants}
                   threads={threads}
-                  opportunities={opportunities}
+                  opportunities={myOpportunities}
                   onOpenThread={openOrganiserThread}
                   onUpdateApplicantStatus={handleUpdateApplicantStatus}
+                  onRateApplicant={handleRateApplicant}
                 />
               )}
 
               {currentOrgTab === 'scout' && (
                 <OrganiserTalentScoutView
-                  opportunities={opportunities}
-                  onInviteArtist={handleInviteArtist}
+                  applicants={myApplicants}
+                  onReviewApplicants={() => setCurrentOrgTab('applicants')}
                 />
               )}
 
               {currentOrgTab === 'org_profile' && (
                 <OrganiserProfileView
                   profile={organiserProfile}
-                  onUpdateProfile={(updated) => {
-                    setOrganiserProfile(updated);
-                    setDraft('kala_org_profile_text', updated);
-                    showToast('Venue profile updated successfully!');
-                  }}
+                  userEmail={currentUser.email}
+                  onUpdateProfile={handleSaveOrganiserProfile}
                 />
               )}
             </>
           )}
             </motion.div>
           </AnimatePresence>
+          )}
         </main>
       </div>
 
@@ -1098,13 +1193,16 @@ export default function App() {
         isOpen={isApplyOpen}
         onClose={() => setIsApplyOpen(false)}
         onSubmitApplication={handleSubmitApplication}
-        userName={userName}
+        userName={currentUser.name}
+        userEmail={currentUser.email}
+        profileKey={currentUser.id}
       />
 
       {/* 4. Opportunity Detail Modal */}
       <OpportunityDetailModal
         opportunity={selectedOpportunity}
         isOpen={isDetailOpen}
+        isApplied={selectedOpportunity ? appliedOppIds.has(selectedOpportunity.id) : false}
         onClose={() => setIsDetailOpen(false)}
         onApply={handleApplyClick}
       />

@@ -39,7 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenSignUp,
   onSwitchPortalAccount,
   onPostOpportunity,
-  orgName = "NCPA Mumbai",
+  orgName = '',
 }) => {
   const artistNavItems = [
     { id: 'home' as NavTab, label: 'Home', icon: Home },
@@ -103,7 +103,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                   <div>
                     <p className="text-[10px] uppercase font-bold text-[#E45826] tracking-wider leading-none">Logged In As</p>
-                    <p className="text-xs font-bold text-zinc-900 mt-0.5">{orgName}</p>
+                    <p className="text-xs font-bold text-zinc-900 mt-0.5">{orgName || 'Organiser Portal'}</p>
                   </div>
                 </div>
               </div>

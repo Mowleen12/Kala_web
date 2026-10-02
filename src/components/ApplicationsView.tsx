@@ -37,12 +37,6 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
             <CheckCircle2 className="w-3.5 h-3.5" /> Selected
           </span>
         );
-      case 'submitted':
-        return (
-          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-200 flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5" /> Submitted
-          </span>
-        );
       case 'rejected':
         return (
           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-200 flex items-center gap-1.5">

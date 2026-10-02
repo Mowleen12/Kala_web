@@ -1,14 +1,14 @@
 import { createClient, SupabaseClient, User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { AuthUser, PortalMode } from '../types';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://mbwcfxiqzzpondyirysl.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1id2NmeGlxenpwb25keWlyeXNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4OTAwMTYsImV4cCI6MjEwNTQ2NjAxNn0.r3XDXxdJYx8xuCnyGeR_5mbGLnJu4u91BG_406sjcbc';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-// Check if valid credentials have been injected via environment variables
+// Credentials must come from the environment — never from committed source.
 export const isSupabaseConfigured: boolean = Boolean(
-  supabaseUrl && 
-  supabaseAnonKey && 
-  !supabaseUrl.includes('placeholder') && 
+  supabaseUrl &&
+  supabaseAnonKey &&
+  !supabaseUrl.includes('placeholder') &&
   supabaseUrl.startsWith('http')
 );
 
@@ -55,6 +55,34 @@ export function mapSupabaseUserToAuthUser(user: SupabaseUser): AuthUser {
 }
 
 /**
+ * Maps Supabase auth errors onto copy the user can act on. Raw provider
+ * messages (and anything unmapped) never reach the UI.
+ */
+export function authErrorMessage(raw?: string | null): string {
+  const m = (raw || '').toLowerCase();
+  if (!m) return 'Something went wrong. Please try again.';
+  if (m.includes('invalid login credentials')) return 'Incorrect email or password.';
+  if (m.includes('email not confirmed')) {
+    return 'Confirm your email first — open the verification link we sent you, then sign in.';
+  }
+  if (m.includes('already registered') || m.includes('already been registered')) {
+    return 'An account with this email already exists. Sign in instead.';
+  }
+  if (m.includes('password should be at least')) return 'Password must be at least 6 characters.';
+  if (m.includes('rate limit') || m.includes('too many') || m.includes('security purposes')) {
+    return 'Too many attempts — wait a minute and try again.';
+  }
+  if (m.includes('signup is disabled')) return 'Registration is currently closed.';
+  if (m.includes('provider is not enabled') || m.includes('unsupported provider')) {
+    return 'Google sign-in is not enabled. Use your email and password instead.';
+  }
+  if (m.includes('failed to fetch') || m.includes('network')) {
+    return 'Network error — check your connection and try again.';
+  }
+  return 'Something went wrong. Please try again.';
+}
+
+/**
  * Sign in or Sign up using Google OAuth via Supabase
  * With automatic support for both Artist and Organiser portals
  */
@@ -98,16 +126,7 @@ export async function supabaseSignInWithGoogle(
 
       if (error) {
         console.warn('[Supabase] Google OAuth provider error:', error.message);
-        if (
-          error.message.toLowerCase().includes('not enabled') || 
-          error.message.toLowerCase().includes('unsupported provider')
-        ) {
-          return {
-            user: null,
-            error: 'Google OAuth provider is not enabled in your Supabase project. To enable it: go to Supabase Console → Authentication → Providers → Google, and toggle "Enable Google Provider".',
-          };
-        }
-        return { user: null, error: error.message };
+        return { user: null, error: authErrorMessage(error.message) };
       }
 
       if (data?.url) {
@@ -205,33 +224,13 @@ export async function supabaseSignInWithGoogle(
     }
   }
 
-  // Graceful instantaneous Google Authentication for development & preview
-  // Provides authentic Google Identity profile with verified avatar & role binding
-  const isArtist = role === 'artist';
-  const defaultEmail = isArtist ? 'mowleen2006@gmail.com' : 'auditions@ncpamumbai.com';
-  const defaultName = isArtist ? 'Mowleen Mukherjee' : 'Dr. Suvarnalata Rao';
-  const defaultOrg = isArtist ? undefined : (options?.customOrgName || 'NCPA Mumbai');
-  const defaultDiscipline = isArtist ? (options?.customDiscipline || 'Classical & Contemporary Vocalist') : undefined;
-
-  const email = options?.customEmail || defaultEmail;
-  const name = options?.customName || defaultName;
-  const avatar = isArtist
-    ? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=240&q=80'
-    : 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=240&q=80';
-
-  const user: AuthUser = {
-    id: `google-user-${Date.now()}`,
-    name,
-    email,
-    role,
-    avatar,
-    avatarUrl: avatar,
-    orgName: defaultOrg,
-    discipline: defaultDiscipline,
-    authProvider: 'google',
+  // No OAuth URL came back (or auth is unconfigured) — never fabricate a session.
+  return {
+    user: null,
+    error: isSupabaseConfigured
+      ? 'Google sign-in did not start. Please try again or use your email and password.'
+      : 'Sign-in is not configured on this deployment.',
   };
-
-  return { user, error: null, redirected: false };
 }
 
 /**
@@ -247,18 +246,7 @@ export async function supabaseSignUp(params: {
   avatarUrl?: string;
 }): Promise<{ user: AuthUser | null; error: string | null; needsEmailConfirmation?: boolean }> {
   if (!isSupabaseConfigured || !supabase) {
-    // Graceful fallback for local development or preview before credentials are added
-    const mockId = `sb-user-${Date.now()}`;
-    const fallbackUser: AuthUser = {
-      id: mockId,
-      name: params.fullName,
-      email: params.email,
-      role: params.role,
-      orgName: params.orgName,
-      discipline: params.discipline,
-      avatar: params.avatarUrl,
-    };
-    return { user: fallbackUser, error: null };
+    return { user: null, error: 'Account creation is not configured on this deployment.' };
   }
 
   try {
@@ -277,20 +265,20 @@ export async function supabaseSignUp(params: {
     });
 
     if (error) {
-      return { user: null, error: error.message };
+      return { user: null, error: authErrorMessage(error.message) };
     }
 
     if (!data.user) {
-      return { user: null, error: 'Registration failed. Please check your credentials.' };
+      return { user: null, error: 'Registration failed. Please check your details and try again.' };
     }
 
-    // Check if email confirmation is required by Supabase project settings
-    const needsEmailConfirmation = !data.session && data.user && data.user.identities?.length === 0;
+    // No session means the project requires email confirmation before sign-in.
+    const needsEmailConfirmation = !data.session;
 
     const authUser = mapSupabaseUserToAuthUser(data.user);
     return { user: authUser, error: null, needsEmailConfirmation };
   } catch (err: any) {
-    return { user: null, error: err?.message || 'An unexpected error occurred during signup.' };
+    return { user: null, error: authErrorMessage(err?.message) };
   }
 }
 
@@ -303,17 +291,7 @@ export async function supabaseSignIn(
   fallbackRole?: PortalMode
 ): Promise<{ user: AuthUser | null; error: string | null }> {
   if (!isSupabaseConfigured || !supabase) {
-    // Graceful fallback for preview testing
-    const role: PortalMode = email.toLowerCase().includes('ncpa') || email.toLowerCase().includes('venue') || email.toLowerCase().includes('organizer') ? 'organiser' : 'artist';
-    const fallbackUser: AuthUser = {
-      id: `sb-user-${Date.now()}`,
-      name: email.split('@')[0],
-      email: email,
-      role: role,
-      orgName: role === 'organiser' ? 'NCPA Mumbai' : undefined,
-      discipline: role === 'artist' ? 'Classical & Contemporary Vocalist' : undefined,
-    };
-    return { user: fallbackUser, error: null };
+    return { user: null, error: 'Sign-in is not configured on this deployment.' };
   }
 
   try {
@@ -323,11 +301,11 @@ export async function supabaseSignIn(
     });
 
     if (error) {
-      return { user: null, error: error.message };
+      return { user: null, error: authErrorMessage(error.message) };
     }
 
     if (!data.user) {
-      return { user: null, error: 'User not found' };
+      return { user: null, error: 'No account found for this email.' };
     }
 
     const authUser = mapSupabaseUserToAuthUser(data.user);
@@ -340,7 +318,7 @@ export async function supabaseSignIn(
 
     return { user: authUser, error: null };
   } catch (err: any) {
-    return { user: null, error: err?.message || 'Failed to sign in. Please verify your credentials.' };
+    return { user: null, error: authErrorMessage(err?.message) };
   }
 }
 
@@ -436,15 +414,14 @@ export async function supabaseGetCurrentUser(): Promise<AuthUser | null> {
         const { data: updated } = await supabase.auth.updateUser({
           data: {
             role: roleToFlush,
+            // No fabricated defaults — absent stays absent.
             org_name:
               roleToFlush === 'organiser'
-                ? pending.orgName || user.user_metadata?.org_name || 'NCPA Mumbai'
+                ? pending.orgName || user.user_metadata?.org_name || undefined
                 : undefined,
             discipline:
               roleToFlush === 'artist'
-                ? pending.discipline ||
-                  user.user_metadata?.discipline ||
-                  'Classical & Contemporary Arts'
+                ? pending.discipline || user.user_metadata?.discipline || undefined
                 : undefined,
           },
         });

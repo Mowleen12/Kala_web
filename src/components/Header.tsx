@@ -13,7 +13,6 @@ import {
   LogIn 
 } from 'lucide-react';
 import { KalaLogo } from './KalaLogo';
-import { NOTIFICATIONS } from '../data/mockData';
 import { PortalMode, Thread } from '../types';
 import { isUnread } from '../lib/threads';
 
@@ -50,19 +49,19 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSignIn,
   onSignOut,
   onSwitchPortalAccount,
-  userName = "Mowleen",
+  userName = '',
   userEmail,
-  orgName = "NCPA Mumbai",
+  orgName = '',
   avatarUrl,
   authProvider,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [notifications, setNotifications] = useState(NOTIFICATIONS);
 
-  // Message alerts: unread threads for the active portal surface in the bell.
+  // Notifications are the real message alerts for the active portal — unread
+  // threads only. Nothing fabricated, nothing to clear client-side.
   const role = portalMode === 'artist' ? 'artist' : 'organiser';
-  const messageNotifs = threads
+  const allNotifs = threads
     .filter((t) => isUnread(t, role))
     .map((t) => ({
       id: `thread-${t.id}`,
@@ -79,12 +78,10 @@ export const Header: React.FC<HeaderProps> = ({
       }),
       unread: true,
     }));
-  const allNotifs = [...messageNotifs, ...notifications];
 
-  const unreadCount = allNotifs.filter(n => n.unread).length;
+  const unreadCount = allNotifs.length;
 
   const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, unread: false })));
     onMarkThreadsRead?.();
   };
 
@@ -98,7 +95,7 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const effectiveEmail = userEmail || (portalMode === 'artist' ? 'mowleen2006@gmail.com' : 'auditions@ncpamumbai.com');
+  const effectiveEmail = userEmail || '';
 
   return (
     <header className="sticky top-0 z-30 bg-[#FAF8F5]/90 backdrop-blur-md px-4 sm:px-8 py-3.5 border-b border-[#EFECE6]/80 flex flex-wrap items-center justify-between gap-y-2.5 gap-x-3 sm:gap-x-4">
@@ -198,6 +195,11 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
               </div>
               <div className="divide-y divide-zinc-50 max-h-80 overflow-y-auto mt-2">
+                {allNotifs.length === 0 && (
+                  <p className="py-6 text-center text-xs text-zinc-400">
+                    No new notifications
+                  </p>
+                )}
                 {allNotifs.map((notif) => (
                   <div
                     key={notif.id}
@@ -227,17 +229,17 @@ export const Header: React.FC<HeaderProps> = ({
             }}
             className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-full bg-white border border-[#E9E4DB] hover:border-zinc-300 transition-colors shadow-2xs cursor-pointer"
           >
-            <img
-              src={
-                avatarUrl || (
-                  portalMode === 'artist'
-                    ? "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80"
-                    : "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=120&q=80"
-                )
-              }
-              alt="Profile"
-              className="w-7 h-7 rounded-full object-cover ring-1 ring-zinc-200"
-            />
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="Profile"
+                className="w-7 h-7 rounded-full object-cover ring-1 ring-zinc-200"
+              />
+            ) : (
+              <span className="w-7 h-7 rounded-full bg-[#FDEEE7] text-[#E45826] ring-1 ring-zinc-200 text-xs font-bold flex items-center justify-center">
+                {(userName || orgName || '?').charAt(0).toUpperCase()}
+              </span>
+            )}
             <span className="text-[13px] text-zinc-600 hidden lg:inline">
               {portalMode === 'artist' ? (
                 <>Hello, <strong className="text-zinc-900 font-semibold">{userName}</strong></>
@@ -314,7 +316,7 @@ export const Header: React.FC<HeaderProps> = ({
                       }}
                       className="w-full text-left px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-[#FDEEE7] hover:text-[#E45826] rounded-lg transition-colors cursor-pointer"
                     >
-                      NCPA Venue Profile
+                      Venue Profile
                     </button>
                     <button
                       onClick={() => {

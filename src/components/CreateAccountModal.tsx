@@ -51,7 +51,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
   const [role, setRole] = useState<PortalMode>(initialRole);
   const [fullName, setFullName] = useState('');
   const [orgName, setOrgName] = useState('');
-  const [discipline, setDiscipline] = useState('Classical & Contemporary Vocalist');
+  const [discipline, setDiscipline] = useState('');
   const [email, setEmail] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [password, setPassword] = useState('');
@@ -64,10 +64,8 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (initialRole) {
-      setRole(initialRole);
-    }
-  }, [initialRole]);
+    if (isOpen) setRole(initialRole);
+  }, [isOpen, initialRole]);
 
   if (!isOpen) return null;
 
@@ -122,7 +120,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
           name: user.name,
           email: user.email,
           role: user.role || role,
-          orgName: user.orgName || (role === 'organiser' ? 'NCPA Mumbai' : undefined),
+          orgName: user.orgName,
           discipline: user.discipline,
           avatar: user.avatar,
         });
@@ -146,6 +144,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
         }
 
         onSuccess({
+          id: user.id,
           name: user.name,
           email: user.email,
           role: user.role,
@@ -184,6 +183,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
       }
 
       onSuccess({
+        id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -307,7 +307,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                       <span>Host & Venue Management Desk</span>
                     </div>
                     <p className="text-[11px] text-zinc-500 leading-relaxed">
-                      Publish open audition calls, review acoustic auditions with ratings, and scout from 12,400+ verified creators.
+                      Publish open audition calls, review applications with ratings, and message artists directly from your pipeline.
                     </p>
                   </div>
 
@@ -329,9 +329,9 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                         <Users className="w-4 h-4 text-[#E45826]" />
                       </div>
                       <div>
-                        <h5 className="text-xs font-bold text-zinc-900">Verified Indian Talent</h5>
+                        <h5 className="text-xs font-bold text-zinc-900">Screen Reels In-App</h5>
                         <p className="text-[11px] text-zinc-500 leading-tight mt-0.5">
-                          Screen audio reels and portfolio tracks directly in-app.
+                          Listen to audio reels and watch video submissions directly in your review room.
                         </p>
                       </div>
                     </div>
@@ -496,7 +496,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                       type="text"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      placeholder={role === 'artist' ? 'e.g. Mowleen Mukherjee' : 'e.g. Dr. Suvarnalata Rao'}
+                      placeholder={role === 'artist' ? 'e.g. Ananya Sharma' : 'e.g. Dr. Meera Rao'}
                       className="w-full bg-[#FAF8F5] border border-[#E5E0D6] focus:border-[#E45826] focus:bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 outline-none transition-all placeholder:text-zinc-400 shadow-2xs"
                     />
                   </div>
@@ -613,7 +613,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                     {isSubmitting ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Connecting to Supabase...</span>
+                        <span>{isLoginMode ? 'Logging in…' : 'Creating your account…'}</span>
                       </>
                     ) : (
                       <>

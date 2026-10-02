@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
   X, 
@@ -7,13 +7,10 @@ import {
   ArrowRight, 
   AlertCircle, 
   Loader2, 
-  Sparkles,
   Building2,
-  User,
-  Zap,
-  CheckCircle2
+  User
 } from 'lucide-react';
-import { KalaStar, KalaLogo } from './KalaLogo';
+import { KalaStar } from './KalaLogo';
 import { PortalMode, AuthUser } from '../types';
 import { supabaseSignIn, supabaseSignInWithGoogle, isSupabaseConfigured } from '../lib/supabase';
 
@@ -33,6 +30,10 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   initialRole = 'artist',
 }) => {
   const [role, setRole] = useState<PortalMode>(initialRole);
+
+  useEffect(() => {
+    if (isOpen) setRole(initialRole);
+  }, [isOpen, initialRole]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -127,7 +128,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
             Log In to Kalā
           </h2>
           <p className="text-xs text-zinc-600 mt-1">
-            Secure Authentication with Supabase
+            Log back in to continue
           </p>
 
           {/* Role Selector Pill */}
@@ -228,7 +229,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={role === 'artist' ? "e.g. mowleen2006@gmail.com" : "e.g. curator@ncpamumbai.com"}
+                placeholder={role === 'artist' ? "you@example.com" : "auditions@venue.org"}
                 className="w-full bg-[#FAF8F5] border border-[#E5DFD5] rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-zinc-900 placeholder:text-zinc-400 outline-none focus:border-[#E45826] transition-colors"
               />
               <Mail className="w-4 h-4 text-zinc-400 absolute left-3 top-3 pointer-events-none" />
@@ -260,7 +261,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Authenticating with Supabase...</span>
+                <span>Signing in…</span>
               </>
             ) : (
               <>

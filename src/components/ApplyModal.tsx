@@ -1,15 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { X, MapPin, Calendar, CheckCircle2, Link2, Sparkles } from 'lucide-react';
+import { X, MapPin, Calendar, Link2, Sparkles, AlertCircle } from 'lucide-react';
 import { Opportunity } from '../types';
 import { MediaUploader } from './MediaUploader';
 import { getDraft, setDraft, clearDraft } from '../lib/drafts';
 import { isLocalMediaUrl, resolveMediaUrl } from '../lib/localMedia';
+import { loadProfileSkills, loadProfileText } from '../lib/profile';
 
 interface ApplyDraft {
   portfolioUrl?: string;
   statement?: string;
   mediaUrl?: string;
+  experienceYears?: string;
+  skills?: string;
+  city?: string;
+}
+
+export interface ApplyFormData {
+  portfolioUrl?: string | null;
+  statement?: string;
+  reelUrl?: string | null;
+  fileName?: string | null;
+  experienceYears?: number;
+  skills?: string[];
+  city?: string;
 }
 
 const applyDraftKey = (oppId: string) => `kala_draft_apply_${oppId}`;
@@ -18,9 +32,13 @@ interface ApplyModalProps {
   opportunity: Opportunity | null;
   isOpen: boolean;
   onClose: () => void;
-  onSubmitApplication: (opp: Opportunity, appData: any) => void;
-  userName?: string;
-  userEmail?: string;
+  onSubmitApplication: (
+    opp: Opportunity,
+    appData: ApplyFormData
+  ) => Promise<{ ok: boolean; error?: string }>;
+  userName: string;
+  userEmail: string;
+  profileKey: string;
 }
 
 export const ApplyModal: React.FC<ApplyModalProps> = ({
@@ -28,14 +46,19 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
   isOpen,
   onClose,
   onSubmitApplication,
-  userName = "Mowleen",
-  userEmail = "mowleen2006@gmail.com",
+  userName,
+  userEmail,
+  profileKey,
 }) => {
   const [portfolioUrl, setPortfolioUrl] = useState('');
   const [statement, setStatement] = useState('');
   const [mediaUrl, setMediaUrl] = useState('');
   const [mediaType, setMediaType] = useState<'video' | 'image' | 'auto'>('auto');
+  const [experienceYears, setExperienceYears] = useState('');
+  const [skills, setSkills] = useState('');
+  const [city, setCity] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Restore a saved draft when this opportunity's form opens...
   useEffect(() => {
@@ -43,8 +66,14 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
     // Read synchronously so the save effect below can't clobber the stored
     // draft before we have it; resolve any stored media ref afterwards.
     const draft = getDraft<ApplyDraft>(applyDraftKey(opportunity.id));
+    const profile = loadProfileText(profileKey);
+    const profileSkills = loadProfileSkills(profileKey);
     setPortfolioUrl(draft?.portfolioUrl ?? '');
     setStatement(draft?.statement ?? '');
+    setExperienceYears(draft?.experienceYears ?? '');
+    setSkills(draft?.skills ?? (profileSkills.length ? profileSkills.join(', ') : ''));
+    setCity(draft?.city ?? profile.location ?? '');
+    setSubmitError(null);
     const draftMedia = draft?.mediaUrl ?? '';
     if (!isLocalMediaUrl(draftMedia)) {
       setMediaUrl(draftMedia);
@@ -57,7 +86,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
     return () => {
       alive = false;
     };
-  }, [isOpen, opportunity?.id]);
+  }, [isOpen, opportunity?.id, profileKey]);
 
   // ...and keep it saved while the artist types, so work survives
   // logout/login and reloads. Cleared on submit below. setDraft swaps live
@@ -68,25 +97,39 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
       portfolioUrl,
       statement,
       mediaUrl,
+      experienceYears,
+      skills,
+      city,
     });
-  }, [isOpen, opportunity?.id, portfolioUrl, statement, mediaUrl]);
+  }, [isOpen, opportunity?.id, portfolioUrl, statement, mediaUrl, experienceYears, skills, city]);
 
   if (!isOpen || !opportunity) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      onSubmitApplication(opportunity, {
-        portfolioUrl: portfolioUrl || (mediaUrl ? mediaUrl : 'https://instagram.com/mowleen.creates'),
-        statement,
-        reelUrl: mediaUrl || undefined,
-        fileName: mediaUrl ? 'audition_reel_cloudinary' : 'portfolio_reel.mp4',
-      });
-      clearDraft(applyDraftKey(opportunity.id));
-      onClose();
-    }, 400);
+    setSubmitError(null);
+    const mediaName = mediaUrl ? mediaUrl.split('/').pop()?.split('?')[0] || 'upload' : null;
+    const res = await onSubmitApplication(opportunity, {
+      portfolioUrl: portfolioUrl || null,
+      statement,
+      reelUrl: mediaUrl || null,
+      fileName: mediaName,
+      experienceYears: experienceYears.trim() ? Number(experienceYears) || undefined : undefined,
+      skills: skills
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      city: city.trim() || undefined,
+    });
+    setIsSubmitting(false);
+    if (res && res.ok === false) {
+      setSubmitError(res.error || 'Your application could not be submitted. Please try again.');
+      return;
+    }
+    clearDraft(applyDraftKey(opportunity.id));
+    onClose();
   };
 
   return (
@@ -137,12 +180,56 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
             <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200 flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-zinc-900">{userName}</p>
-                <p className="text-[11px] text-zinc-500">{userEmail} • Verified Artist</p>
+                <p className="text-[11px] text-zinc-500">{userEmail}</p>
               </div>
-              <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> Ready
+              <span className="text-[11px] font-semibold text-zinc-500 bg-white border border-zinc-200 px-2 py-0.5 rounded-md">
+                Artist
               </span>
             </div>
+          </div>
+
+          {/* Real application fields — organisers filter and sort on these */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                Years of Experience
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={70}
+                value={experienceYears}
+                onChange={(e) => setExperienceYears(e.target.value)}
+                placeholder="e.g. 4"
+                className="w-full bg-[#FAF8F5] border border-[#E5E0D6] focus:border-[#E45826] focus:bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 outline-none transition-all shadow-2xs"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                City
+              </label>
+              <input
+                type="text"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="e.g. Mumbai"
+                className="w-full bg-[#FAF8F5] border border-[#E5E0D6] focus:border-[#E45826] focus:bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 outline-none transition-all shadow-2xs"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-700 mb-1">
+              <Sparkles className="w-3.5 h-3.5 text-zinc-400" />
+              <span>Skills (comma-separated)</span>
+            </label>
+            <input
+              type="text"
+              value={skills}
+              onChange={(e) => setSkills(e.target.value)}
+              placeholder="e.g. Carnatic Vocals, Sitar, Live Improvisation"
+              className="w-full bg-[#FAF8F5] border border-[#E5E0D6] focus:border-[#E45826] focus:bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 outline-none transition-all shadow-2xs"
+            />
           </div>
 
           {/* Cloudinary Audition Video & Image Uploader */}
@@ -188,6 +275,13 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
               className="w-full bg-[#FAF8F5] border border-[#E5E0D6] focus:border-[#E45826] focus:bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 outline-none transition-all shadow-2xs resize-none"
             />
           </div>
+
+          {submitError && (
+            <div className="flex items-start gap-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{submitError}</span>
+            </div>
+          )}
 
           <div className="pt-2">
             <button
