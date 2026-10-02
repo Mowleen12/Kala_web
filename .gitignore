@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+.e2e/shots/
+.playwright-mcp/
+brag-output/
