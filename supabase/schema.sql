@@ -336,3 +336,259 @@ begin
     alter publication supabase_realtime add table public.threads;
   end if;
 end $$;
+
+-- ===========================================================================
+-- 5. Marketplace: opportunities + applications
+--     Paste the WHOLE file (it is idempotent) into the Supabase SQL editor.
+-- ===========================================================================
+
+create extension if not exists "pgcrypto";
+
+-- ---------------------------------------------------------------------------
+-- 5.1 Opportunities (an organiser's casting/audition call)
+-- ---------------------------------------------------------------------------
+create table if not exists public.opportunities (
+  id              uuid primary key default gen_random_uuid(),
+  organiser_id    uuid not null references public.profiles(id) on delete cascade,
+  -- Display snapshots: profiles RLS stops other users reading the organiser row.
+  organiser_name  text,
+  organiser_avatar text,
+  title           text not null check (length(btrim(title)) between 3 and 300),
+  category        text not null check (length(btrim(category)) between 1 and 80),
+  description     text,
+  requirements    text[],
+  location        text,
+  venue           text,
+  city            text,
+  date_range      text,
+  deadline        timestamptz,
+  compensation    text,
+  image_url       text,
+  status          text not null default 'active' check (status in ('active', 'closed')),
+  featured        boolean not null default false,
+  -- Maintained by trigger in 5.3 — never written by clients.
+  applicant_count int not null default 0,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+
+create index if not exists opportunities_organiser_idx on public.opportunities (organiser_id);
+create index if not exists opportunities_status_deadline_idx on public.opportunities (status, deadline);
+create index if not exists opportunities_category_idx on public.opportunities (category);
+create index if not exists opportunities_created_idx on public.opportunities (created_at desc);
+
+-- ---------------------------------------------------------------------------
+-- 5.2 Applications (one artist -> one opportunity, enforced by the DB)
+-- ---------------------------------------------------------------------------
+create table if not exists public.applications (
+  id                uuid primary key default gen_random_uuid(),
+  opportunity_id    uuid not null references public.opportunities(id) on delete cascade,
+  applicant_id      uuid not null references public.profiles(id) on delete cascade,
+  -- Snapshot of the applicant at submission time (profiles RLS blocks later reads)
+  applicant_name    text not null,
+  applicant_avatar  text,
+  applicant_role    text,
+  applicant_city    text,
+  skills            text,
+  experience_years  int check (experience_years is null or experience_years between 0 and 80),
+  statement         text,
+  portfolio_url     text,
+  reel_url          text,
+  file_name         text,
+  -- Set by the reviewing organiser only (column grant, see 5.5).
+  status            text not null default 'under_review'
+                    check (status in ('under_review', 'interview', 'selected', 'rejected')),
+  rating            int check (rating is null or rating between 1 and 5),
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now(),
+  -- Business rule: an artist may apply at most once per opportunity.
+  unique (opportunity_id, applicant_id)
+);
+
+create index if not exists applications_opportunity_idx on public.applications (opportunity_id);
+create index if not exists applications_applicant_idx on public.applications (applicant_id);
+create index if not exists applications_status_idx on public.applications (status);
+
+-- ---------------------------------------------------------------------------
+-- 5.3 Triggers: applicant_count stays correct no matter who writes
+-- ---------------------------------------------------------------------------
+create or replace function public.refresh_opportunity_applicant_count()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if tg_op = 'INSERT' then
+    update public.opportunities
+       set applicant_count = applicant_count + 1
+     where id = new.opportunity_id;
+  elsif tg_op = 'DELETE' then
+    update public.opportunities
+       set applicant_count = greatest(applicant_count - 1, 0)
+     where id = old.opportunity_id;
+  elsif tg_op = 'UPDATE' and new.opportunity_id is distinct from old.opportunity_id then
+    update public.opportunities set applicant_count = greatest(applicant_count - 1, 0)
+     where id = old.opportunity_id;
+    update public.opportunities set applicant_count = applicant_count + 1
+     where id = new.opportunity_id;
+  end if;
+  return coalesce(new, old);
+end;
+$$;
+
+drop trigger if exists applications_count_trg on public.applications;
+create trigger applications_count_trg
+  after insert or update or delete on public.applications
+  for each row execute function public.refresh_opportunity_applicant_count();
+
+-- ---------------------------------------------------------------------------
+-- 5.4 Row Level Security
+-- ---------------------------------------------------------------------------
+alter table public.opportunities enable row level security;
+alter table public.applications  enable row level security;
+
+-- Anyone signed in can browse the marketplace; only the owning organiser may
+-- write. is_organiser() is the product's own gate (organiser is a self-serve
+-- signup role — this stops artists who never chose it from posting calls).
+drop policy if exists opportunities_select on public.opportunities;
+create policy opportunities_select on public.opportunities
+  for select to authenticated using (true);
+
+drop policy if exists opportunities_insert on public.opportunities;
+create policy opportunities_insert on public.opportunities
+  for insert to authenticated
+  with check (organiser_id = auth.uid() and public.is_organiser());
+
+drop policy if exists opportunities_update on public.opportunities;
+create policy opportunities_update on public.opportunities
+  for update to authenticated
+  using (organiser_id = auth.uid())
+  with check (organiser_id = auth.uid());
+
+drop policy if exists opportunities_delete on public.opportunities;
+create policy opportunities_delete on public.opportunities
+  for delete to authenticated
+  using (organiser_id = auth.uid());
+
+drop policy if exists applications_select on public.applications;
+create policy applications_select on public.applications
+  for select to authenticated
+  using (
+    applicant_id = auth.uid()
+    or exists (
+      select 1 from public.opportunities o
+       where o.id = opportunity_id and o.organiser_id = auth.uid()
+    )
+  );
+
+-- Applicants may only file applications as themselves, and only against a live
+-- call (status + deadline enforced server-side, not just in the UI).
+drop policy if exists applications_insert on public.applications;
+create policy applications_insert on public.applications
+  for insert to authenticated
+  with check (
+    applicant_id = auth.uid()
+    and exists (
+      select 1 from public.opportunities o
+       where o.id = opportunity_id
+         and o.status = 'active'
+         and (o.deadline is null or o.deadline > now())
+    )
+  );
+
+-- Only the organiser who owns the call may review, and only via the columns
+-- granted in 5.5 (status / rating / updated_at) — they cannot re-file the
+-- application as someone else.
+drop policy if exists applications_update on public.applications;
+create policy applications_update on public.applications
+  for update to authenticated
+  using (
+    exists (
+      select 1 from public.opportunities o
+       where o.id = opportunity_id and o.organiser_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.opportunities o
+       where o.id = opportunity_id and o.organiser_id = auth.uid()
+    )
+  );
+
+-- No DELETE policy: application records are transactional history.
+
+-- ---------------------------------------------------------------------------
+-- 5.5 Column-level grants (RLS scopes WHO; these scope WHICH COLUMNS)
+-- ---------------------------------------------------------------------------
+revoke all on table public.opportunities from anon;
+revoke all on table public.applications  from anon;
+
+grant select, insert, delete on table public.opportunities to authenticated;
+revoke update on table public.opportunities from authenticated;
+grant update (title, category, description, requirements, location, venue,
+              city, date_range, deadline, compensation, image_url, status,
+              featured, updated_at)
+  on table public.opportunities to authenticated;
+
+grant select, insert on table public.applications to authenticated;
+revoke update, delete on table public.applications from authenticated;
+grant update (status, rating, updated_at)
+  on table public.applications to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 5.6 Aggregates: every displayed metric is computed here, once
+-- ---------------------------------------------------------------------------
+create or replace function public.platform_stats()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select jsonb_build_object(
+    'artists',       (select count(*) from public.profiles where role = 'artist'),
+    'organisers',    (select count(*) from public.profiles where role = 'organiser'),
+    'opportunities', (select count(*) from public.opportunities),
+    'applications',  (select count(*) from public.applications),
+    'cities',        (select count(distinct city) from public.opportunities
+                       where city is not null and btrim(city) <> '')
+  );
+$$;
+
+create or replace function public.category_counts()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(
+    (select jsonb_object_agg(category, n)
+       from (select category, count(*)::int as n
+               from public.opportunities
+              group by category) counts),
+    '{}'::jsonb
+  );
+$$;
+
+revoke execute on function public.platform_stats() from public, anon;
+revoke execute on function public.category_counts() from public, anon;
+grant execute on function public.platform_stats() to authenticated;
+grant execute on function public.category_counts() to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 5.7 OPTIONAL DEVELOPMENT SEED — NOT FOR PRODUCTION.
+--     Deliberately commented out. To preview a populated marketplace, set
+--     :organiser_id to a real auth.users uuid you own, uncomment, run, then
+--     delete the rows. Never enable this on a live project: it fabricates
+--     listings and metrics that are not real events.
+-- ---------------------------------------------------------------------------
+-- insert into public.opportunities
+--   (organiser_id, organiser_name, title, category, description, location,
+--    venue, city, date_range, deadline, compensation, image_url, featured)
+-- values
+--   (:organiser_id, 'Sample Organiser', 'Sample Open Call', 'Music & Dance',
+--    'Development-only sample listing.', 'Sample Venue', 'Sample Venue',
+--    'Mumbai, Maharashtra', '29 Sep – 1 Oct', now() + interval '14 days',
+--    '₹5,000', 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819', true);
