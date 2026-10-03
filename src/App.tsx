@@ -192,19 +192,43 @@ export default function App() {
   // Organiser venue profile is a localStorage draft keyed by user id,
   // re-derived whenever the draft version bumps.
   const [orgProfileVersion, setOrgProfileVersion] = useState(0);
+  // Draft media URLs are stored as kala-idb: refs — resolved back into live
+  // object URLs (null until the first resolution lands).
+  const [orgMedia, setOrgMedia] = useState<{ logo?: string; coverImage?: string } | null>(null);
   const organiserProfile = useMemo<OrganiserProfile>(() => {
     if (!currentUser) return EMPTY_ORGANISER_PROFILE;
     const draft = getDraft<Partial<OrganiserProfile>>(orgProfileKey(currentUser.id)) || {};
     const logo =
-      draft.logo || profileMedia.avatar || currentUser.avatarUrl || currentUser.avatar || '';
+      (orgMedia?.logo ?? draft.logo) || profileMedia.avatar || currentUser.avatarUrl || currentUser.avatar || '';
     return {
       ...EMPTY_ORGANISER_PROFILE,
       id: currentUser.id,
       name: currentUser.orgName || '',
       ...draft,
       logo,
+      coverImage: orgMedia ? orgMedia.coverImage || '' : draft.coverImage || '',
     };
-  }, [currentUser, profileMedia, orgProfileVersion]);
+  }, [currentUser, profileMedia, orgProfileVersion, orgMedia]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setOrgMedia(null);
+      return;
+    }
+    let alive = true;
+    (async () => {
+      const draft = getDraft<Partial<OrganiserProfile>>(orgProfileKey(currentUser.id)) || {};
+      const resolved = await resolveMediaUrlDeep({
+        logo: draft.logo || '',
+        coverImage: draft.coverImage || '',
+      });
+      if (alive) setOrgMedia(resolved);
+    })();
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id, orgProfileVersion]);
 
   // Supabase Auth State Synchronization & OAuth Callback Handling
   useEffect(() => {

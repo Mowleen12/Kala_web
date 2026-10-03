@@ -310,9 +310,9 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                 </p>
               </div>
               <div className="pt-1 flex items-center justify-center gap-3 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
-                <span>MP4 • MOV • WEBM</span>
-                <span>•</span>
-                <span>JPG • PNG • WEBP</span>
+                {resourceType !== 'image' && <span>MP4 • MOV • WEBM</span>}
+                {resourceType !== 'image' && resourceType !== 'video' && <span>•</span>}
+                {resourceType !== 'video' && <span>JPG • PNG • WEBP</span>}
               </div>
             </div>
           )}
