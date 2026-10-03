@@ -862,7 +862,7 @@ export default function App() {
         onOpenSignUp={() => handleOpenSignUp(portalMode)}
         onSwitchPortalAccount={handleSwitchPortalAccount}
         onPostOpportunity={() => setIsPostModalOpen(true)}
-        orgName={currentUser.orgName || organiserProfile.name}
+        orgName={organiserProfile.name || currentUser.orgName}
       />
 
       {/* Main Content Workspace */}
@@ -906,8 +906,8 @@ export default function App() {
           onSwitchPortalAccount={handleSwitchPortalAccount}
           userName={currentUser.name}
           userEmail={currentUser.email}
-          orgName={currentUser.orgName || organiserProfile.name}
-          avatarUrl={currentUser.avatarUrl || currentUser.avatar}
+          orgName={organiserProfile.name || currentUser.orgName}
+          avatarUrl={profileMedia.avatar || currentUser.avatarUrl || currentUser.avatar}
           authProvider={currentUser.authProvider}
         />
 
