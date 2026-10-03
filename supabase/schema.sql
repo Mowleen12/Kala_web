@@ -577,18 +577,3 @@ revoke execute on function public.category_counts() from public, anon;
 grant execute on function public.platform_stats() to authenticated;
 grant execute on function public.category_counts() to authenticated;
 
--- ---------------------------------------------------------------------------
--- 5.7 OPTIONAL DEVELOPMENT SEED — NOT FOR PRODUCTION.
---     Deliberately commented out. To preview a populated marketplace, set
---     :organiser_id to a real auth.users uuid you own, uncomment, run, then
---     delete the rows. Never enable this on a live project: it fabricates
---     listings and metrics that are not real events.
--- ---------------------------------------------------------------------------
--- insert into public.opportunities
---   (organiser_id, organiser_name, title, category, description, location,
---    venue, city, date_range, deadline, compensation, image_url, featured)
--- values
---   (:organiser_id, 'Sample Organiser', 'Sample Open Call', 'Music & Dance',
---    'Development-only sample listing.', 'Sample Venue', 'Sample Venue',
---    'Mumbai, Maharashtra', '29 Sep – 1 Oct', now() + interval '14 days',
---    '₹5,000', 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819', true);
