@@ -6,7 +6,6 @@ import {
   Lock, 
   ArrowRight, 
   AlertCircle, 
-  Loader2, 
   Building2,
   User
 } from 'lucide-react';
@@ -179,7 +178,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
           >
             {isGoogleLoading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin text-[#E45826]" />
+                <KalaStar size={16} className="w-4 h-4 animate-spin text-[#E45826]" />
                 <span>Connecting to Google...</span>
               </>
             ) : (
@@ -260,7 +259,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <KalaStar size={16} className="w-4 h-4 animate-spin" />
                 <span>Signing in…</span>
               </>
             ) : (

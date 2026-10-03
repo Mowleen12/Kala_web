@@ -30,6 +30,7 @@ import { OrganiserApplicantsView } from './components/OrganiserApplicantsView';
 import { OrganiserTalentScoutView } from './components/OrganiserTalentScoutView';
 import { OrganiserProfileView } from './components/OrganiserProfileView';
 import { PostOpportunityModal } from './components/PostOpportunityModal';
+import { KalaStar } from './components/KalaLogo';
 
 // Supabase auth & Cloudinary media integrations
 import { 
@@ -800,6 +801,7 @@ export default function App() {
   if (!authReady) {
     return (
       <div className="min-h-screen bg-[#FAF8F5] text-zinc-900 flex flex-col items-center justify-center gap-4">
+        <KalaStar size={44} className="w-11 h-11 text-[#E45826] animate-spin" />
         <div className="text-3xl font-serif tracking-[0.3em]">KALĀ</div>
         <div className="text-[11px] uppercase tracking-[0.35em] text-zinc-500">
           Restoring your session
@@ -927,8 +929,9 @@ export default function App() {
         {/* Dynamic Main Body Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1580px] w-full mx-auto">
           {!listingsLoaded ? (
-            <div className="flex items-center justify-center py-32 text-sm text-zinc-500 tracking-wide">
-              Loading your workspace…
+            <div className="flex flex-col items-center justify-center gap-3 py-32 text-sm text-zinc-500 tracking-wide">
+              <KalaStar size={30} className="w-7 h-7 text-[#E45826] animate-spin" />
+              <span>Loading your workspace…</span>
             </div>
           ) : (
           <AnimatePresence mode="wait">

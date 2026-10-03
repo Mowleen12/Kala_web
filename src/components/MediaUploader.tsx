@@ -5,11 +5,11 @@ import {
   Image as ImageIcon, 
   X, 
   CheckCircle2, 
-  Loader2, 
   Play, 
   AlertCircle,
   FileText
 } from 'lucide-react';
+import { KalaStar } from './KalaLogo';
 import { uploadToCloudinary, CloudinaryUploadResult } from '../lib/cloudinary';
 import { maxBytesFor, isVideoFile, formatMB } from '../lib/limits';
 
@@ -274,7 +274,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
           {isUploading ? (
             <div className="py-4 space-y-3">
               <div className="w-10 h-10 mx-auto rounded-full bg-[#FCEEE7] text-[#E45826] flex items-center justify-center animate-spin">
-                <Loader2 className="w-5 h-5" />
+                <KalaStar size={20} className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-xs font-bold text-zinc-900">
