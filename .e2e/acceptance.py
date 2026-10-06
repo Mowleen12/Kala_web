@@ -199,11 +199,21 @@ def phase_d(page):
     page.get_by_role("button", name="Talent Pipeline").first.click()
     page.wait_for_timeout(1500)
     body = page.inner_text("body")
+    check("1 Total Submissions" in body, "pipeline header counts 1")
+    check(
+        "No students selected yet" in body,
+        "pipeline defaults to the selected roster (empty before any commission)",
+    )
+
+    # pending applicants live behind the stage tabs
+    page.get_by_role("button", name="Under Review (1)").click()
+    page.wait_for_timeout(500)
+    body = page.inner_text("body")
     check(ARTIST_NAME in body, "applicant card in pipeline")
     check("Under Review" in body, "applicant starts Under Review")
-    check("1 Total Submissions" in body, "pipeline header counts 1")
 
     page.get_by_role("button", name="Commission Artist").click()
+    page.get_by_role("button", name="Selected (1)").click()
     page.wait_for_selector("text=Artist Selected", timeout=30000)
     body = page.inner_text("body")
     check("Artist Selected" in body, "status moved to Artist Selected")

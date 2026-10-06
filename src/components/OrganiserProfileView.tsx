@@ -85,7 +85,7 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
                 <MediaPreview
                   src={profile.coverImage}
                   alt={`${profile.name} cover`}
-                  mediaClassName="w-full h-full object-cover opacity-90"
+                  mediaClassName="w-full h-full object-contain object-center opacity-90"
                 />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent pointer-events-none" />

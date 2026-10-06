@@ -65,10 +65,10 @@ export const OnboardingLoadingScreen: React.FC<OnboardingLoadingScreenProps> = (
 
       {/* Center Setup Animation & Status */}
       <div className="relative z-10 flex flex-col items-center text-center max-w-sm px-4">
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-zinc-950 tracking-tight mb-2">
+        <h2 className="font-brand text-3xl sm:text-4xl font-extrabold text-zinc-950 tracking-tight mb-2">
           {title}
         </h2>
-        <p className="text-sm text-zinc-500 mb-10">
+        <p className="font-brand text-sm text-zinc-500 mb-10">
           {subtitle}
         </p>
 

@@ -335,6 +335,14 @@ begin
   ) then
     alter publication supabase_realtime add table public.threads;
   end if;
+
+  -- Application status changes must reach the artist live (no reload).
+  if not exists (
+    select 1 from pg_publication_tables
+     where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'applications'
+  ) then
+    alter publication supabase_realtime add table public.applications;
+  end if;
 end $$;
 
 -- ===========================================================================

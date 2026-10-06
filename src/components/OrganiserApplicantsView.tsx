@@ -49,7 +49,9 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
 }) => {
   // Filter states
   const [selectedOppFilter, setSelectedOppFilter] = useState<string>(initialOppId || 'all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  // The roster opens on the artists you have actually commissioned; everyone
+  // else stays one tap away in the Under Review / Audition / All tabs.
+  const [statusFilter, setStatusFilter] = useState<string>('selected');
   const [experienceFilter, setExperienceFilter] = useState<string>('all');
   const [cityFilter, setCityFilter] = useState<string>('all');
   const [ratingFilter, setRatingFilter] = useState<string>('all');
@@ -484,6 +486,19 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
             <>
               <h3 className="text-base font-bold text-zinc-800 mb-1">No applicants yet</h3>
               <p className="text-xs text-zinc-500 mb-4">Applications to your calls will show up here for review.</p>
+            </>
+          ) : statusFilter === 'selected' ? (
+            <>
+              <h3 className="text-base font-bold text-zinc-800 mb-1">No students selected yet</h3>
+              <p className="text-xs text-zinc-500 mb-4">
+                Commission artists from your review room — they show up here as your current students.
+              </p>
+              <button
+                onClick={() => setStatusFilter('under_review')}
+                className="px-5 py-2 rounded-full bg-[#E45826] text-white text-xs font-semibold cursor-pointer shadow-xs hover:bg-[#D44716]"
+              >
+                Open Under Review queue
+              </button>
             </>
           ) : (
             <>

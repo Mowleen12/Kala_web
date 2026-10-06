@@ -56,6 +56,7 @@ import {
   applyToOpportunity,
   createOpportunity,
   updateApplicationStatus,
+  subscribeApplications,
   fetchPlatformStats,
   fetchCategoryCounts,
   schemaMissing,
@@ -450,6 +451,7 @@ export default function App() {
     if (!currentUser) return;
     let active = true;
     let unsubscribe: (() => void) | null = null;
+    let unsubscribeApps: (() => void) | null = null;
     (async () => {
       await ensureProfile(currentUser).catch(() => {});
       const fresh = await fetchThreads();
@@ -461,10 +463,29 @@ export default function App() {
           if (active) setThreads(t);
         });
       });
+      // Status changes made by the other side of the conversation (an organiser
+      // commissioning the artist) only land in the DB — refetch on every event.
+      const refetchApplications = () => {
+        fetchApplications().then((r) => {
+          if (active) setApplications(r.data);
+        });
+      };
+      const unsubscribeChannel = subscribeApplications(refetchApplications);
+      // Websockets die while a tab is backgrounded (phone lock, other window),
+      // so refetch the moment the tab becomes visible again too.
+      const onWake = () => {
+        if (document.visibilityState === 'visible') refetchApplications();
+      };
+      document.addEventListener('visibilitychange', onWake);
+      unsubscribeApps = () => {
+        unsubscribeChannel();
+        document.removeEventListener('visibilitychange', onWake);
+      };
     })();
     return () => {
       active = false;
       unsubscribe?.();
+      unsubscribeApps?.();
     };
   }, [currentUser?.id]);
 

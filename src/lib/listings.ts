@@ -263,6 +263,22 @@ export async function fetchApplications(): Promise<{ data: Application[]; error:
   return { data: (data || []).map(rowToApplication), error: null };
 }
 
+/** Live application status: an organiser's Commission click has to reach the
+ *  artist without a reload. Callers gate on isDbReady() first — local mode has
+ *  no realtime (one browser, no server), so there is nothing to subscribe to. */
+export function subscribeApplications(onChange: () => void): () => void {
+  if (!supabaseClient) return () => {};
+
+  const channel = supabase
+    .channel('applications-list')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'applications' }, () => onChange())
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
 export interface ApplyInput {
   opportunityId: string;
   artistName: string;
