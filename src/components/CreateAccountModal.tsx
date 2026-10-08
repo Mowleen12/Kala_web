@@ -62,6 +62,8 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [error, setError] = useState('');
+  /** Shown when signup succeeded but Supabase still needs an email confirmation. */
+  const [notice, setNotice] = useState('');
 
   useEffect(() => {
     if (isOpen) setRole(initialRole);
@@ -72,6 +74,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setNotice('');
 
     if (!isLoginMode) {
       if (!fullName.trim()) {
@@ -125,7 +128,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
           avatar: user.avatar,
         });
       } else {
-        const { user, error: signUpErr } = await supabaseSignUp({
+        const { user, error: signUpErr, needsEmailConfirmation } = await supabaseSignUp({
           email: email.trim(),
           password,
           fullName: fullName.trim(),
@@ -139,6 +142,17 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
 
         if (signUpErr || !user) {
           setError(signUpErr || 'Failed to create account with Supabase.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        // No session exists until the confirmation link is clicked — opening
+        // the portal now would fabricate a login that dies on the next reload.
+        if (needsEmailConfirmation) {
+          setNotice(
+            `Account created for ${email.trim()} — open the confirmation link we emailed you, then log in here.`
+          );
+          setIsLoginMode(true);
           setIsSubmitting(false);
           return;
         }
@@ -353,6 +367,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                     onClick={() => {
                       setIsLoginMode(!isLoginMode);
                       setError('');
+                      setNotice('');
                     }}
                     className="text-[#E45826] font-bold hover:underline cursor-pointer ml-1"
                   >
@@ -407,6 +422,12 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                     : (role === 'artist' ? 'Join India\'s leading network of musicians, dancers, and creators.' : 'Register your auditorium, theatre, festival, or cultural house.')}
                 </p>
               </div>
+
+              {notice && (
+                <div className="mb-4 p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-xs font-medium">
+                  {notice}
+                </div>
+              )}
 
               {error && (
                 <div className="mb-4 p-2.5 bg-rose-50 border border-rose-200 text-rose-600 rounded-xl text-xs font-medium">
@@ -594,6 +615,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                       value={avatarUrl}
                       onChange={(url) => setAvatarUrl(url)}
                       onRemove={() => setAvatarUrl('')}
+                      local
                     />
                   </div>
                 )}

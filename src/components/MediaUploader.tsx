@@ -11,7 +11,14 @@ import {
 } from 'lucide-react';
 import { KalaStar } from './KalaLogo';
 import { uploadToCloudinary, CloudinaryUploadResult } from '../lib/cloudinary';
-import { maxBytesFor, isVideoFile, formatMB } from '../lib/limits';
+import { localMediaKind } from '../lib/localMedia';
+import {
+  maxBytesFor,
+  isVideoFile,
+  formatMB,
+  IMAGE_MAX_BYTES,
+  VIDEO_MAX_BYTES,
+} from '../lib/limits';
 
 interface MediaUploaderProps {
   label?: string;
@@ -25,6 +32,8 @@ interface MediaUploaderProps {
    *  show (rejecting the file) or null to proceed. ThreadModal uses it for the
    *  monthly budget so a rejected insert can never orphan an uploaded asset. */
   beforeUpload?: (file: File) => string | null;
+  /** Store in this browser only (no session yet — signup avatar). */
+  local?: boolean;
   className?: string;
 }
 
@@ -37,6 +46,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   onChange,
   onRemove,
   beforeUpload,
+  local,
   className = '',
 }) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -54,10 +64,13 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
     if (pending) URL.revokeObjectURL(pending.url);
   }, [pending]);
 
+  // Local media keeps its kind across reloads via the IndexedDB key extension —
+  // uploadDetails (session-only) and URL extensions (blob: has none) do not.
   const isVideo = value && (
+    localMediaKind(value) === 'video' ||
     value.includes('/video/') || 
     value.endsWith('.mp4') || 
-    value.endsWith('.webm') || 
+    value.endsWith('.webm') ||
     value.endsWith('.mov') ||
     uploadDetails?.resourceType === 'video'
   );
@@ -102,6 +115,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
       const result = await uploadToCloudinary(file, {
         folder,
         resourceType,
+        local,
         onProgress: (pct) => setProgress(pct),
       });
 
@@ -182,7 +196,9 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
           <div className="p-3 flex flex-wrap items-center justify-between gap-2.5 text-xs">
             <div className="min-w-0">
               <p className="truncate font-semibold text-zinc-800">{pending.file.name}</p>
-              <p className="text-[11px] text-zinc-500">{formatMB(pending.file.size)} ready to upload</p>
+              <p className="text-[11px] text-zinc-500">
+                {formatMB(pending.file.size)} ready to upload (max {formatMB(maxBytesFor(pending.file))})
+              </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
@@ -313,6 +329,11 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                 {resourceType !== 'image' && <span>MP4 • MOV • WEBM</span>}
                 {resourceType !== 'image' && resourceType !== 'video' && <span>•</span>}
                 {resourceType !== 'video' && <span>JPG • PNG • WEBP</span>}
+              </div>
+              <div className="flex items-center justify-center gap-3 text-[10px] font-bold text-[#E45826] uppercase tracking-wider">
+                {resourceType !== 'image' && <span>Max {formatMB(VIDEO_MAX_BYTES)} video</span>}
+                {resourceType !== 'image' && resourceType !== 'video' && <span>•</span>}
+                {resourceType !== 'video' && <span>Max {formatMB(IMAGE_MAX_BYTES)} image</span>}
               </div>
             </div>
           )}

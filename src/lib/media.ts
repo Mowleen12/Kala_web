@@ -6,6 +6,11 @@ export const isDirectMediaUrl = (url: string): boolean =>
   url.includes('cloudinary.com') ||
   /\.(mp4|webm|mov|jpg|jpeg|png|gif|webp|mp3|wav|ogg)(\?|#|$)/i.test(url);
 
+/** blob:/kala-idb: refs only resolve in the browser that created them —
+ *  dead for every other user and every later session. */
+export const isDeviceLocalUrl = (url: string): boolean =>
+  url.startsWith('blob:') || url.startsWith('kala-idb:');
+
 export const mediaKind = (url: string): 'image' | 'audio' | 'video' => {
   // Local uploads (blob:/kala-idb:) classify via their IndexedDB key extension.
   const local = localMediaKind(url);

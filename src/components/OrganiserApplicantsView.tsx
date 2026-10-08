@@ -26,7 +26,7 @@ import { KalaStar } from './KalaLogo';
 import { MediaPreview } from './MediaPreview';
 import { isUnread } from '../lib/threads';
 import { getOptimizedCloudinaryUrl } from '../lib/cloudinary';
-import { isDirectMediaUrl, mediaKind, linkHost } from '../lib/media';
+import { isDirectMediaUrl, isDeviceLocalUrl, mediaKind, linkHost } from '../lib/media';
 
 interface OrganiserApplicantsViewProps {
   applicants: ApplicantReview[];
@@ -619,7 +619,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                 {/* Audition Reel & Portfolio */}
                 {(app.reelUrl || app.portfolioUrl) && (
                   <div className="p-3 rounded-2xl bg-[#FAF2EB] border border-[#FAD7C8] mb-4 space-y-2.5">
-                    {app.reelUrl && isDirectMediaUrl(app.reelUrl) && (
+                    {app.reelUrl && isDirectMediaUrl(app.reelUrl) && !isDeviceLocalUrl(app.reelUrl) && (
                       mediaKind(app.reelUrl) === 'image' ? (
                         <MediaPreview
                           src={getOptimizedCloudinaryUrl(app.reelUrl, { width: 800, quality: 'auto' })}
@@ -656,6 +656,11 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                         </div>
                         <ExternalLink className="w-3.5 h-3.5 text-[#E45826] shrink-0" />
                       </a>
+                    )}
+                    {app.reelUrl && isDeviceLocalUrl(app.reelUrl) && (
+                      <p className="text-[11px] text-zinc-500 italic">
+                        Submitted media is no longer available — it was uploaded before shared storage was connected.
+                      </p>
                     )}
                     {app.portfolioUrl && (
                       <div className="flex justify-end">

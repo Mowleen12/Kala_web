@@ -585,3 +585,18 @@ revoke execute on function public.category_counts() from public, anon;
 grant execute on function public.platform_stats() to authenticated;
 grant execute on function public.category_counts() to authenticated;
 
+-- ---------------------------------------------------------------------------
+-- 6. Media storage: public bucket for avatars, reels, gallery and auditions
+-- ---------------------------------------------------------------------------
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('media', 'media', true, 52428800) -- 50 MB per-file backstop (client caps: 5 MB image / 40 MB video)
+on conflict (id) do update set public = true, file_size_limit = 52428800;
+
+drop policy if exists media_public_read on storage.objects;
+create policy media_public_read on storage.objects
+  for select using (bucket_id = 'media');
+
+drop policy if exists media_insert_authenticated on storage.objects;
+create policy media_insert_authenticated on storage.objects
+  for insert to authenticated with check (bucket_id = 'media');
+

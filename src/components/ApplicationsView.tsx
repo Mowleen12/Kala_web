@@ -6,7 +6,7 @@ import { MediaPreview } from './MediaPreview';
 import { Application, Opportunity, Thread } from '../types';
 import { isUnread } from '../lib/threads';
 import { getOptimizedCloudinaryUrl } from '../lib/cloudinary';
-import { isDirectMediaUrl, mediaKind, linkHost } from '../lib/media';
+import { isDirectMediaUrl, isDeviceLocalUrl, mediaKind, linkHost } from '../lib/media';
 
 interface ApplicationsViewProps {
   applications: Application[];
@@ -128,7 +128,11 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
 
               {app.mediaUrl && (
                 <div className="pt-1">
-                  {isDirectMediaUrl(app.mediaUrl) ? (
+                  {isDeviceLocalUrl(app.mediaUrl) ? (
+                    <p className="text-[11px] text-zinc-500 italic">
+                      Submitted media is no longer available — apply again with a fresh upload.
+                    </p>
+                  ) : isDirectMediaUrl(app.mediaUrl) ? (
                     mediaKind(app.mediaUrl) === 'image' ? (
                       <MediaPreview
                         src={getOptimizedCloudinaryUrl(app.mediaUrl, { width: 400, quality: 'auto' })}

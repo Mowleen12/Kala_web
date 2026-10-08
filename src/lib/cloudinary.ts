@@ -5,6 +5,8 @@
  */
 
 import { storeLocalMedia } from './localMedia';
+import { supabase } from './supabase';
+import { formatMB, maxBytesFor } from './limits';
 
 const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -34,25 +36,34 @@ export interface UploadOptions {
   folder?: string;
   resourceType?: 'image' | 'video' | 'auto';
   onProgress?: (percent: number) => void;
+  /** Keep the file in this browser's IndexedDB instead of shared storage.
+   *  Only for flows that run BEFORE a Supabase session exists (signup avatar). */
+  local?: boolean;
 }
 
 /**
- * Upload a media file (video or image) directly to Cloudinary storage
+ * Upload a media file (video or image) directly to storage.
+ * Shared uploads go to the Supabase `media` bucket (or Cloudinary when
+ * configured) so every signed-in user can see the resulting URL.
  */
 export async function uploadToCloudinary(
   file: File,
   options: UploadOptions = {}
 ): Promise<CloudinaryUploadResult> {
-  const { folder = 'kala-arts', resourceType = 'auto', onProgress } = options;
+  const { folder = 'kala-arts', resourceType = 'auto', onProgress, local } = options;
 
   // Determine media type
   const isVideo = file.type.startsWith('video/') || ['mp4', 'mov', 'webm', 'ogg'].some(ext => file.name.toLowerCase().endsWith(`.${ext}`));
   const isImage = file.type.startsWith('image/');
   const detectedType = isVideo ? 'video' : isImage ? 'image' : resourceType;
 
-  // Fallback if Cloudinary credentials are not yet set
+  // Pre-auth flows can only persist locally — no session to authorize a bucket write.
+  if (local) {
+    return simulateLocalUpload(file, detectedType === 'image' ? 'image' : 'video', onProgress);
+  }
+
   if (!isCloudinaryConfigured) {
-    return simulateLocalUpload(file, detectedType as 'image' | 'video', onProgress);
+    return uploadToMediaBucket(file, detectedType === 'image' ? 'image' : 'video', folder, onProgress);
   }
 
   return new Promise((resolve, reject) => {
@@ -116,6 +127,58 @@ export async function uploadToCloudinary(
     xhr.open('POST', uploadUrl, true);
     xhr.send(formData);
   });
+}
+
+/**
+ * Shared upload: browser -> Supabase Storage `media` bucket -> public URL.
+ * The path keeps the file extension so mediaKind()/isVideo() classify the
+ * stored URL correctly on every device.
+ */
+async function uploadToMediaBucket(
+  file: File,
+  detectedType: 'image' | 'video',
+  folder: string,
+  onProgress?: (percent: number) => void
+): Promise<CloudinaryUploadResult> {
+  if (!supabase) {
+    throw new Error('Media storage is not configured on this deployment.');
+  }
+
+  const ext =
+    (file.name.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '') ||
+    (file.type.startsWith('video/') ? 'mp4' : file.type.startsWith('audio/') ? 'mp3' : 'jpg');
+  const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+  onProgress?.(10);
+  const { error } = await supabase.storage
+    .from('media')
+    .upload(path, file, { contentType: file.type || undefined, upsert: false });
+
+  if (error) {
+    const m = (error.message || '').toLowerCase();
+    if (m.includes('bucket') && (m.includes('not') || m.includes('exist'))) {
+      throw new Error('Media storage is missing — run section 6 of supabase/schema.sql in the Supabase SQL editor.');
+    }
+    if (m.includes('row-level security') || m.includes('permission') || m.includes('not authorized') || m.includes('401')) {
+      throw new Error('You are signed out — sign in again and retry the upload.');
+    }
+    if (m.includes('exceed') || m.includes('too large') || m.includes('size')) {
+      throw new Error(`File exceeds the ${formatMB(maxBytesFor(file))} upload limit.`);
+    }
+    throw new Error(`Upload failed — ${error.message}`);
+  }
+
+  onProgress?.(100);
+  const { data } = supabase.storage.from('media').getPublicUrl(path);
+  return {
+    url: data.publicUrl,
+    secureUrl: data.publicUrl,
+    publicId: path,
+    resourceType: detectedType,
+    format: ext,
+    bytes: file.size,
+    isSimulated: false,
+  };
 }
 
 /**

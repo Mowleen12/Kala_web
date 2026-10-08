@@ -22,6 +22,7 @@ import { MediaUploader } from './MediaUploader';
 import { MediaPreview } from './MediaPreview';
 import { getDraft, setDraft } from '../lib/drafts';
 import { computeProfileCompletion, ProfileFields } from '../lib/profile';
+import { VIDEO_MAX_BYTES, formatMB } from '../lib/limits';
 
 export interface ProfileMedia {
   avatar?: string;
@@ -326,7 +327,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
         <MediaUploader
           label="Upload Audition Reel (MP4 / MOV / WEBM)"
-          description="Drag & drop or click to upload your performance reel. Curators can play it directly in their review room."
+          description={`Drag & drop or click to upload your performance reel. Curators can play it directly in their review room. Max ${formatMB(VIDEO_MAX_BYTES)}.`}
           folder="kala-artists/reels"
           resourceType="video"
           value={reelUrl}

@@ -6,6 +6,7 @@ import { MediaUploader } from './MediaUploader';
 import { getDraft, setDraft, clearDraft } from '../lib/drafts';
 import { isLocalMediaUrl, resolveMediaUrl } from '../lib/localMedia';
 import { loadProfileSkills, loadProfileText } from '../lib/profile';
+import { IMAGE_MAX_BYTES, VIDEO_MAX_BYTES, formatMB } from '../lib/limits';
 
 interface ApplyDraft {
   portfolioUrl?: string;
@@ -236,7 +237,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
           <div>
             <MediaUploader
               label="Audition Video Reel or Work Sample"
-              description="Upload your live performance video (MP4/MOV/WEBM) or artwork still (JPG/PNG)."
+              description={`Upload your live performance video (MP4/MOV/WEBM) or artwork still (JPG/PNG). Max ${formatMB(VIDEO_MAX_BYTES)} video / ${formatMB(IMAGE_MAX_BYTES)} image.`}
               folder="kala-auditions"
               resourceType="auto"
               value={mediaUrl}

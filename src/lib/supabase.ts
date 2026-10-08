@@ -65,6 +65,9 @@ export function authErrorMessage(raw?: string | null): string {
   if (m.includes('email not confirmed')) {
     return 'Confirm your email first — open the verification link we sent you, then sign in.';
   }
+  if (m.includes('email address') && m.includes('invalid')) {
+    return 'That email address is not valid — use your real email (for example a Gmail address).';
+  }
   if (m.includes('already registered') || m.includes('already been registered')) {
     return 'An account with this email already exists. Sign in instead.';
   }
