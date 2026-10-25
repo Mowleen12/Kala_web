@@ -106,10 +106,12 @@ export async function supabaseSignInWithGoogle(
   // Store pending portal role and details in localStorage so callback/session sync attaches it to Supabase metadata
   try {
     localStorage.setItem('kala_pending_auth_role', role);
-    if (options?.customOrgName) localStorage.setItem('kala_pending_auth_org', options.customOrgName);
-    if (options?.customDiscipline) localStorage.setItem('kala_pending_auth_discipline', options.customDiscipline);
-    if (options?.customOrgType) localStorage.setItem('kala_pending_auth_org_type', options.customOrgType);
-    if (options?.customCollegeName) localStorage.setItem('kala_pending_auth_college', options.customCollegeName);
+    if (options?.isSignUp) {
+      if (options.customOrgName) localStorage.setItem('kala_pending_auth_org', options.customOrgName);
+      if (options.customDiscipline) localStorage.setItem('kala_pending_auth_discipline', options.customDiscipline);
+      if (options.customOrgType) localStorage.setItem('kala_pending_auth_org_type', options.customOrgType);
+      if (options.customCollegeName) localStorage.setItem('kala_pending_auth_college', options.customCollegeName);
+    }
   } catch {}
 
   // If Supabase is fully configured, attempt live OAuth redirect or popup through Supabase

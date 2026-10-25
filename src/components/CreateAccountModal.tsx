@@ -509,7 +509,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                           id="signup-org-type-venue"
                           type="button"
                           onClick={() => setOrgType('venue')}
-                          className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${orgType === 'venue' ? 'bg-[#E45826] text-white shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'}`}
+                          className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${orgType === 'venue' ? 'bg-[#E45826] text-white shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'}`}
                         >
                           Cultural Venue / Festival
                         </button>
@@ -517,7 +517,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                           id="signup-org-type-society"
                           type="button"
                           onClick={() => setOrgType('society')}
-                          className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${orgType === 'society' ? 'bg-[#E45826] text-white shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'}`}
+                          className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${orgType === 'society' ? 'bg-[#E45826] text-white shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'}`}
                         >
                           College Society / Club
                         </button>
