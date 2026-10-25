@@ -316,7 +316,7 @@ export const Header: React.FC<HeaderProps> = ({
                       }}
                       className="w-full text-left px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-[#FDEEE7] hover:text-[#E45826] rounded-lg transition-colors cursor-pointer"
                     >
-                      Venue Profile
+                      Organiser Profile
                     </button>
                     <button
                       onClick={() => {

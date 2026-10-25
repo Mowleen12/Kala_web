@@ -53,7 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'listings' as OrganiserNavTab, label: 'Manage Calls', icon: CalendarDays },
     { id: 'applicants' as OrganiserNavTab, label: 'Talent Pipeline', shortLabel: 'Pipeline', icon: Users },
     { id: 'scout' as OrganiserNavTab, label: 'Direct Scout', icon: Search },
-    { id: 'org_profile' as OrganiserNavTab, label: 'Venue Profile', icon: Building2 },
+    { id: 'org_profile' as OrganiserNavTab, label: 'Organiser Profile', icon: Building2 },
   ];
 
   return (

@@ -156,13 +156,13 @@ export const PortalGateway: React.FC<PortalGatewayProps> = ({
                   <Building2 className="w-6 h-6 text-[#E45826]" />
                 </div>
                 <span className="px-3 py-1 rounded-full bg-[#FAF2EA] border border-[#EBDCCF] text-[#C73E0E] text-xs font-bold uppercase tracking-wider">
-                  Host & Venue
+                  Hosts, Venues & Clubs
                 </span>
               </div>
 
               {/* Title & Description */}
               <h2 className="text-2xl font-bold text-zinc-950 tracking-tight group-hover:text-[#E45826] transition-colors">
-                Organiser & Venue Portal
+                Organiser Portal
               </h2>
               <p className="text-xs sm:text-sm text-zinc-600 mt-2 leading-relaxed">
                 For cultural centres, theatres, festival directors, and production houses commissioning artists and managing audition pipelines.
