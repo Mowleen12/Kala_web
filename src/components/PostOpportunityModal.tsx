@@ -11,6 +11,7 @@ import { MediaUploader } from './MediaUploader';
 import { getDraft, setDraft, clearDraft } from '../lib/drafts';
 import { isLocalMediaUrl, resolveMediaUrl } from '../lib/localMedia';
 import { buildDateRange, buildCompensation, PRICE_PRESETS } from '../lib/offer';
+import { validatePostForm, PostFormErrors } from '../lib/postForm';
 
 interface PostOpportunityDraft {
   title?: string;
@@ -68,6 +69,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
   const [selectedImage, setSelectedImage] = useState(savedDraft?.selectedImage || '');
   const [description, setDescription] = useState(savedDraft?.description ?? DEFAULT_DESCRIPTION);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<PostFormErrors>({});
   const [submitting, setSubmitting] = useState(false);
 
   // Persist the in-progress call so it survives logout/login and reloads.
@@ -108,10 +110,29 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
 
   if (!isOpen) return null;
 
+  const fieldError = (k: keyof PostFormErrors) =>
+    fieldErrors[k] ? <p className="text-[11px] text-rose-600 mt-1">{fieldErrors[k]}</p> : null;
+  const inputCls = (k: keyof PostFormErrors) =>
+    `w-full bg-[#FAF8F5] border rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none ${
+      fieldErrors[k] ? 'border-rose-400' : 'border-[#E0D9CD] focus:border-[#E45826]'
+    }`;
+  const clearErr = (k: keyof PostFormErrors) =>
+    setFieldErrors((prev) => {
+      if (!prev[k]) return prev;
+      const next = { ...prev };
+      delete next[k];
+      return next;
+    });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) {
-      setError('Please provide a title for the opportunity');
+    const errors = validatePostForm({
+      title, category, venue, city, startDate, endDate, description,
+      imageUrl: selectedImage, priceChoice, customMin, customMax,
+    });
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      setError('Some required fields are missing — check the highlighted inputs.');
       return;
     }
     if (submitting) return;
@@ -253,14 +274,16 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
 
               {/* Title */}
               <div>
-                <label className="text-xs font-bold text-zinc-700 block mb-1">Opportunity Title *</label>
+                <label className="text-xs font-bold text-zinc-700 block mb-1">Opportunity Title <span className="text-[#E45826]">*</span></label>
                 <input
+                  id="post-title"
                   type="text"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => { clearErr('title'); setTitle(e.target.value); }}
                   placeholder="e.g. Monsoon Classical & Fusion Showcase 2026"
-                  className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
+                  className={inputCls('title')}
                 />
+                {fieldError('title')}
               </div>
 
               {/* Category & Deadline Days */}
@@ -299,48 +322,55 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
               {/* Venue & City */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-zinc-700 block mb-1">Venue / Auditorium</label>
+                  <label className="text-xs font-bold text-zinc-700 block mb-1">Venue / Auditorium <span className="text-[#E45826]">*</span></label>
                   <input
+                    id="post-venue"
                     type="text"
                     value={venue}
-                    onChange={(e) => setVenue(e.target.value)}
+                    onChange={(e) => { clearErr('venue'); setVenue(e.target.value); }}
                     placeholder="e.g. NCPA Tata Theatre"
-                    className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
+                    className={inputCls('venue')}
                   />
+                  {fieldError('venue')}
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-zinc-700 block mb-1">City & State</label>
+                  <label className="text-xs font-bold text-zinc-700 block mb-1">City & State <span className="text-[#E45826]">*</span></label>
                   <input
+                    id="post-city"
                     type="text"
                     value={city}
-                    onChange={(e) => setCity(e.target.value)}
+                    onChange={(e) => { clearErr('city'); setCity(e.target.value); }}
                     placeholder="e.g. Mumbai, Maharashtra"
-                    className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
+                    className={inputCls('city')}
                   />
+                  {fieldError('city')}
                 </div>
               </div>
 
               {/* Dates & Time */}
               <div>
-                <label className="text-xs font-bold text-zinc-700 block mb-1">Event Dates & Time</label>
+                <label className="text-xs font-bold text-zinc-700 block mb-1">Event Dates & Time <span className="text-[#E45826]">*</span></label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <input
+                    id="post-start-date"
                     type="date"
                     aria-label="Event start date"
                     value={startDate}
                     onChange={(e) => {
+                      clearErr('startDate');
                       setStartDate(e.target.value);
                       if (endDate && e.target.value && endDate < e.target.value) setEndDate(e.target.value);
                     }}
-                    className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
+                    className={inputCls('startDate')}
                   />
                   <input
+                    id="post-end-date"
                     type="date"
                     aria-label="Event end date"
                     value={endDate}
                     min={startDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
+                    onChange={(e) => { clearErr('endDate'); setEndDate(e.target.value); }}
+                    className={inputCls('endDate')}
                   />
                   <input
                     type="time"
@@ -350,6 +380,8 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                     className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
                   />
                 </div>
+                {fieldError('startDate')}
+                {fieldError('endDate')}
                 <p className="text-[11px] text-zinc-400 mt-1">
                   Preview: {buildDateRange(startDate, endDate, eventTime) || '—'}
                 </p>
@@ -386,27 +418,33 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                   </button>
                 </div>
                 {priceChoice === 'custom' && (
-                  <div className="flex items-center gap-2 mt-2">
-                    <input
-                      type="number"
-                      min="0"
-                      aria-label="Minimum honorarium"
-                      value={customMin}
-                      onChange={(e) => setCustomMin(e.target.value)}
-                      placeholder="Min ₹"
-                      className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
-                    />
-                    <span className="text-xs text-zinc-400 shrink-0">–</span>
-                    <input
-                      type="number"
-                      min="0"
-                      aria-label="Maximum honorarium"
-                      value={customMax}
-                      onChange={(e) => setCustomMax(e.target.value)}
-                      placeholder="Max ₹"
-                      className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
-                    />
-                  </div>
+                  <>
+                    <div className="flex items-center gap-2 mt-2">
+                      <input
+                        type="number"
+                        min="0"
+                        aria-label="Minimum honorarium"
+                        value={customMin}
+                        onChange={(e) => setCustomMin(e.target.value)}
+                        placeholder="Min ₹"
+                        className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
+                      />
+                      <span className="text-xs text-zinc-400 shrink-0">–</span>
+                      <input
+                        type="number"
+                        min="0"
+                        aria-label="Maximum honorarium"
+                        value={customMax}
+                        onChange={(e) => setCustomMax(e.target.value)}
+                        placeholder="Max ₹"
+                        className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
+                      />
+                    </div>
+                    <div>
+                      {fieldError('customMin')}
+                      {fieldError('customMax')}
+                    </div>
+                  </>
                 )}
                 <p className="text-[11px] text-zinc-400 mt-1">
                   Preview: {buildCompensation(priceChoice, customMin, customMax)}
@@ -424,6 +462,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                   onChange={(url) => setSelectedImage(url)}
                   onRemove={() => setSelectedImage('')}
                 />
+                {fieldError('imageUrl')}
 
                 <div>
                   <span className="text-[11px] font-semibold text-zinc-500 block mb-1.5">Or choose a curated stage preset:</span>
@@ -446,14 +485,16 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
 
               {/* Description */}
               <div>
-                <label className="text-xs font-bold text-zinc-700 block mb-1">Curatorial Synopsis</label>
+                <label className="text-xs font-bold text-zinc-700 block mb-1">Curatorial Synopsis <span className="text-[#E45826]">*</span></label>
                 <textarea
+                  id="post-description"
                   rows={2}
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={(e) => { clearErr('description'); setDescription(e.target.value); }}
                   placeholder="Describe the call: who you're looking for, the production, and what makes it worth applying for."
-                  className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl p-3 text-xs text-zinc-900 outline-none focus:border-[#E45826]"
+                  className={inputCls('description')}
                 />
+                {fieldError('description')}
               </div>
 
               {/* Submit Button */}
