@@ -12,9 +12,10 @@ import {
   Music,
   Drama,
   Camera,
-  Pencil
+  Pencil,
+  GraduationCap
 } from 'lucide-react';
-import { OrganiserProfile } from '../types';
+import { OrganiserProfile, OrganiserType } from '../types';
 import { KalaStar } from './KalaLogo';
 import { MediaPreview } from './MediaPreview';
 import { MediaUploader } from './MediaUploader';
@@ -37,6 +38,8 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
   const [editTagline, setEditTagline] = useState('');
   const [editAbout, setEditAbout] = useState('');
   const [editCoverImage, setEditCoverImage] = useState('');
+  const [editOrgType, setEditOrgType] = useState<OrganiserType>('venue');
+  const [editCollege, setEditCollege] = useState('');
 
   const startEditing = () => {
     setEditName(profile.name);
@@ -45,6 +48,8 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
     setEditTagline(profile.tagline);
     setEditAbout(profile.about);
     setEditCoverImage(profile.coverImage);
+    setEditOrgType(profile.orgType || 'venue');
+    setEditCollege(profile.collegeName || '');
     setIsEditing(true);
   };
 
@@ -59,6 +64,8 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
       tagline: editTagline.trim(),
       about: editAbout.trim(),
       coverImage: editCoverImage,
+      orgType: editOrgType,
+      collegeName: editOrgType === 'society' ? editCollege.trim() : profile.collegeName || '',
     });
     setIsEditing(false);
   };
@@ -108,6 +115,38 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
                 </div>
 
               <div className="min-w-0">
+                {isEditing && (
+                  <div className="mb-3">
+                    <div className="grid grid-cols-2 p-1 bg-[#FAF8F5] border border-[#E8E2D8] rounded-2xl">
+                      <button
+                        id="profile-org-type-venue"
+                        type="button"
+                        onClick={() => setEditOrgType('venue')}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${editOrgType === 'venue' ? 'bg-[#E45826] text-white shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'}`}
+                      >
+                        Cultural Venue / Festival
+                      </button>
+                      <button
+                        id="profile-org-type-society"
+                        type="button"
+                        onClick={() => setEditOrgType('society')}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${editOrgType === 'society' ? 'bg-[#E45826] text-white shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'}`}
+                      >
+                        College Society / Club
+                      </button>
+                    </div>
+                    {editOrgType === 'society' && (
+                      <input
+                        value={editCollege}
+                        onChange={(e) => setEditCollege(e.target.value)}
+                        maxLength={100}
+                        aria-label="College name"
+                        placeholder="e.g. Indian Institute of Technology Delhi"
+                        className="mt-2 w-full bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-2 text-xs outline-none focus:border-[#E45826]"
+                      />
+                    )}
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   {isEditing ? (
                     <input
@@ -150,6 +189,12 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
                     )}
                   </span>
                 </p>
+                {profile.orgType === 'society' && (
+                  <span className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-[11px] font-bold bg-[#FDEEE7] text-[#E45826] border border-[#FAD7C8]">
+                    <GraduationCap className="w-3.5 h-3.5" />
+                    College Society{profile.collegeName ? ` • ${profile.collegeName}` : ''}
+                  </span>
+                )}
               </div>
             </div>
 

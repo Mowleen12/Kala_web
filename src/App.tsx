@@ -94,6 +94,7 @@ const EMPTY_ORGANISER_PROFILE: OrganiserProfile = {
   city: '',
   state: '',
   about: '',
+  orgType: undefined,
   collegeName: '',
   focusDisciplines: [],
 };
@@ -207,6 +208,8 @@ export default function App() {
       ...EMPTY_ORGANISER_PROFILE,
       id: currentUser.id,
       name: currentUser.orgName || '',
+      orgType: currentUser.orgType,
+      collegeName: currentUser.collegeName || '',
       ...draft,
       logo,
       coverImage: orgMedia ? orgMedia.coverImage || '' : draft.coverImage || '',
