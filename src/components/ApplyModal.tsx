@@ -154,6 +154,9 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
           <div className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#E45826] text-white mb-2">
             {opportunity.category}
           </div>
+          {opportunity.organiserType === 'society' && (
+            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FDEEE7] text-[#E45826] border border-[#FAD7C8]">College Society</span>
+          )}
           <h3 className="text-xl font-bold text-zinc-900 leading-tight">
             Apply to {opportunity.title}
           </h3>

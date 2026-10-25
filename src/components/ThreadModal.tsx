@@ -233,6 +233,9 @@ export const ThreadModal: React.FC<ThreadModalProps> = ({
             )}
             <div className="min-w-0">
               <p className="text-sm font-bold text-zinc-900 truncate">{counterpartyName}</p>
+              {isArtist && thread.organiserType === 'society' && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FDEEE7] text-[#E45826] border border-[#FAD7C8]">College Society</span>
+              )}
               <p className="text-[11px] text-zinc-500 truncate">{thread.opportunityTitle}</p>
             </div>
           </div>

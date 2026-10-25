@@ -404,6 +404,10 @@ export default function App() {
     () => new Set(myApplications.map((a) => a.opportunityId)),
     [myApplications]
   );
+  const societyCalls = useMemo(
+    () => opportunities.filter((o) => o.organiserType === 'society'),
+    [opportunities]
+  );
   const myOpportunities = useMemo(
     () => (currentUser ? opportunities.filter((o) => o.organiserId === currentUser.id) : []),
     [opportunities, currentUser]
@@ -1008,6 +1012,18 @@ export default function App() {
                         onViewDetails={handleViewDetails}
                         onViewAll={() => setCurrentArtistTab('discover')}
                       />
+
+                      {societyCalls.length > 0 && (
+                        <FeaturedOpportunities
+                          title="Calls from College Societies & Clubs"
+                          subtitle="Campus festivals, club showcases and society productions."
+                          opportunities={societyCalls}
+                          appliedIds={appliedOppIds}
+                          onApply={handleApplyClick}
+                          onViewDetails={handleViewDetails}
+                          onViewAll={() => setCurrentArtistTab('discover')}
+                        />
+                      )}
 
                       {/* Browse Categories Section */}
                       <BrowseCategories

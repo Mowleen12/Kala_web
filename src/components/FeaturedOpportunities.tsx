@@ -10,6 +10,8 @@ interface FeaturedOpportunitiesProps {
   onApply: (opp: Opportunity) => void;
   onViewDetails: (opp: Opportunity) => void;
   onViewAll: () => void;
+  title?: string;
+  subtitle?: string;
 }
 
 export const FeaturedOpportunities: React.FC<FeaturedOpportunitiesProps> = ({
@@ -18,6 +20,8 @@ export const FeaturedOpportunities: React.FC<FeaturedOpportunitiesProps> = ({
   onApply,
   onViewDetails,
   onViewAll,
+  title,
+  subtitle,
 }) => {
   const getCategoryBadgeStyle = (category: string) => {
     switch (category) {
@@ -42,16 +46,16 @@ export const FeaturedOpportunities: React.FC<FeaturedOpportunitiesProps> = ({
           <div className="flex items-center gap-2">
             <KalaStar size={18} className="text-[#E45826]" />
             <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 tracking-tight">
-              Featured Opportunities
+              {title ?? 'Featured Opportunities'}
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">
-            Live events, auditions, and programs tailored for you.
+            {subtitle ?? 'Live events, auditions, and programs tailored for you.'}
           </p>
         </div>
 
         <button
-          id="view-all-featured-btn"
+          id={title ? undefined : 'view-all-featured-btn'}
           onClick={onViewAll}
           className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#E45826] hover:text-[#C73E0E] transition-colors self-start sm:self-auto cursor-pointer"
         >
@@ -100,6 +104,9 @@ export const FeaturedOpportunities: React.FC<FeaturedOpportunitiesProps> = ({
                   <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide shadow-xs ${getCategoryBadgeStyle(opp.category)}`}>
                     {opp.category}
                   </span>
+                  {opp.organiserType === 'society' && (
+                    <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white text-[#E45826] shadow-xs">College Society</span>
+                  )}
                 </div>
 
                 <div className="absolute top-3 right-3">

@@ -85,6 +85,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
     { label: 'Theatres & Auditoriums', value: 'theatre' },
     { label: 'Galleries & Studios', value: 'gallery' },
     { label: 'Open-Air & Festivals', value: 'festival' },
+    { label: 'College Societies & Clubs', value: 'society' },
   ];
 
   // Calculate active filter count
@@ -153,7 +154,9 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
       // Venue type filter
       let matchesVenue = true;
       const venueStr = (opp.venue || opp.location).toLowerCase();
-      if (selectedVenueType === 'theatre') {
+      if (selectedVenueType === 'society') {
+        matchesVenue = opp.organiserType === 'society';
+      } else if (selectedVenueType === 'theatre') {
         matchesVenue = venueStr.includes('theatre') || venueStr.includes('auditorium') || venueStr.includes('hall');
       } else if (selectedVenueType === 'gallery') {
         matchesVenue = venueStr.includes('gallery') || venueStr.includes('studio') || venueStr.includes('art');
@@ -471,10 +474,13 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                     loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-104 transition-transform duration-500"
                   />
-                  <div className="absolute top-3 left-3">
+                  <div className="absolute top-3 left-3 flex items-center gap-2">
                     <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#E45826] text-white shadow-xs">
                       {opp.category}
                     </span>
+                    {opp.organiserType === 'society' && (
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white text-[#E45826] shadow-xs">College Society</span>
+                    )}
                   </div>
                   <div className="absolute top-3 right-3">
                     <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-zinc-900/90 text-white backdrop-blur-xs">
