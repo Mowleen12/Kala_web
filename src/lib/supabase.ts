@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient, User as SupabaseUser, Session } from '@supabase/supabase-js';
-import { AuthUser, PortalMode } from '../types';
+import { AuthUser, OrganiserType, PortalMode } from '../types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -49,6 +49,8 @@ export function mapSupabaseUserToAuthUser(user: SupabaseUser): AuthUser {
     avatar: avatar,
     avatarUrl: avatar,
     orgName: metadata.org_name || undefined,
+    orgType: metadata.org_type === 'venue' || metadata.org_type === 'society' ? metadata.org_type : undefined,
+    collegeName: metadata.college_name || undefined,
     discipline: metadata.discipline || undefined,
     authProvider: provider === 'google' ? 'google' : 'email',
   };
@@ -95,6 +97,8 @@ export async function supabaseSignInWithGoogle(
     customEmail?: string;
     customName?: string;
     customOrgName?: string;
+    customOrgType?: OrganiserType;
+    customCollegeName?: string;
     customDiscipline?: string;
     isSignUp?: boolean;
   }
@@ -104,6 +108,8 @@ export async function supabaseSignInWithGoogle(
     localStorage.setItem('kala_pending_auth_role', role);
     if (options?.customOrgName) localStorage.setItem('kala_pending_auth_org', options.customOrgName);
     if (options?.customDiscipline) localStorage.setItem('kala_pending_auth_discipline', options.customDiscipline);
+    if (options?.customOrgType) localStorage.setItem('kala_pending_auth_org_type', options.customOrgType);
+    if (options?.customCollegeName) localStorage.setItem('kala_pending_auth_college', options.customCollegeName);
   } catch {}
 
   // If Supabase is fully configured, attempt live OAuth redirect or popup through Supabase
@@ -245,6 +251,8 @@ export async function supabaseSignUp(params: {
   fullName: string;
   role: PortalMode;
   orgName?: string;
+  orgType?: OrganiserType;
+  collegeName?: string;
   discipline?: string;
   avatarUrl?: string;
 }): Promise<{ user: AuthUser | null; error: string | null; needsEmailConfirmation?: boolean }> {
@@ -261,6 +269,8 @@ export async function supabaseSignUp(params: {
           full_name: params.fullName,
           role: params.role,
           org_name: params.orgName,
+          org_type: params.orgType,
+          college_name: params.collegeName,
           discipline: params.discipline,
           avatar_url: params.avatarUrl,
         },
@@ -335,6 +345,8 @@ export async function supabaseSignOut(): Promise<void> {
     localStorage.removeItem('kala_pending_auth_role');
     localStorage.removeItem('kala_pending_auth_org');
     localStorage.removeItem('kala_pending_auth_discipline');
+    localStorage.removeItem('kala_pending_auth_org_type');
+    localStorage.removeItem('kala_pending_auth_college');
   } catch {}
   if (isSupabaseConfigured && supabase) {
     try {
@@ -354,17 +366,24 @@ export async function supabaseSignOut(): Promise<void> {
 function takePendingAuthRole(): {
   role: PortalMode | null;
   orgName?: string;
+  orgType?: OrganiserType;
+  collegeName?: string;
   discipline?: string;
 } {
   let role: PortalMode | null = null;
   let orgName: string | undefined;
+  let orgType: OrganiserType | undefined;
+  let collegeName: string | undefined;
   let discipline: string | undefined;
   try {
     role = (localStorage.getItem('kala_pending_auth_role') as PortalMode) || null;
     orgName = localStorage.getItem('kala_pending_auth_org') || undefined;
+    const ot = localStorage.getItem('kala_pending_auth_org_type');
+    orgType = ot === 'venue' || ot === 'society' ? ot : undefined;
+    collegeName = localStorage.getItem('kala_pending_auth_college') || undefined;
     discipline = localStorage.getItem('kala_pending_auth_discipline') || undefined;
   } catch {}
-  return { role, orgName, discipline };
+  return { role, orgName, orgType, collegeName, discipline };
 }
 
 function clearPendingAuthRole(): void {
@@ -372,6 +391,8 @@ function clearPendingAuthRole(): void {
     localStorage.removeItem('kala_pending_auth_role');
     localStorage.removeItem('kala_pending_auth_org');
     localStorage.removeItem('kala_pending_auth_discipline');
+    localStorage.removeItem('kala_pending_auth_org_type');
+    localStorage.removeItem('kala_pending_auth_college');
   } catch {}
 }
 
@@ -383,6 +404,9 @@ function withPendingPortal(user: AuthUser): AuthUser {
     ...user,
     role: pending.role,
     orgName: pending.role === 'organiser' ? pending.orgName || user.orgName : user.orgName,
+    orgType: pending.role === 'organiser' ? pending.orgType || user.orgType : user.orgType,
+    collegeName:
+      pending.role === 'organiser' ? pending.collegeName || user.collegeName : user.collegeName,
     discipline:
       pending.role === 'artist' ? pending.discipline || user.discipline : user.discipline,
   };
@@ -410,7 +434,11 @@ export async function supabaseGetCurrentUser(): Promise<AuthUser | null> {
     const roleToFlush = pending.role ?? (!metaRole ? 'artist' : null);
     const needsFlush =
       roleToFlush !== null &&
-      (roleToFlush !== metaRole || Boolean(pending.orgName) || Boolean(pending.discipline));
+      (roleToFlush !== metaRole ||
+        Boolean(pending.orgName) ||
+        Boolean(pending.orgType) ||
+        Boolean(pending.collegeName) ||
+        Boolean(pending.discipline));
 
     if (needsFlush && roleToFlush) {
       try {
@@ -421,6 +449,14 @@ export async function supabaseGetCurrentUser(): Promise<AuthUser | null> {
             org_name:
               roleToFlush === 'organiser'
                 ? pending.orgName || user.user_metadata?.org_name || undefined
+                : undefined,
+            org_type:
+              roleToFlush === 'organiser'
+                ? pending.orgType || user.user_metadata?.org_type || undefined
+                : undefined,
+            college_name:
+              roleToFlush === 'organiser'
+                ? pending.collegeName || user.user_metadata?.college_name || undefined
                 : undefined,
             discipline:
               roleToFlush === 'artist'

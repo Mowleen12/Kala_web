@@ -94,6 +94,7 @@ const EMPTY_ORGANISER_PROFILE: OrganiserProfile = {
   city: '',
   state: '',
   about: '',
+  collegeName: '',
   focusDisciplines: [],
 };
 

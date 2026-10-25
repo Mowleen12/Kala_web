@@ -1,5 +1,7 @@
 export type PortalMode = 'artist' | 'organiser';
 
+export type OrganiserType = 'venue' | 'society';
+
 export type NavTab = 'home' | 'discover' | 'applications' | 'profile';
 export type OrganiserNavTab = 'overview' | 'listings' | 'applicants' | 'scout' | 'org_profile';
 
@@ -27,6 +29,7 @@ export interface Opportunity {
   deadline?: string | null;
   requirements?: string[];
   organizer?: string;
+  organiserType?: OrganiserType;
   organiserId?: string;
   organiserAvatar?: string | null;
   applicantCount?: number;
@@ -105,6 +108,8 @@ export interface OrganiserProfile {
   city: string;
   state: string;
   about: string;
+  orgType?: OrganiserType;
+  collegeName: string;
   focusDisciplines: string[];
 }
 
@@ -116,6 +121,8 @@ export interface AuthUser {
   avatar?: string;
   avatarUrl?: string;
   orgName?: string;
+  orgType?: OrganiserType;
+  collegeName?: string;
   discipline?: string;
   authProvider?: 'google' | 'email';
 }
@@ -132,6 +139,7 @@ export interface Thread {
   organiserId: string | null;
   organiserName: string | null;
   organiserAvatar: string | null;
+  organiserType?: OrganiserType | null;
   artistLastReadAt: string;
   organiserLastReadAt: string;
   lastMessageAt: string;
