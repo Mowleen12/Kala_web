@@ -57,6 +57,7 @@ import {
   createOpportunity,
   updateApplicationStatus,
   subscribeApplications,
+  subscribeOpportunities,
   fetchPlatformStats,
   fetchCategoryCounts,
   schemaMissing,
@@ -460,6 +461,7 @@ export default function App() {
     let active = true;
     let unsubscribe: (() => void) | null = null;
     let unsubscribeApps: (() => void) | null = null;
+    let unsubscribeOpps: (() => void) | null = null;
     (async () => {
       await ensureProfile(currentUser).catch(() => {});
       const fresh = await fetchThreads();
@@ -479,10 +481,19 @@ export default function App() {
         });
       };
       const unsubscribeChannel = subscribeApplications(refetchApplications);
+      // A call published by another session only exists in the DB — refetch on every event.
+      const refetchOpportunities = () => {
+        fetchOpportunities().then((r) => {
+          if (active) setOpportunities(r.data);
+        });
+      };
+      unsubscribeOpps = subscribeOpportunities(refetchOpportunities);
       // Websockets die while a tab is backgrounded (phone lock, other window),
       // so refetch the moment the tab becomes visible again too.
       const onWake = () => {
-        if (document.visibilityState === 'visible') refetchApplications();
+        if (document.visibilityState !== 'visible') return;
+        refetchApplications();
+        refetchOpportunities();
       };
       document.addEventListener('visibilitychange', onWake);
       unsubscribeApps = () => {
@@ -494,6 +505,7 @@ export default function App() {
       active = false;
       unsubscribe?.();
       unsubscribeApps?.();
+      unsubscribeOpps?.();
     };
   }, [currentUser?.id]);
 
