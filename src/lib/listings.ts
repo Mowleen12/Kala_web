@@ -1,5 +1,5 @@
 import { supabase as supabaseClient, isSupabaseConfigured } from './supabase';
-import { Application, ApplicationStatus, Opportunity, OpportunityStatus, PlatformStats } from '../types';
+import { Application, ApplicationStatus, Opportunity, OpportunityStatus, OrganiserType, PlatformStats } from '../types';
 
 const supabase = supabaseClient!;
 
@@ -77,6 +77,7 @@ const rowToOpportunity = (r: any): Opportunity => ({
   deadline: r.deadline || null,
   requirements: r.requirements || [],
   organizer: r.organiser_name || undefined,
+  organiserType: r.organiser_type === 'society' ? 'society' : 'venue',
   organiserId: r.organiser_id,
   organiserAvatar: r.organiser_avatar || null,
   applicantCount: r.applicant_count || 0,
@@ -186,15 +187,16 @@ export async function fetchOpportunities(): Promise<{ data: Opportunity[]; error
 export interface OpportunityInput {
   title: string;
   category: string;
-  description?: string;
+  description: string;
+  venue: string;
+  city: string;
+  dateRange: string;
+  imageUrl: string;
+  organiserType?: OrganiserType;
   requirements?: string[];
   location?: string;
-  venue?: string;
-  city?: string;
-  dateRange?: string;
   deadline?: string | null;
   compensation?: string;
-  imageUrl?: string;
 }
 
 export async function createOpportunity(
@@ -212,15 +214,16 @@ export async function createOpportunity(
       organiser_avatar: owner.avatar || null,
       title: input.title,
       category: input.category,
-      description: input.description || null,
+      description: input.description,
       requirements: input.requirements?.length ? input.requirements : null,
+      venue: input.venue,
+      city: input.city,
+      date_range: input.dateRange,
+      image_url: input.imageUrl,
+      organiser_type: input.organiserType || null,
       location: input.location || null,
-      venue: input.venue || null,
-      city: input.city || null,
-      date_range: input.dateRange || null,
       deadline: input.deadline || null,
       compensation: input.compensation || null,
-      image_url: input.imageUrl || null,
       status: 'active',
       featured: false,
     })
@@ -272,6 +275,22 @@ export function subscribeApplications(onChange: () => void): () => void {
   const channel = supabase
     .channel('applications-list')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'applications' }, () => onChange())
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
+/** A call published by any organiser has to land in every open artist tab
+ *  without a reload. Same contract as subscribeApplications: callers gate on
+ *  isDbReady() first, local mode has nothing to subscribe to. */
+export function subscribeOpportunities(onChange: () => void): () => void {
+  if (!supabaseClient) return () => {};
+
+  const channel = supabase
+    .channel('opportunities-list')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'opportunities' }, () => onChange())
     .subscribe();
 
   return () => {

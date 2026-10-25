@@ -703,7 +703,7 @@ export default function App() {
       {
         title: newOpp.title,
         category: newOpp.category,
-        description: newOpp.description,
+        description: newOpp.description ?? '',
         requirements: newOpp.requirements,
         location: newOpp.location,
         venue: newOpp.venue,
@@ -712,6 +712,7 @@ export default function App() {
         deadline: newOpp.deadline,
         compensation: newOpp.compensation,
         imageUrl: newOpp.imageUrl,
+        organiserType: currentUser.orgType,
       },
       {
         id: currentUser.id,
