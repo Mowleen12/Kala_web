@@ -601,6 +601,7 @@ export default function App() {
       opportunityTitle: opp?.title || 'Opportunity',
       user: currentUser!,
       organiserName: opp?.organizer,
+      organiserType: opp?.organiserType,
     });
     if (thread) {
       setThreads((prev) => (prev.some((t) => t.id === thread.id) ? prev : [...prev, thread]));
@@ -769,6 +770,7 @@ export default function App() {
         },
         organiserName: currentUser.orgName || currentUser.name,
         organiserAvatar: currentUser.avatarUrl || currentUser.avatar,
+        organiserType: currentUser.orgType,
       });
       if (thread) {
         const body = `Congratulations, ${review.artistName || 'artist'}! You've been selected for "${review.opportunityTitle}". Our team will reach out with the schedule and next steps soon.`;

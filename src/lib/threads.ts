@@ -3,7 +3,7 @@ import { supabase as supabaseClient, isSupabaseConfigured } from './supabase';
 // isDbReady() gates every live call; supabase.ts resolves the client at module
 // load, so this non-null alias is safe even when the export itself is null.
 const supabase = supabaseClient!;
-import { AuthUser, Message, MessageSenderRole, Thread } from '../types';
+import { AuthUser, Message, MessageSenderRole, OrganiserType, Thread } from '../types';
 import { USER_MONTHLY_BYTES, remaining } from './limits';
 import { resolveMediaUrl, toPersistableUrl } from './localMedia';
 
@@ -36,6 +36,7 @@ const rowToThread = (r: any): Thread => ({
   organiserId: r.organiser_id,
   organiserName: r.organiser_name,
   organiserAvatar: r.organiser_avatar,
+  organiserType: r.organiser_type === 'society' ? 'society' : r.organiser_type ? 'venue' : null,
   artistLastReadAt: r.artist_last_read_at,
   organiserLastReadAt: r.organiser_last_read_at,
   lastMessageAt: r.last_message_at,
@@ -201,6 +202,7 @@ export async function ensureArtistThread(input: {
   user: AuthUser;
   organiserName?: string;
   organiserAvatar?: string;
+  organiserType?: OrganiserType;
 }): Promise<{ thread: Thread | null; error: string | null }> {
   const key = localThreadKey(input.opportunityId, input.user.id);
 
@@ -217,6 +219,7 @@ export async function ensureArtistThread(input: {
         organiserId: null,
         organiserName: input.organiserName || null,
         organiserAvatar: input.organiserAvatar || null,
+        organiserType: input.organiserType || null,
         artistLastReadAt: new Date().toISOString(),
         organiserLastReadAt: new Date().toISOString(),
         lastMessageAt: new Date().toISOString(),
@@ -248,6 +251,7 @@ export async function ensureArtistThread(input: {
       artist_avatar: input.user.avatarUrl || input.user.avatar || null,
       organiser_name: input.organiserName || null,
       organiser_avatar: input.organiserAvatar || null,
+      organiser_type: input.organiserType || null,
     })
     .select()
     .single();
