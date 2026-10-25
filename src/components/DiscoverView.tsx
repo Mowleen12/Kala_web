@@ -53,6 +53,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
     'Theatre & Performance',
     'Writing & Content',
     'Design & Fashion',
+    'College Societies & Clubs',
   ];
 
   const cities = [
@@ -155,7 +156,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
       let matchesVenue = true;
       const venueStr = (opp.venue || opp.location).toLowerCase();
       if (selectedVenueType === 'society') {
-        matchesVenue = opp.organiserType === 'society';
+        matchesVenue = opp.organiserType === 'society' || opp.category === 'College Societies & Clubs';
       } else if (selectedVenueType === 'theatre') {
         matchesVenue = venueStr.includes('theatre') || venueStr.includes('auditorium') || venueStr.includes('hall');
       } else if (selectedVenueType === 'gallery') {

@@ -6,7 +6,8 @@ import {
   Palette, 
   Theater, 
   PenTool, 
-  Sparkles 
+  Sparkles,
+  GraduationCap
 } from 'lucide-react';
 import { KalaStar } from './KalaLogo';
 import { CATEGORIES } from '../data/mockData';
@@ -39,6 +40,8 @@ export const BrowseCategories: React.FC<BrowseCategoriesProps> = ({
         return PenTool;
       case 'Design & Fashion':
         return Sparkles;
+      case 'College Societies & Clubs':
+        return GraduationCap;
       default:
         return Sparkles;
     }

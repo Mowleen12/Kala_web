@@ -8,7 +8,8 @@ import {
   ShieldCheck, 
   Users, 
   Calendar,
-  Lock
+  Lock,
+  Mail
 } from 'lucide-react';
 import { KalaLogo, KalaStar } from './KalaLogo';
 import { PortalMode } from '../types';
@@ -124,6 +125,15 @@ export const PortalGateway: React.FC<PortalGatewayProps> = ({
               </button>
 
               <button
+                id="artist-gateway-email-btn"
+                onClick={() => onOpenRegister('artist')}
+                className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl bg-white border-2 border-[#E9E4DC] hover:border-[#E45826] hover:bg-[#FAF8F5] active:scale-98 text-xs sm:text-sm font-bold text-zinc-900 shadow-2xs transition-all cursor-pointer"
+              >
+                <Mail className="w-4 h-4 shrink-0 text-[#E45826]" />
+                <span>Sign up with Email</span>
+              </button>
+
+              <button
                 onClick={() => onSelectPortal('artist')}
                 className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#E45826] hover:bg-[#D44716] active:scale-98 text-white text-xs sm:text-sm font-semibold shadow-xs transition-all cursor-pointer"
               >
@@ -212,6 +222,15 @@ export const PortalGateway: React.FC<PortalGatewayProps> = ({
                   />
                 </svg>
                 <span>Continue with Google (Host / Venue)</span>
+              </button>
+
+              <button
+                id="organiser-gateway-email-btn"
+                onClick={() => onOpenRegister('organiser')}
+                className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl bg-white border-2 border-[#E9E4DC] hover:border-[#E45826] hover:bg-[#FAF8F5] active:scale-98 text-xs sm:text-sm font-bold text-zinc-900 shadow-2xs transition-all cursor-pointer"
+              >
+                <Mail className="w-4 h-4 shrink-0 text-[#E45826]" />
+                <span>Sign up with Email</span>
               </button>
 
               <button

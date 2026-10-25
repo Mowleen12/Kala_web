@@ -53,6 +53,7 @@ export const OrganiserListingsView: React.FC<OrganiserListingsViewProps> = ({
     'Visual Arts',
     'Theatre & Performance',
     'Design & Fashion',
+    'College Societies & Clubs',
   ];
 
   const venueOptions = [

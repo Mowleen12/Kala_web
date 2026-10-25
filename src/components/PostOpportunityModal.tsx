@@ -303,6 +303,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                     <option>Theatre & Performance</option>
                     <option>Writing & Content</option>
                     <option>Design & Fashion</option>
+                    <option>College Societies & Clubs</option>
                   </select>
                 </div>
 

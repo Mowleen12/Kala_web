@@ -406,7 +406,9 @@ export default function App() {
     [myApplications]
   );
   const societyCalls = useMemo(
-    () => opportunities.filter((o) => o.organiserType === 'society'),
+    () => opportunities.filter(
+      (o) => o.organiserType === 'society' || o.category === 'College Societies & Clubs'
+    ),
     [opportunities]
   );
   const myOpportunities = useMemo(

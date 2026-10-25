@@ -8,7 +8,8 @@ import {
   Sparkles, 
   Landmark,
   Layers,
-  Users
+  Users,
+  GraduationCap
 } from 'lucide-react';
 import { KalaStar } from './KalaLogo';
 
@@ -75,6 +76,14 @@ export const OrganiserBrowseCategories: React.FC<OrganiserBrowseCategoriesProps>
       desc: 'Stage Scenography, Costume & Spatial Design',
       color: 'from-blue-500/10 to-cyan-500/10 border-blue-200 text-blue-700',
       badgeBg: 'bg-blue-100 text-blue-800'
+    },
+    {
+      id: 'college-societies',
+      name: 'College Societies & Clubs',
+      icon: GraduationCap,
+      desc: 'Campus Festivals, Society Residencies & Inter-College Calls',
+      color: 'from-rose-500/10 to-pink-500/10 border-rose-200 text-rose-700',
+      badgeBg: 'bg-rose-100 text-rose-800'
     },
   ];
 

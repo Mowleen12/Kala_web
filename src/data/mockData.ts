@@ -48,4 +48,11 @@ export const CATEGORIES: Category[] = [
     bgColor: 'bg-[#F9EFFE]',
     iconColor: 'text-[#D946EF]',
   },
+  {
+    id: 'cat-7',
+    name: 'College Societies & Clubs',
+    icon: 'GraduationCap',
+    bgColor: 'bg-[#FFF1F2]',
+    iconColor: 'text-[#F43F5E]',
+  },
 ];
