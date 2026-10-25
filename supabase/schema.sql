@@ -66,6 +66,9 @@ create index if not exists messages_sender_created_idx
 create index if not exists threads_artist_idx on public.threads (artist_id);
 create index if not exists threads_organiser_idx on public.threads (organiser_id);
 
+-- Organiser sub-type snapshot (venue vs college society) — mirrors organiser_name.
+alter table public.threads add column if not exists organiser_type text;
+
 -- ---------------------------------------------------------------------------
 -- 2. Triggers (spec §4 "Triggers")
 -- ---------------------------------------------------------------------------
@@ -384,6 +387,33 @@ create index if not exists opportunities_organiser_idx on public.opportunities (
 create index if not exists opportunities_status_deadline_idx on public.opportunities (status, deadline);
 create index if not exists opportunities_category_idx on public.opportunities (category);
 create index if not exists opportunities_created_idx on public.opportunities (created_at desc);
+
+alter table public.opportunities add column if not exists organiser_type text;
+
+-- Core-7 mandatory event fields: backfill legacy rows, then hold new writes.
+update public.opportunities set venue       = '' where venue is null;
+update public.opportunities set city        = '' where city is null;
+update public.opportunities set date_range  = '' where date_range is null;
+update public.opportunities set description = '' where description is null;
+update public.opportunities set image_url   = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=700&q=80'
+  where image_url is null or btrim(image_url) = '';
+
+alter table public.opportunities alter column venue       set not null;
+alter table public.opportunities alter column city        set not null;
+alter table public.opportunities alter column date_range  set not null;
+alter table public.opportunities alter column description set not null;
+alter table public.opportunities alter column image_url   set not null;
+
+-- A published call must reach every open artist tab without a reload.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+     where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'opportunities'
+  ) then
+    alter publication supabase_realtime add table public.opportunities;
+  end if;
+end $$;
 
 -- ---------------------------------------------------------------------------
 -- 5.2 Applications (one artist -> one opportunity, enforced by the DB)
