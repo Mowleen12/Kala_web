@@ -116,6 +116,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
     `w-full bg-[#FAF8F5] border rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none ${
       fieldErrors[k] ? 'border-rose-400' : 'border-[#E0D9CD] focus:border-[#E45826]'
     }`;
+  const inputAria = (k: keyof PostFormErrors) => ({ 'aria-invalid': fieldErrors[k] ? true : undefined });
   const clearErr = (k: keyof PostFormErrors) =>
     setFieldErrors((prev) => {
       if (!prev[k]) return prev;
@@ -281,6 +282,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                   value={title}
                   onChange={(e) => { clearErr('title'); setTitle(e.target.value); }}
                   placeholder="e.g. Monsoon Classical & Fusion Showcase 2026"
+                  {...inputAria('title')}
                   className={inputCls('title')}
                 />
                 {fieldError('title')}
@@ -329,6 +331,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                     value={venue}
                     onChange={(e) => { clearErr('venue'); setVenue(e.target.value); }}
                     placeholder="e.g. NCPA Tata Theatre"
+                    {...inputAria('venue')}
                     className={inputCls('venue')}
                   />
                   {fieldError('venue')}
@@ -341,6 +344,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                     value={city}
                     onChange={(e) => { clearErr('city'); setCity(e.target.value); }}
                     placeholder="e.g. Mumbai, Maharashtra"
+                    {...inputAria('city')}
                     className={inputCls('city')}
                   />
                   {fieldError('city')}
@@ -361,6 +365,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                       setStartDate(e.target.value);
                       if (endDate && e.target.value && endDate < e.target.value) setEndDate(e.target.value);
                     }}
+                    {...inputAria('startDate')}
                     className={inputCls('startDate')}
                   />
                   <input
@@ -370,6 +375,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                     value={endDate}
                     min={startDate}
                     onChange={(e) => { clearErr('endDate'); setEndDate(e.target.value); }}
+                    {...inputAria('endDate')}
                     className={inputCls('endDate')}
                   />
                   <input
@@ -427,6 +433,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                         value={customMin}
                         onChange={(e) => setCustomMin(e.target.value)}
                         placeholder="Min ₹"
+                        {...inputAria('customMin')}
                         className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
                       />
                       <span className="text-xs text-zinc-400 shrink-0">–</span>
@@ -437,6 +444,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                         value={customMax}
                         onChange={(e) => setCustomMax(e.target.value)}
                         placeholder="Max ₹"
+                        {...inputAria('customMax')}
                         className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
                       />
                     </div>
@@ -492,6 +500,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                   value={description}
                   onChange={(e) => { clearErr('description'); setDescription(e.target.value); }}
                   placeholder="Describe the call: who you're looking for, the production, and what makes it worth applying for."
+                  {...inputAria('description')}
                   className={inputCls('description')}
                 />
                 {fieldError('description')}
