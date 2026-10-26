@@ -159,7 +159,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
         // the portal now would fabricate a login that dies on the next reload.
         if (needsEmailConfirmation) {
           setNotice(
-            `Account created for ${email.trim()} — open the confirmation link we emailed you, then log in here.`
+            `Account created for ${email.trim()} — check your inbox (and spam folder) for a confirmation link, then log in here.`
           );
           setIsLoginMode(true);
           setIsSubmitting(false);

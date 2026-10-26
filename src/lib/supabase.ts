@@ -267,6 +267,7 @@ export async function supabaseSignUp(params: {
       email: params.email,
       password: params.password,
       options: {
+        emailRedirectTo: window.location.origin,
         data: {
           full_name: params.fullName,
           role: params.role,
@@ -287,11 +288,31 @@ export async function supabaseSignUp(params: {
       return { user: null, error: 'Registration failed. Please check your details and try again.' };
     }
 
-    // No session means the project requires email confirmation before sign-in.
-    const needsEmailConfirmation = !data.session;
+    // If no session exists the project requires email confirmation before
+    // sign-in.  The built-in Supabase mailer on the free tier is unreliable,
+    // so we attempt an immediate signInWithPassword as a fallback — this
+    // succeeds when the dashboard setting "Confirm email" is turned off, and
+    // harmlessly fails otherwise.
+    if (!data.session) {
+      try {
+        const { data: signInData } = await supabase.auth.signInWithPassword({
+          email: params.email,
+          password: params.password,
+        });
+        if (signInData?.session && signInData?.user) {
+          const authUser = mapSupabaseUserToAuthUser(signInData.user);
+          return { user: authUser, error: null, needsEmailConfirmation: false };
+        }
+      } catch {
+        // Fall through — the project genuinely requires email confirmation.
+      }
+
+      const authUser = mapSupabaseUserToAuthUser(data.user);
+      return { user: authUser, error: null, needsEmailConfirmation: true };
+    }
 
     const authUser = mapSupabaseUserToAuthUser(data.user);
-    return { user: authUser, error: null, needsEmailConfirmation };
+    return { user: authUser, error: null, needsEmailConfirmation: false };
   } catch (err: any) {
     return { user: null, error: authErrorMessage(err?.message) };
   }
