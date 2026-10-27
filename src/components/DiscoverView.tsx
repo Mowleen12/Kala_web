@@ -114,7 +114,11 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
   const filteredOpportunities = useMemo(() => {
     let list = opportunities.filter((opp) => {
       // Category
-      const matchesCat = selectedCategory === 'All' || opp.category === selectedCategory;
+      const matchesCat =
+        selectedCategory === 'All' ||
+        (selectedCategory === 'College Societies & Clubs'
+          ? opp.organiserType === 'society' || opp.category === selectedCategory
+          : opp.category === selectedCategory);
 
       // City
       const matchesCity =
