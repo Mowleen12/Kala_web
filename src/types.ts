@@ -32,6 +32,9 @@ export interface Opportunity {
   organiserType?: OrganiserType;
   organiserId?: string;
   organiserAvatar?: string | null;
+  collegeName?: string;
+  festName?: string;
+  collegeOnly?: boolean;
   applicantCount?: number;
   status?: OpportunityStatus;
   createdAt?: string;
@@ -61,6 +64,7 @@ export interface Application {
   artistAvatar?: string | null;
   artistRole?: string | null;
   artistLocation?: string | null;
+  artistCollege?: string | null;
   experienceYears?: number | null;
   skills: string[];
   pitch: string;

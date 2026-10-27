@@ -390,6 +390,11 @@ create index if not exists opportunities_created_idx on public.opportunities (cr
 
 alter table public.opportunities add column if not exists organiser_type text;
 
+-- College society context (spec 2026-10-27) — idempotent.
+alter table public.opportunities add column if not exists college_name text;
+alter table public.opportunities add column if not exists fest_name text;
+alter table public.opportunities add column if not exists college_only boolean not null default false;
+
 -- Core-7 mandatory event fields: backfill legacy rows, then hold new writes.
 update public.opportunities set venue       = '' where venue is null;
 update public.opportunities set city        = '' where city is null;
@@ -446,6 +451,9 @@ create table if not exists public.applications (
 create index if not exists applications_opportunity_idx on public.applications (opportunity_id);
 create index if not exists applications_applicant_idx on public.applications (applicant_id);
 create index if not exists applications_status_idx on public.applications (status);
+
+-- College snapshot of the applicant at submission time (spec 2026-10-27).
+alter table public.applications add column if not exists applicant_college text;
 
 -- ---------------------------------------------------------------------------
 -- 5.3 Triggers: applicant_count stays correct no matter who writes
