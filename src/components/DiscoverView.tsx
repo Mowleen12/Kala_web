@@ -14,6 +14,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { KalaStar } from './KalaLogo';
+import { HostTypeTag } from './HostTypeTag';
 import { Opportunity } from '../types';
 
 interface DiscoverViewProps {
@@ -475,13 +476,11 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                     loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-104 transition-transform duration-500"
                   />
-                  <div className="absolute top-3 left-3 flex items-center gap-2">
+                  <div className="absolute top-3 left-3 right-3 flex flex-wrap items-center gap-2 pr-20">
                     <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#E45826] text-white shadow-xs">
                       {opp.category}
                     </span>
-                    {opp.organiserType === 'society' && (
-                      <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white text-[#E45826] shadow-xs">College Society</span>
-                    )}
+                    <HostTypeTag organiserType={opp.organiserType} />
                   </div>
                   <div className="absolute top-3 right-3">
                     <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-zinc-900/90 text-white backdrop-blur-xs">

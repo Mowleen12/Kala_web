@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight, MapPin, Calendar } from 'lucide-react';
 import { KalaStar } from './KalaLogo';
+import { HostTypeTag } from './HostTypeTag';
 import { Opportunity } from '../types';
 
 interface FeaturedOpportunitiesProps {
@@ -100,13 +101,11 @@ export const FeaturedOpportunities: React.FC<FeaturedOpportunitiesProps> = ({
                 />
                 
                 {/* Overlay Badges */}
-                <div className="absolute top-3 left-3 flex items-center gap-2">
+                <div className="absolute top-3 left-3 right-3 flex flex-wrap items-center gap-2 pr-20">
                   <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide shadow-xs ${getCategoryBadgeStyle(opp.category)}`}>
                     {opp.category}
                   </span>
-                  {opp.organiserType === 'society' && (
-                    <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white text-[#E45826] shadow-xs">College Society</span>
-                  )}
+                  <HostTypeTag organiserType={opp.organiserType} />
                 </div>
 
                 <div className="absolute top-3 right-3">

@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { X, MapPin, Calendar, Building, CheckCircle2, ArrowRight } from 'lucide-react';
 import { Opportunity } from '../types';
+import { HostTypeTag } from './HostTypeTag';
 
 interface OpportunityDetailModalProps {
   opportunity: Opportunity | null;
@@ -115,9 +116,7 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
               <div>
                 <p className="text-xs text-zinc-400 font-medium">Presented by</p>
                 <p className="text-sm font-bold text-zinc-900">{opportunity.organizer}</p>
-                {opportunity.organiserType === 'society' && (
-                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FDEEE7] text-[#E45826] border border-[#FAD7C8]">College Society</span>
-                )}
+                <HostTypeTag organiserType={opportunity.organiserType} variant="inline" />
               </div>
             </div>
           )}
