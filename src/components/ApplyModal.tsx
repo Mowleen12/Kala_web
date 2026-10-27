@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { X, MapPin, Calendar, Link2, Sparkles, AlertCircle } from 'lucide-react';
 import { Opportunity } from '../types';
 import { MediaUploader } from './MediaUploader';
-import { HostTypeTag } from './HostTypeTag';
+import { HostTypeTag, CollegeOnlyTag } from './HostTypeTag';
 import { getDraft, setDraft, clearDraft } from '../lib/drafts';
 import { isLocalMediaUrl, resolveMediaUrl } from '../lib/localMedia';
 import { loadProfileSkills, loadProfileText } from '../lib/profile';
@@ -166,6 +166,9 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
           </div>
           <span className="ml-2 inline-block align-middle">
             <HostTypeTag organiserType={opportunity.organiserType} variant="inline" />
+          </span>
+          <span className="ml-2 inline-block align-middle">
+            <CollegeOnlyTag variant="inline" show={opportunity.collegeOnly} />
           </span>
           <h3 className="text-xl font-bold text-zinc-900 leading-tight">
             Apply to {opportunity.title}

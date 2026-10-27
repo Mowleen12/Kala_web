@@ -14,7 +14,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { KalaStar } from './KalaLogo';
-import { HostTypeTag } from './HostTypeTag';
+import { HostTypeTag, CollegeOnlyTag } from './HostTypeTag';
 import { Opportunity } from '../types';
 
 interface DiscoverViewProps {
@@ -481,6 +481,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                       {opp.category}
                     </span>
                     <HostTypeTag organiserType={opp.organiserType} />
+                    <CollegeOnlyTag show={opp.collegeOnly} />
                   </div>
                   <div className="absolute top-3 right-3">
                     <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-zinc-900/90 text-white backdrop-blur-xs">

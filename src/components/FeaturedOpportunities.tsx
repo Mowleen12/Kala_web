@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight, MapPin, Calendar } from 'lucide-react';
 import { KalaStar } from './KalaLogo';
-import { HostTypeTag } from './HostTypeTag';
+import { HostTypeTag, CollegeOnlyTag } from './HostTypeTag';
 import { Opportunity } from '../types';
 
 interface FeaturedOpportunitiesProps {
@@ -106,6 +106,7 @@ export const FeaturedOpportunities: React.FC<FeaturedOpportunitiesProps> = ({
                     {opp.category}
                   </span>
                   <HostTypeTag organiserType={opp.organiserType} />
+                  <CollegeOnlyTag show={opp.collegeOnly} />
                 </div>
 
                 <div className="absolute top-3 right-3">
