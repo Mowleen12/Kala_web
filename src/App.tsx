@@ -689,6 +689,7 @@ export default function App() {
       artistAvatar: currentUser.avatarUrl || currentUser.avatar,
       artistRole: currentUser.discipline || null,
       artistLocation: appData.city || null,
+      artistCollege: currentUser.collegeName || null,
       experienceYears: appData.experienceYears ?? null,
       skills: appData.skills,
       statement: appData.statement,
@@ -1285,6 +1286,7 @@ export default function App() {
         onSubmitApplication={handleSubmitApplication}
         userName={currentUser.name}
         userEmail={currentUser.email}
+        collegeName={currentUser.collegeName}
         profileKey={currentUser.id}
       />
 

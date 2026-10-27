@@ -105,6 +105,7 @@ const rowToApplication = (r: any): Application => {
     artistAvatar: r.applicant_avatar || null,
     artistRole: r.applicant_role || null,
     artistLocation: r.applicant_city || null,
+    artistCollege: r.applicant_college || null,
     experienceYears: r.experience_years ?? null,
     skills: r.skills ? String(r.skills).split(',').map((s: string) => s.trim()).filter(Boolean) : [],
     pitch: r.statement || '',
@@ -319,6 +320,7 @@ export interface ApplyInput {
   portfolioUrl?: string | null;
   reelUrl?: string | null;
   fileName?: string | null;
+  artistCollege?: string | null;
 }
 
 export async function applyToOpportunity(
@@ -338,6 +340,7 @@ export async function applyToOpportunity(
       applicant_avatar: input.artistAvatar || null,
       applicant_role: input.artistRole || null,
       applicant_city: input.artistLocation || null,
+      applicant_college: input.artistCollege || null,
       skills: input.skills?.length ? input.skills.join(', ') : null,
       experience_years: input.experienceYears ?? null,
       statement: input.statement || null,

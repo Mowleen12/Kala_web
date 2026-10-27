@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { X, MapPin, Calendar, Link2, Sparkles, AlertCircle } from 'lucide-react';
 import { Opportunity } from '../types';
 import { MediaUploader } from './MediaUploader';
-import { HostTypeTag, CollegeOnlyTag } from './HostTypeTag';
+import { HostTypeTag, CollegeOnlyTag, StudentTag } from './HostTypeTag';
 import { getDraft, setDraft, clearDraft } from '../lib/drafts';
 import { isLocalMediaUrl, resolveMediaUrl } from '../lib/localMedia';
 import { loadProfileSkills, loadProfileText } from '../lib/profile';
@@ -41,6 +41,7 @@ interface ApplyModalProps {
   ) => Promise<{ ok: boolean; error?: string }>;
   userName: string;
   userEmail: string;
+  collegeName?: string;
   profileKey: string;
 }
 
@@ -51,6 +52,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
   onSubmitApplication,
   userName,
   userEmail,
+  collegeName,
   profileKey,
 }) => {
   const [portfolioUrl, setPortfolioUrl] = useState('');
@@ -198,6 +200,9 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
               <div>
                 <p className="text-xs font-bold text-zinc-900">{userName}</p>
                 <p className="text-[11px] text-zinc-500">{userEmail}</p>
+                <div className="mt-1.5">
+                  <StudentTag college={collegeName} />
+                </div>
               </div>
               <span className="text-[11px] font-semibold text-zinc-500 bg-white border border-zinc-200 px-2 py-0.5 rounded-md">
                 Artist
