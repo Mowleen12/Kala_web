@@ -1096,6 +1096,7 @@ export default function App() {
                   profileKey={currentUser.id}
                   userName={currentUser.name}
                   userEmail={currentUser.email}
+                  collegeName={currentUser.collegeName}
                   avatarUrl={currentUser.avatarUrl || currentUser.avatar}
                   profileMedia={profileMedia}
                   onProfileMediaChange={handleProfileMediaChange}

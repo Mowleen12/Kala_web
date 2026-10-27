@@ -24,6 +24,7 @@ import { getDraft, setDraft } from '../lib/drafts';
 import { computeProfileCompletion, ProfileFields } from '../lib/profile';
 import { VIDEO_MAX_BYTES, formatMB } from '../lib/limits';
 import { suggestSkills } from '../lib/skills';
+import { StudentTag } from './HostTypeTag';
 
 export interface ProfileMedia {
   avatar?: string;
@@ -43,6 +44,7 @@ interface ProfileViewProps {
   profileKey: string;
   userName?: string;
   userEmail?: string;
+  collegeName?: string;
   avatarUrl?: string;
   profileMedia?: ProfileMedia;
   onProfileMediaChange?: (patch: ProfileMedia) => void;
@@ -55,6 +57,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   profileKey,
   userName = '',
   userEmail = '',
+  collegeName = '',
   avatarUrl = '',
   profileMedia,
   onProfileMediaChange,
@@ -230,6 +233,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   {userEmail}
                 </span>
               </p>
+              {collegeName && (
+                <div className="mt-2">
+                  <StudentTag college={collegeName} />
+                </div>
+              )}
             </div>
           </div>
 

@@ -7,6 +7,7 @@ import { Application, Opportunity, Thread } from '../types';
 import { isUnread } from '../lib/threads';
 import { getOptimizedCloudinaryUrl } from '../lib/cloudinary';
 import { isDirectMediaUrl, isDeviceLocalUrl, mediaKind, linkHost } from '../lib/media';
+import { StudentTag } from './HostTypeTag';
 
 interface ApplicationsViewProps {
   applications: Application[];
@@ -99,6 +100,7 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
                 <span className="text-xs text-zinc-400">
                   Applied on {app.appliedDate}
                 </span>
+                <StudentTag college={app.artistCollege} />
               </div>
 
               <div className="flex items-start gap-3.5">
