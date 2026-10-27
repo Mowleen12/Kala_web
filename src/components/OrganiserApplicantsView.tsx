@@ -19,10 +19,12 @@ import {
   X,
   Award,
   Music,
-  MessageSquare
+  MessageSquare,
+  GraduationCap
 } from 'lucide-react';
 import { ApplicantReview, Opportunity, Thread } from '../types';
 import { KalaStar } from './KalaLogo';
+import { StudentTag } from './HostTypeTag';
 import { MediaPreview } from './MediaPreview';
 import { isUnread } from '../lib/threads';
 import { getOptimizedCloudinaryUrl } from '../lib/cloudinary';
@@ -56,6 +58,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
   const [cityFilter, setCityFilter] = useState<string>('all');
   const [ratingFilter, setRatingFilter] = useState<string>('all');
   const [hasReelFilter, setHasReelFilter] = useState<boolean>(false);
+  const [collegeOnlyFilter, setCollegeOnlyFilter] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<'rating' | 'experience' | 'newest'>('rating');
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
@@ -71,6 +74,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
     cityFilter !== 'all',
     ratingFilter !== 'all',
     hasReelFilter,
+    collegeOnlyFilter,
     searchQuery.trim().length > 0,
   ].filter(Boolean).length;
 
@@ -81,6 +85,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
     setCityFilter('all');
     setRatingFilter('all');
     setHasReelFilter(false);
+    setCollegeOnlyFilter(false);
     setSearchQuery('');
     setSortBy('rating');
   };
@@ -128,7 +133,9 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
       // Has reel
       const matchesReel = !hasReelFilter || Boolean(app.reelUrl);
 
-      return matchesOpp && matchesStatus && matchesSearch && matchesExp && matchesCity && matchesRating && matchesReel;
+      const matchesCollege = !collegeOnlyFilter || Boolean(app.artistCollege);
+
+      return matchesOpp && matchesStatus && matchesSearch && matchesExp && matchesCity && matchesRating && matchesReel && matchesCollege;
     });
 
     // Sorting
@@ -139,7 +146,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
     }
 
     return list;
-  }, [applicants, selectedOppFilter, statusFilter, experienceFilter, cityFilter, ratingFilter, hasReelFilter, sortBy, searchQuery]);
+  }, [applicants, selectedOppFilter, statusFilter, experienceFilter, cityFilter, ratingFilter, hasReelFilter, collegeOnlyFilter, sortBy, searchQuery]);
 
   const getStatusBadge = (status: ApplicantReview['status']) => {
     switch (status) {
@@ -399,6 +406,18 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                 Show only submissions with acoustic / video audition reel
               </span>
             </label>
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-zinc-700">
+              <input
+                type="checkbox"
+                checked={collegeOnlyFilter}
+                onChange={(e) => setCollegeOnlyFilter(e.target.checked)}
+                className="w-4 h-4 rounded text-[#E45826] focus:ring-[#E45826] border-zinc-300"
+              />
+              <span className="flex items-center gap-1">
+                <GraduationCap className="w-3.5 h-3.5 text-[#E45826]" />
+                Show only college students
+              </span>
+            </label>
           </div>
         </div>
       )}
@@ -447,6 +466,13 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[#FDEEE7] text-[#E45826] border border-[#FAD7C8]">
               <span>Has Audition Reel</span>
               <X className="w-3 h-3 cursor-pointer hover:opacity-75" onClick={() => setHasReelFilter(false)} />
+            </span>
+          )}
+
+          {collegeOnlyFilter && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[#FDEEE7] text-[#E45826] border border-[#FAD7C8]">
+              <span>College students only</span>
+              <X className="w-3 h-3 cursor-pointer hover:opacity-75" onClick={() => setCollegeOnlyFilter(false)} />
             </span>
           )}
 
@@ -568,6 +594,11 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                         {app.artistRole || 'Artist'}
                         {app.experienceYears != null && ` • ${app.experienceYears} yrs exp`}
                       </p>
+                      {app.artistCollege && (
+                        <div className="mt-1">
+                          <StudentTag college={app.artistCollege} />
+                        </div>
+                      )}
                       <p className="text-xs text-zinc-400 flex items-center gap-1 mt-0.5">
                         <MapPin className="w-3 h-3" />
                         {app.artistLocation || 'Location not specified'}
