@@ -75,7 +75,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
     const profile = loadProfileText(profileKey);
     const profileSkills = loadProfileSkills(profileKey);
     setPortfolioUrl(draft?.portfolioUrl ?? '');
-    setStatement(draft?.statement ?? '');
+    setStatement(draft?.statement ?? profile.bio ?? '');
     setExperienceYears(draft?.experienceYears ?? '');
     setSkills(draft?.skills ?? (profileSkills.length ? profileSkills.join(', ') : ''));
     setCity(draft?.city ?? profile.location ?? '');
@@ -111,6 +111,8 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
   }, [isOpen, opportunity?.id, portfolioUrl, statement, mediaUrl, experienceYears, skills, city]);
 
   if (!isOpen || !opportunity) return null;
+
+  const isCollegeCall = opportunity.collegeOnly || opportunity.organiserType === 'society';
 
   const clearFieldError = (field: string) =>
     setFieldErrors((prev) => (prev[field] ? { ...prev, [field]: '' } : prev));
@@ -192,6 +194,16 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
 
         {/* Application Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {isCollegeCall && (
+            <div
+              id="apply-college-notice"
+              className="text-xs font-semibold text-[#C2410C] bg-[#FFF7ED] border border-[#FED7AA] rounded-xl px-3 py-2.5"
+            >
+              {collegeName
+                ? `College students only — you're applying as College Student • ${collegeName}`
+                : 'College students only'}
+            </div>
+          )}
           <div>
             <label className="block text-xs font-semibold text-zinc-700 mb-1">
               Applying as

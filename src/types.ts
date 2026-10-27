@@ -114,6 +114,7 @@ export interface OrganiserProfile {
   about: string;
   orgType?: OrganiserType;
   collegeName: string;
+  collegeStudent?: boolean;
   focusDisciplines: string[];
 }
 

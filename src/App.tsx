@@ -550,6 +550,7 @@ export default function App() {
     email: string; 
     role: PortalMode; 
     orgName?: string;
+    orgType?: AuthUser['orgType'];
     discipline?: string;
     avatar?: string;
     avatarUrl?: string;
@@ -564,6 +565,7 @@ export default function App() {
       email: userData.email,
       role: userData.role,
       orgName: userData.orgName,
+      orgType: userData.orgType,
       discipline: userData.discipline,
       avatarUrl: effectiveAvatar,
       collegeName: userData.collegeName,

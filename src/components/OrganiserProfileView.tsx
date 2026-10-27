@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { OrganiserProfile, OrganiserType } from '../types';
 import { KalaStar } from './KalaLogo';
+import { StudentTag } from './HostTypeTag';
 import { MediaPreview } from './MediaPreview';
 import { MediaUploader } from './MediaUploader';
 
@@ -40,6 +41,7 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
   const [editCoverImage, setEditCoverImage] = useState('');
   const [editOrgType, setEditOrgType] = useState<OrganiserType>('venue');
   const [editCollege, setEditCollege] = useState('');
+  const [editCollegeStudent, setEditCollegeStudent] = useState(false);
 
   const startEditing = () => {
     setEditName(profile.name);
@@ -50,12 +52,14 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
     setEditCoverImage(profile.coverImage);
     setEditOrgType(profile.orgType || 'venue');
     setEditCollege(profile.collegeName || '');
+    setEditCollegeStudent(profile.collegeStudent ?? false);
     setIsEditing(true);
   };
 
   const saveProfile = () => {
     const name = editName.trim();
     if (!name) return;
+    if (editCollegeStudent && !editCollege.trim()) return;
     onUpdateProfile?.({
       ...profile,
       name,
@@ -65,7 +69,13 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
       about: editAbout.trim(),
       coverImage: editCoverImage,
       orgType: editOrgType,
-      collegeName: editOrgType === 'society' ? editCollege.trim() : profile.collegeName || '',
+      collegeName:
+        editOrgType === 'society'
+          ? editCollege.trim()
+          : editCollegeStudent
+            ? editCollege.trim()
+            : profile.collegeName || '',
+      collegeStudent: editCollegeStudent,
     });
     setIsEditing(false);
   };
@@ -145,6 +155,26 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
                         className="mt-2 w-full bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-2 text-xs outline-none focus:border-[#E45826]"
                       />
                     )}
+                    <label className="mt-2 flex items-center gap-2 text-xs font-bold text-zinc-700 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        id="profile-college-student"
+                        checked={editCollegeStudent}
+                        onChange={(e) => setEditCollegeStudent(e.target.checked)}
+                        className="w-4 h-4 accent-[#E45826] cursor-pointer"
+                      />
+                      I'm a college student
+                    </label>
+                    {editCollegeStudent && editOrgType !== 'society' && (
+                      <input
+                        value={editCollege}
+                        onChange={(e) => setEditCollege(e.target.value)}
+                        maxLength={100}
+                        aria-label="Your college name"
+                        placeholder="e.g. University of Mumbai"
+                        className="mt-2 w-full bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-2 text-xs outline-none focus:border-[#E45826]"
+                      />
+                    )}
                   </div>
                 )}
                 <div className="flex items-center gap-2">
@@ -157,9 +187,14 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
                       className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-1 outline-none focus:border-[#E45826] w-full sm:w-72"
                     />
                   ) : (
-                    <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight">
-                      {profile.name || 'Your venue'}
-                    </h1>
+                    <>
+                      <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight">
+                        {profile.name || 'Your venue'}
+                      </h1>
+                      {profile.collegeStudent && profile.collegeName && (
+                        <StudentTag college={profile.collegeName} className="mb-1" />
+                      )}
+                    </>
                   )}
                 </div>
                 <p className="text-xs text-zinc-500 flex flex-wrap items-center gap-2 mt-1">
@@ -203,7 +238,7 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
                 <>
                   <button
                     onClick={saveProfile}
-                    disabled={!editName.trim()}
+                    disabled={!editName.trim() || (editCollegeStudent && !editCollege.trim())}
                     className="px-4 py-2 rounded-full bg-[#E45826] hover:bg-[#D44716] text-white text-xs font-semibold shadow-xs cursor-pointer disabled:opacity-50 transition-all"
                   >
                     Save Changes

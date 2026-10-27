@@ -38,6 +38,7 @@ interface CreateAccountModalProps {
     email: string; 
     role: PortalMode; 
     orgName?: string;
+    orgType?: OrganiserType;
     discipline?: string;
     avatar?: string;
     collegeName?: string;
@@ -140,6 +141,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
           discipline: user.discipline,
           avatar: user.avatar,
           collegeName: user.collegeName,
+          orgType: user.orgType,
         });
       } else {
         const { user, error: signUpErr, needsEmailConfirmation } = await supabaseSignUp({
@@ -189,6 +191,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
           discipline: user.discipline,
           avatar: user.avatar,
           collegeName: user.collegeName,
+          orgType: user.orgType,
         });
       }
     } catch (err: any) {
@@ -238,6 +241,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
         discipline: user.discipline,
         avatar: user.avatarUrl || user.avatar,
         collegeName: user.collegeName,
+        orgType: user.orgType,
       });
       onClose();
     } catch (err: any) {
