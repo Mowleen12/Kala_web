@@ -128,7 +128,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors = validatePostForm({
-      title, category, venue, city, startDate, endDate, description,
+      title, category, venue, city, college: '', startDate, endDate, description,
       imageUrl: selectedImage, priceChoice, customMin, customMax,
     });
     setFieldErrors(errors);

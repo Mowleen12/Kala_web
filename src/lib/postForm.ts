@@ -3,6 +3,7 @@ export interface PostFormFields {
   category: string;
   venue: string;
   city: string;
+  college: string;
   startDate: string;
   endDate: string;
   description: string;
@@ -14,8 +15,8 @@ export interface PostFormFields {
 
 export type PostFormErrors = Partial<Record<keyof PostFormFields, string>>;
 
-/** Core-7 required fields; honorarium bounds only when "Your own price" is picked. */
-export function validatePostForm(f: PostFormFields): PostFormErrors {
+/** Core-7 required fields; honorarium bounds only when "Your own price" is picked. Society posts additionally require the college (spec 2026-10-27). */
+export function validatePostForm(f: PostFormFields, society = false): PostFormErrors {
   const errors: PostFormErrors = {};
   const title = f.title.trim();
   if (title.length < 3) errors.title = 'Title must be at least 3 characters';
@@ -23,6 +24,7 @@ export function validatePostForm(f: PostFormFields): PostFormErrors {
   if (!f.category.trim()) errors.category = 'Pick a category discipline';
   if (!f.venue.trim()) errors.venue = 'Venue is required';
   if (!f.city.trim()) errors.city = 'City & state is required';
+  if (society && !f.college.trim()) errors.college = 'College / institution is required';
   if (!f.startDate) errors.startDate = 'Event start date is required';
   else if (f.endDate && f.endDate < f.startDate) errors.endDate = 'End date cannot be before the start date';
   if (!f.description.trim()) errors.description = 'Add a short synopsis of the call';

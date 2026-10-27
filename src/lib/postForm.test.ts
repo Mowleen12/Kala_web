@@ -7,6 +7,7 @@ const VALID: PostFormFields = {
   category: 'Music & Dance',
   venue: 'NCPA Tata Theatre',
   city: 'Mumbai, Maharashtra',
+  college: '',
   startDate: '2026-12-05',
   endDate: '2026-12-06',
   description: 'Looking for fusion ensembles for a two-evening showcase.',
@@ -47,4 +48,10 @@ test('preset honorarium needs no numbers', () => {
   const errors = validatePostForm({ ...VALID, priceChoice: 'Under ₹10k', customMin: '', customMax: '' });
   assert.equal(errors.customMin, undefined);
   assert.equal(errors.customMax, undefined);
+});
+
+test('society requires a college; venue posts do not', () => {
+  assert.ok(validatePostForm({ ...VALID, college: '' }, true).college);
+  assert.equal(validatePostForm({ ...VALID, college: '' }).college, undefined);
+  assert.equal(validatePostForm({ ...VALID, college: 'IIT Delhi' }, true).college, undefined);
 });
