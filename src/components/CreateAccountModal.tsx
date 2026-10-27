@@ -40,6 +40,7 @@ interface CreateAccountModalProps {
     orgName?: string;
     discipline?: string;
     avatar?: string;
+    collegeName?: string;
   }) => void;
 }
 
@@ -138,6 +139,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
           orgName: user.orgName,
           discipline: user.discipline,
           avatar: user.avatar,
+          collegeName: user.collegeName,
         });
       } else {
         const { user, error: signUpErr, needsEmailConfirmation } = await supabaseSignUp({
@@ -186,6 +188,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
           orgName: user.orgName,
           discipline: user.discipline,
           avatar: user.avatar,
+          collegeName: user.collegeName,
         });
       }
     } catch (err: any) {
@@ -234,6 +237,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
         orgName: user.orgName,
         discipline: user.discipline,
         avatar: user.avatarUrl || user.avatar,
+        collegeName: user.collegeName,
       });
       onClose();
     } catch (err: any) {

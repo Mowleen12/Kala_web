@@ -553,6 +553,7 @@ export default function App() {
     discipline?: string;
     avatar?: string;
     avatarUrl?: string;
+    collegeName?: string;
   }) => {
     setIsSignUpOpen(false);
 
@@ -565,6 +566,7 @@ export default function App() {
       orgName: userData.orgName,
       discipline: userData.discipline,
       avatarUrl: effectiveAvatar,
+      collegeName: userData.collegeName,
     });
 
     setCurrentUser(newUser);
