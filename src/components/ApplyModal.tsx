@@ -3,10 +3,12 @@ import { motion } from 'motion/react';
 import { X, MapPin, Calendar, Link2, Sparkles, AlertCircle } from 'lucide-react';
 import { Opportunity } from '../types';
 import { MediaUploader } from './MediaUploader';
+import { HostTypeTag } from './HostTypeTag';
 import { getDraft, setDraft, clearDraft } from '../lib/drafts';
 import { isLocalMediaUrl, resolveMediaUrl } from '../lib/localMedia';
 import { loadProfileSkills, loadProfileText } from '../lib/profile';
 import { IMAGE_MAX_BYTES, VIDEO_MAX_BYTES, formatMB } from '../lib/limits';
+import { validateApplyForm } from '../lib/applyForm';
 
 interface ApplyDraft {
   portfolioUrl?: string;
@@ -60,6 +62,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
   const [city, setCity] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Restore a saved draft when this opportunity's form opens...
   useEffect(() => {
@@ -75,6 +78,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
     setSkills(draft?.skills ?? (profileSkills.length ? profileSkills.join(', ') : ''));
     setCity(draft?.city ?? profile.location ?? '');
     setSubmitError(null);
+    setFieldErrors({});
     const draftMedia = draft?.mediaUrl ?? '';
     if (!isLocalMediaUrl(draftMedia)) {
       setMediaUrl(draftMedia);
@@ -106,9 +110,15 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
 
   if (!isOpen || !opportunity) return null;
 
+  const clearFieldError = (field: string) =>
+    setFieldErrors((prev) => (prev[field] ? { ...prev, [field]: '' } : prev));
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
+    const errs = validateApplyForm({ experienceYears, city, skills });
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) return;
     setIsSubmitting(true);
     setSubmitError(null);
     const mediaName = mediaUrl ? mediaUrl.split('/').pop()?.split('?')[0] || 'upload' : null;
@@ -154,9 +164,9 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
           <div className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#E45826] text-white mb-2">
             {opportunity.category}
           </div>
-          {opportunity.organiserType === 'society' && (
-            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FDEEE7] text-[#E45826] border border-[#FAD7C8]">College Society</span>
-          )}
+          <span className="ml-2 inline-block align-middle">
+            <HostTypeTag organiserType={opportunity.organiserType} variant="inline" />
+          </span>
           <h3 className="text-xl font-bold text-zinc-900 leading-tight">
             Apply to {opportunity.title}
           </h3>
@@ -196,44 +206,68 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                Years of Experience
+                Years of Experience <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
                 min={0}
                 max={70}
                 value={experienceYears}
-                onChange={(e) => setExperienceYears(e.target.value)}
+                onChange={(e) => {
+                  setExperienceYears(e.target.value);
+                  clearFieldError('experienceYears');
+                }}
                 placeholder="e.g. 4"
-                className="w-full bg-[#FAF8F5] border border-[#E5E0D6] focus:border-[#E45826] focus:bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 outline-none transition-all shadow-2xs"
+                className={`w-full bg-[#FAF8F5] border focus:border-[#E45826] focus:bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 outline-none transition-all shadow-2xs ${
+                  fieldErrors.experienceYears ? 'border-red-400' : 'border-[#E5E0D6]'
+                }`}
               />
+              {fieldErrors.experienceYears && (
+                <p className="mt-1 text-[11px] font-medium text-red-600">{fieldErrors.experienceYears}</p>
+              )}
             </div>
             <div>
               <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                City
+                City <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={city}
-                onChange={(e) => setCity(e.target.value)}
+                onChange={(e) => {
+                  setCity(e.target.value);
+                  clearFieldError('city');
+                }}
                 placeholder="e.g. Mumbai"
-                className="w-full bg-[#FAF8F5] border border-[#E5E0D6] focus:border-[#E45826] focus:bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 outline-none transition-all shadow-2xs"
+                className={`w-full bg-[#FAF8F5] border focus:border-[#E45826] focus:bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 outline-none transition-all shadow-2xs ${
+                  fieldErrors.city ? 'border-red-400' : 'border-[#E5E0D6]'
+                }`}
               />
+              {fieldErrors.city && (
+                <p className="mt-1 text-[11px] font-medium text-red-600">{fieldErrors.city}</p>
+              )}
             </div>
           </div>
 
           <div>
             <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-700 mb-1">
               <Sparkles className="w-3.5 h-3.5 text-zinc-400" />
-              <span>Skills (comma-separated)</span>
+              <span>Skills (comma-separated) <span className="text-red-500">*</span></span>
             </label>
             <input
               type="text"
               value={skills}
-              onChange={(e) => setSkills(e.target.value)}
+              onChange={(e) => {
+                setSkills(e.target.value);
+                clearFieldError('skills');
+              }}
               placeholder="e.g. Carnatic Vocals, Sitar, Live Improvisation"
-              className="w-full bg-[#FAF8F5] border border-[#E5E0D6] focus:border-[#E45826] focus:bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 outline-none transition-all shadow-2xs"
+              className={`w-full bg-[#FAF8F5] border focus:border-[#E45826] focus:bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 outline-none transition-all shadow-2xs ${
+                fieldErrors.skills ? 'border-red-400' : 'border-[#E5E0D6]'
+              }`}
             />
+            {fieldErrors.skills && (
+              <p className="mt-1 text-[11px] font-medium text-red-600">{fieldErrors.skills}</p>
+            )}
           </div>
 
           {/* Cloudinary Audition Video & Image Uploader */}
