@@ -732,6 +732,9 @@ export default function App() {
         compensation: newOpp.compensation,
         imageUrl: newOpp.imageUrl,
         organiserType: currentUser.orgType,
+        collegeName: newOpp.collegeName,
+        festName: newOpp.festName,
+        collegeOnly: newOpp.collegeOnly,
       },
       {
         id: currentUser.id,
@@ -1298,6 +1301,8 @@ export default function App() {
         onClose={() => setIsPostModalOpen(false)}
         onPublish={handlePublishOpportunity}
         organizerName={organiserProfile.name}
+        society={currentUser.orgType === 'society'}
+        collegeName={organiserProfile.collegeName || currentUser.collegeName}
       />
     </div>
   );

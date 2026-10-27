@@ -27,6 +27,9 @@ interface PostOpportunityDraft {
   deadlineDays?: string;
   selectedImage?: string;
   description?: string;
+  college?: string;
+  fest?: string;
+  collegeOnly?: boolean;
 }
 
 const DRAFT_KEY = 'kala_draft_post';
@@ -38,6 +41,8 @@ interface PostOpportunityModalProps {
   onClose: () => void;
   onPublish: (opp: Opportunity) => Promise<{ ok: boolean; error?: string }>;
   organizerName?: string;
+  society?: boolean;
+  collegeName?: string;
 }
 
 const PRESET_IMAGES = [
@@ -53,6 +58,8 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
   onClose,
   onPublish,
   organizerName = '',
+  society = false,
+  collegeName = '',
 }) => {
   const savedDraft = useRef(getDraft<PostOpportunityDraft>(DRAFT_KEY)).current;
   const [title, setTitle] = useState(savedDraft?.title ?? '');
@@ -68,6 +75,9 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
   const [deadlineDays, setDeadlineDays] = useState(savedDraft?.deadlineDays ?? '7');
   const [selectedImage, setSelectedImage] = useState(savedDraft?.selectedImage || '');
   const [description, setDescription] = useState(savedDraft?.description ?? DEFAULT_DESCRIPTION);
+  const [college, setCollege] = useState(savedDraft?.college ?? collegeName);
+  const [fest, setFest] = useState(savedDraft?.fest ?? '');
+  const [collegeOnly, setCollegeOnly] = useState(savedDraft?.collegeOnly ?? false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<PostFormErrors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -90,8 +100,11 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
       // custom cover survives reloads; unknown dead blobs fall back to preset.
       selectedImage,
       description,
+      college,
+      fest,
+      collegeOnly,
     });
-  }, [title, category, venue, city, startDate, endDate, eventTime, priceChoice, customMin, customMax, deadlineDays, selectedImage, description]);
+  }, [title, category, venue, city, startDate, endDate, eventTime, priceChoice, customMin, customMax, deadlineDays, selectedImage, description, college, fest, collegeOnly]);
 
   // Resolve a locally-stored cover ref (kala-idb:) into a live object URL
   // while the modal is open; fall back to the preset if the blob is gone.
@@ -128,9 +141,9 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors = validatePostForm({
-      title, category, venue, city, college: '', startDate, endDate, description,
-      imageUrl: selectedImage, priceChoice, customMin, customMax,
-    });
+      title, category, venue, city, startDate, endDate, description,
+      imageUrl: selectedImage, priceChoice, customMin, customMax, college,
+    }, society);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
       setError('Some required fields are missing — check the highlighted inputs.');
@@ -161,6 +174,9 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
       organizer: organizerName,
       description: description,
       requirements: [],
+      collegeName: society ? college.trim() || undefined : undefined,
+      festName: society ? fest.trim() || undefined : undefined,
+      collegeOnly: society && collegeOnly,
       applicantCount: 0,
       status: 'active',
       deadline: deadlineIso,
@@ -321,6 +337,46 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                   </select>
                 </div>
               </div>
+
+              {/* College Details — society organisers only */}
+              {society && (
+                <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-[#EFEBE4] space-y-3">
+                  <div>
+                    <label className="text-xs font-bold text-zinc-700 block mb-1">College / Institution <span className="text-[#E45826]">*</span></label>
+                    <input
+                      id="post-college"
+                      type="text"
+                      value={college}
+                      onChange={(e) => { clearErr('college'); setCollege(e.target.value); }}
+                      placeholder="e.g. IIT Delhi"
+                      {...inputAria('college')}
+                      className={inputCls('college')}
+                    />
+                    {fieldError('college')}
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-zinc-700 block mb-1">Fest / Club Name</label>
+                    <input
+                      id="post-fest"
+                      type="text"
+                      value={fest}
+                      onChange={(e) => setFest(e.target.value)}
+                      placeholder="e.g. Rhapsody 2026 / Music Club"
+                      className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-zinc-700">
+                    <input
+                      id="post-college-only"
+                      type="checkbox"
+                      checked={collegeOnly}
+                      onChange={(e) => setCollegeOnly(e.target.checked)}
+                      className="w-4 h-4 rounded text-[#E45826] focus:ring-[#E45826] border-zinc-300"
+                    />
+                    Open to college students only
+                  </label>
+                </div>
+              )}
 
               {/* Venue & City */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
