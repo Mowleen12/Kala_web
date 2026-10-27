@@ -80,6 +80,9 @@ const rowToOpportunity = (r: any): Opportunity => ({
   organiserType: r.organiser_type === 'society' ? 'society' : 'venue',
   organiserId: r.organiser_id,
   organiserAvatar: r.organiser_avatar || null,
+  collegeName: r.college_name || undefined,
+  festName: r.fest_name || undefined,
+  collegeOnly: Boolean(r.college_only),
   applicantCount: r.applicant_count || 0,
   status: (r.status as OpportunityStatus) || 'active',
   createdAt: r.created_at,
@@ -197,6 +200,9 @@ export interface OpportunityInput {
   location?: string;
   deadline?: string | null;
   compensation?: string;
+  collegeName?: string;
+  festName?: string;
+  collegeOnly?: boolean;
 }
 
 export async function createOpportunity(
@@ -224,6 +230,9 @@ export async function createOpportunity(
       location: input.location || null,
       deadline: input.deadline || null,
       compensation: input.compensation || null,
+      college_name: input.collegeName || null,
+      fest_name: input.festName || null,
+      college_only: input.collegeOnly ?? false,
       status: 'active',
       featured: false,
     })
