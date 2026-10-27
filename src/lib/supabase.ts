@@ -428,8 +428,7 @@ function withPendingPortal(user: AuthUser): AuthUser {
     role: pending.role,
     orgName: pending.role === 'organiser' ? pending.orgName || user.orgName : user.orgName,
     orgType: pending.role === 'organiser' ? pending.orgType || user.orgType : user.orgType,
-    collegeName:
-      pending.role === 'organiser' ? pending.collegeName || user.collegeName : user.collegeName,
+    collegeName: pending.collegeName || user.collegeName,
     discipline:
       pending.role === 'artist' ? pending.discipline || user.discipline : user.discipline,
   };
@@ -478,9 +477,7 @@ export async function supabaseGetCurrentUser(): Promise<AuthUser | null> {
                 ? pending.orgType || user.user_metadata?.org_type || undefined
                 : undefined,
             college_name:
-              roleToFlush === 'organiser'
-                ? pending.collegeName || user.user_metadata?.college_name || undefined
-                : undefined,
+              pending.collegeName || user.user_metadata?.college_name || undefined,
             discipline:
               roleToFlush === 'artist'
                 ? pending.discipline || user.user_metadata?.discipline || undefined

@@ -54,6 +54,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
   const [orgName, setOrgName] = useState('');
   const [orgType, setOrgType] = useState<OrganiserType>('venue');
   const [collegeName, setCollegeName] = useState('');
+  const [isCollegeStudent, setIsCollegeStudent] = useState(false);
   const [discipline, setDiscipline] = useState('');
   const [email, setEmail] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -89,6 +90,10 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
         return;
       }
       if (role === 'organiser' && orgType === 'society' && !collegeName.trim()) {
+        setError('Please enter your college / institution name');
+        return;
+      }
+      if (role === 'artist' && isCollegeStudent && !collegeName.trim()) {
         setError('Please enter your college / institution name');
         return;
       }
@@ -142,7 +147,14 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
           role,
           orgName: role === 'organiser' ? orgName.trim() : undefined,
           orgType: role === 'organiser' ? orgType : undefined,
-          collegeName: role === 'organiser' && orgType === 'society' ? collegeName.trim() : undefined,
+          collegeName:
+            role === 'organiser'
+              ? orgType === 'society'
+                ? collegeName.trim()
+                : undefined
+              : isCollegeStudent
+                ? collegeName.trim()
+                : undefined,
           discipline: role === 'artist' ? discipline : undefined,
           // Stable IndexedDB ref instead of a session-only blob: preview, so
           // the avatar set during sign-up is still there on the next login.
@@ -192,7 +204,14 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
         customEmail: email.trim() || undefined,
         customOrgName: role === 'organiser' ? (orgName.trim() || undefined) : undefined,
         customOrgType: role === 'organiser' ? orgType : undefined,
-        customCollegeName: role === 'organiser' && orgType === 'society' ? collegeName.trim() : undefined,
+        customCollegeName:
+          role === 'organiser'
+            ? orgType === 'society'
+              ? collegeName.trim()
+              : undefined
+            : isCollegeStudent
+              ? collegeName.trim()
+              : undefined,
         customDiscipline: role === 'artist' ? (discipline || undefined) : undefined,
         isSignUp: !isLoginMode,
       });
@@ -568,6 +587,40 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                       placeholder={role === 'artist' ? 'e.g. Ananya Sharma' : 'e.g. Dr. Meera Rao'}
                       className="w-full bg-[#FAF8F5] border border-[#E5E0D6] focus:border-[#E45826] focus:bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 outline-none transition-all placeholder:text-zinc-400 shadow-2xs"
                     />
+                  </div>
+                )}
+
+                {!isLoginMode && role === 'artist' && (
+                  <div>
+                    <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+                      <input
+                        id="signup-college-student"
+                        type="checkbox"
+                        checked={isCollegeStudent}
+                        onChange={(e) => setIsCollegeStudent(e.target.checked)}
+                        className="w-4 h-4 accent-[#E45826] cursor-pointer"
+                      />
+                      <span className="flex items-center gap-1.5 text-xs font-semibold text-zinc-700">
+                        <GraduationCap className="w-3.5 h-3.5 text-zinc-400" />
+                        I am a college student
+                      </span>
+                    </label>
+                    {isCollegeStudent && (
+                      <div className="mt-3">
+                        <label htmlFor="signup-artist-college" className="flex items-center gap-1.5 text-xs font-semibold text-zinc-700 mb-1">
+                          <span>College / Institution Name</span>
+                          <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          id="signup-artist-college"
+                          type="text"
+                          value={collegeName}
+                          onChange={(e) => setCollegeName(e.target.value)}
+                          placeholder="e.g. St. Xavier's College, Mumbai"
+                          className="w-full bg-[#FAF8F5] border border-[#E5E0D6] focus:border-[#E45826] focus:bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 outline-none transition-all placeholder:text-zinc-400 shadow-2xs"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 
