@@ -62,7 +62,7 @@ import {
   fetchCategoryCounts,
   schemaMissing,
 } from './lib/listings';
-import { computeProfileCompletion, initialProfileCompletion, loadProfileSkills, loadProfileText } from './lib/profile';
+import { computeProfileCompletion, initialProfileCompletion, loadProfileSkills, loadProfileText, isDeviceLocalAvatarUrl, persistAvatarToAccount, upgradeLocalAvatarToHosted } from './lib/profile';
 import { ThreadModal } from './components/ThreadModal';
 
 import { 
@@ -293,7 +293,19 @@ export default function App() {
     const unsubscribe = onSupabaseAuthStateChange((rawUser, event) => {
       const user = rawUser && applyStoredProfileName(rawUser);
       if (user) {
-        setCurrentUser(user);
+        setCurrentUser((prev) => {
+          // A token refresh re-maps the user from auth metadata; device-local
+          // avatar refs (kala-idb:/blob:) are not durable — keep the URL the
+          // session already resolved instead of reverting to the raw ref.
+          if (prev && prev.id === user.id) {
+            const nextAvatar = user.avatarUrl || user.avatar;
+            const prevAvatar = prev.avatarUrl || prev.avatar;
+            if (prevAvatar && nextAvatar && isDeviceLocalAvatarUrl(nextAvatar) && nextAvatar !== prevAvatar) {
+              return { ...user, avatar: prevAvatar, avatarUrl: prevAvatar };
+            }
+          }
+          return user;
+        });
       } else if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
       }
@@ -319,10 +331,25 @@ export default function App() {
       const resolvedAvatar =
         ((await resolveMediaUrl(rawAvatar)) as string | undefined) || rawAvatar;
       if (!alive) return;
-      setProfileMedia(stored);
+
+      // Device-local avatar refs (IndexedDB, e.g. the pre-session signup
+      // avatar) are re-hosted into the shared media bucket once a session
+      // exists, so the avatar is permanently bound to the account.
+      let avatar = stored.avatar || resolvedAvatar;
+      if (avatar && isDeviceLocalAvatarUrl(avatar)) {
+        const hosted = await upgradeLocalAvatarToHosted(avatar);
+        if (hosted) avatar = hosted;
+      }
+      if (!alive) return;
+
+      const media: ProfileMedia = avatar ? { ...stored, avatar } : stored;
+      setProfileMedia(media);
+      if (avatar && avatar !== stored.avatar) {
+        saveProfileMedia(currentUser.id, media);
+      }
       setCurrentUser((prev) => {
         if (!prev || prev.id !== currentUser.id) return prev;
-        const mirrorAvatar = stored.avatar || resolvedAvatar;
+        const mirrorAvatar = avatar || resolvedAvatar;
         if (mirrorAvatar && mirrorAvatar !== (prev.avatarUrl || prev.avatar)) {
           return { ...prev, avatar: mirrorAvatar, avatarUrl: mirrorAvatar };
         }
@@ -345,6 +372,9 @@ export default function App() {
       setCurrentUser((prev) =>
         prev ? { ...prev, avatarUrl: patch.avatar || prev.avatarUrl } : prev
       );
+      // Bind the avatar to the Supabase account too, so it survives
+      // logout/login on any device — not just this browser's localStorage.
+      persistAvatarToAccount(patch.avatar || null);
     }
   };
 
@@ -1226,6 +1256,7 @@ export default function App() {
                   profile={organiserProfile}
                   userEmail={currentUser.email}
                   onUpdateProfile={handleSaveOrganiserProfile}
+                  onLogoChange={(url) => handleProfileMediaChange({ avatar: url })}
                 />
               )}
             </>

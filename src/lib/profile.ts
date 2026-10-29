@@ -1,5 +1,8 @@
 import { getDraft } from './drafts';
 import { ProfileMedia } from '../components/ProfileView';
+import { isLocalMediaUrl, resolveMediaUrl, toPersistableUrl } from './localMedia';
+import { uploadToCloudinary } from './cloudinary';
+import { supabase } from './supabase';
 
 export interface ProfileFields {
   name?: string;
@@ -48,4 +51,60 @@ export function initialProfileCompletion(profileKey: string, media: ProfileMedia
     reel: media.reel,
     gallery: media.gallery,
   });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Account-associated avatar persistence                                       */
+/* -------------------------------------------------------------------------- */
+
+/** True when a URL can only ever resolve in the browser that created it. */
+export function isDeviceLocalAvatarUrl(url: string | null | undefined): boolean {
+  return !!url && (isLocalMediaUrl(url) || url.startsWith('blob:'));
+}
+
+/**
+ * Write the avatar URL onto the user's Supabase account (auth metadata +
+ * profiles row) so it survives logout/login on every device, not just the
+ * browser's localStorage. Failures are swallowed — the local copy still works.
+ */
+export async function persistAvatarToAccount(url: string | null | undefined): Promise<void> {
+  if (!supabase) return;
+  const value = toPersistableUrl(url) || null;
+  try {
+    await supabase.auth.updateUser({ data: { avatar_url: value } });
+  } catch {}
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase
+        .from('profiles')
+        .update({ avatar_url: value, updated_at: new Date().toISOString() })
+        .eq('id', user.id);
+    }
+  } catch {}
+}
+
+/**
+ * Device-local refs (IndexedDB blobs from the pre-session signup flow) are
+ * re-hosted into the shared media bucket once a session exists, and the
+ * account metadata is updated to the hosted URL. Returns the hosted URL, or
+ * null when nothing needed upgrading (or the upgrade failed).
+ */
+export async function upgradeLocalAvatarToHosted(url: string | null | undefined): Promise<string | null> {
+  if (!url || !isDeviceLocalAvatarUrl(url)) return null;
+  try {
+    const resolved = (await resolveMediaUrl(url)) as string | undefined;
+    if (!resolved?.startsWith('blob:')) return null;
+    const blob = await (await fetch(resolved)).blob();
+    const ext =
+      (blob.type.split('/').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '') ||
+      (isLocalMediaUrl(url) ? (url.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '') : '') ||
+      'jpg';
+    const file = new File([blob], `avatar.${ext}`, { type: blob.type || 'image/jpeg' });
+    const result = await uploadToCloudinary(file, { folder: 'kala-avatars', resourceType: 'image' });
+    await persistAvatarToAccount(result.secureUrl);
+    return result.secureUrl;
+  } catch {
+    return null;
+  }
 }
