@@ -37,7 +37,7 @@ export const CollegeAutocomplete = ({
   };
 
   return (
-    <div className={`relative ${wrapperClassName}`}>
+    <div className={wrapperClassName}>
       <input
         id={id}
         type="text"
@@ -62,24 +62,29 @@ export const CollegeAutocomplete = ({
           if (e.key === 'ArrowDown') {
             e.preventDefault();
             setOpen(true);
-            setActive((a) => Math.min(a + 1, matches.length - 1));
+            setActive((a) => Math.min(a + 1, matches.length));
           } else if (e.key === 'ArrowUp') {
             e.preventDefault();
             setActive((a) => Math.max(a - 1, 0));
           } else if (e.key === 'Enter' && open && active >= 0) {
             e.preventDefault();
-            pick(matches[active]);
+            if (active === matches.length) {
+              setOpen(false);
+              setActive(-1);
+            } else {
+              pick(matches[active]);
+            }
           } else if (e.key === 'Escape') {
             setOpen(false);
           }
         }}
         className={className}
       />
-      {open && matches.length > 0 && (
+      {open && (
         <ul
           id="kala-college-listbox"
           role="listbox"
-          className="absolute left-0 right-0 top-full mt-1 z-30 max-h-44 overflow-y-auto bg-white border border-[#EDE8E0] rounded-xl shadow-lg py-1"
+          className="mt-1.5 max-h-44 overflow-y-auto bg-white border border-[#E5E0D6] rounded-xl shadow-xs py-1"
         >
           {matches.map((c, i) => (
             <li
@@ -98,6 +103,23 @@ export const CollegeAutocomplete = ({
               {c}
             </li>
           ))}
+          <li
+            role="option"
+            aria-selected={active === matches.length}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setOpen(false);
+              setActive(-1);
+            }}
+            onMouseEnter={() => setActive(matches.length)}
+            className={`px-3.5 py-2 text-xs font-semibold cursor-pointer transition-colors border-t border-[#E5E0D6] ${
+              active === matches.length
+                ? 'bg-[#FDEEE7] text-[#E45826]'
+                : 'text-[#E45826] hover:bg-[#FAF8F5]'
+            }`}
+          >
+            Not in the list? Type it yourself
+          </li>
         </ul>
       )}
     </div>

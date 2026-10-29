@@ -15,7 +15,7 @@ with sync_playwright() as p:
     page.goto(BASE); page.wait_for_load_state("networkidle")
     page.wait_for_selector("text=Select Your Workspace to Log In", timeout=20000)
 
-    # Artist signup — college student input
+    # Artist signup — listed college
     page.get_by_role("button", name="+ Sign up as new Artist").click()
     page.wait_for_selector("#signup-submit-btn")
     page.check("#signup-college-student")
@@ -23,18 +23,22 @@ with sync_playwright() as p:
     page.click("#signup-artist-college")
     page.fill("#signup-artist-college", "Hind")
     items = options(page)
-    print("artist signup matches:", items)
-    # click the suggestion, verify it lands in the input
+    print("matches:", items)
+    assert items[-1] == "Not in the list? Type it yourself", "other-row missing"
     page.locator("#kala-college-listbox li", has_text="Hindu College").click()
-    print("picked value:", page.input_value("#signup-artist-college"))
-    print("listbox closed:", page.locator("#kala-college-listbox").count() == 0)
-    # dropdown anchored inside the form (below the input, same left edge)
-    page.click("#signup-artist-college")
-    box_input = page.locator("#signup-artist-college").bounding_box()
-    box_list = page.locator("#kala-college-listbox").bounding_box()
-    print("anchored:", abs(box_list["x"] - box_input["x"]) < 2 and box_list["y"] >= box_input["y"] + box_input["height"] - 2)
+    print("picked:", page.input_value("#signup-artist-college"))
 
-    # Organiser signup — society input
+    # Unlisted college — zero matches, other-row only, keep typing after click
+    page.fill("#signup-artist-college", "My Fake College of Arts")
+    items = options(page)
+    print("zero-match items:", items)
+    assert items == ["Not in the list? Type it yourself"], "expected only other-row"
+    page.locator("#kala-college-listbox li").click()
+    print("value kept:", page.input_value("#signup-artist-college"))
+    print("list closed:", page.locator("#kala-college-listbox").count() == 0)
+    print("focus retained:", page.evaluate("() => document.activeElement.id") == "signup-artist-college")
+
+    # Organiser society signup — other-row present
     page.reload(); page.wait_for_load_state("networkidle")
     page.wait_for_selector("text=Select Your Workspace to Log In", timeout=20000)
     page.get_by_role("button", name="+ Register Cultural Venue").click()
@@ -42,7 +46,9 @@ with sync_playwright() as p:
     page.click("#signup-org-type-society")
     page.wait_for_selector("#signup-college-name")
     page.click("#signup-college-name")
-    page.fill("#signup-college-name", "Jawaharlal")
-    print("society matches:", options(page))
+    page.fill("#signup-college-name", "zzzz")
+    items = options(page)
+    print("society zero-match items:", items)
+    assert items == ["Not in the list? Type it yourself"], "society other-row missing"
     browser.close()
-print("DONE")
+print("ALL PASSED")
