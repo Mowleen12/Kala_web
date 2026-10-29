@@ -185,7 +185,7 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
                 );
               })()}
               <div>{getStatusBadge(app.status)}</div>
-              <span className="text-[11px] text-zinc-400">
+              <span className="hidden sm:inline text-[11px] text-zinc-400">
                 ID: {app.id.toUpperCase()}
               </span>
             </div>

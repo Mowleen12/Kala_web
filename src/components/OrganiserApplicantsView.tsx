@@ -209,7 +209,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
       {/* Main Filter & Stage Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Stage Status Tabs */}
-        <div className="flex items-center gap-1 p-1 bg-[#EFE8DE] rounded-2xl overflow-x-auto scrollbar-none w-fit">
+        <div className="flex items-center gap-1 p-1 bg-[#EFE8DE] rounded-2xl overflow-x-auto scrollbar-none w-fit max-w-full">
           <button
             onClick={() => setStatusFilter('all')}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer ${
@@ -253,8 +253,8 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
         </div>
 
         {/* Search, Filter Drawer Toggle & Sort */}
-        <div className="flex items-center gap-2">
-          <div className="relative max-w-xs w-full">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[180px] sm:max-w-xs sm:w-full">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
             <input
               type="text"
@@ -393,7 +393,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
           </div>
 
           {/* Quick Toggle Checkbox */}
-          <div className="pt-1 flex items-center gap-3">
+          <div className="pt-1 flex flex-wrap items-center gap-3">
             <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-zinc-700">
               <input
                 type="checkbox"
@@ -556,7 +556,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
               <div>
                 {/* Header */}
                 <div className="flex items-start justify-between gap-3 mb-4">
-                  <div className="flex items-start gap-3.5">
+                  <div className="flex items-start gap-3.5 min-w-0">
                     {app.artistAvatar ? (
                       <img
                         src={app.artistAvatar}
@@ -568,8 +568,8 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                         {app.artistName.charAt(0).toUpperCase()}
                       </span>
                     )}
-                    <div>
-                      <h3 className="text-base font-bold text-zinc-900 flex items-center gap-1.5">
+                    <div className="min-w-0">
+                      <h3 className="text-base font-bold text-zinc-900 flex items-center gap-1.5 truncate">
                         {app.artistName}
                       </h3>
                       <div className="flex items-center gap-0.5 mt-0.5" title={app.rating ? `Rated ${app.rating}/5` : 'Rate this applicant'}>
