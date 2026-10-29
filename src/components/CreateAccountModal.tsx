@@ -27,7 +27,7 @@ import { PortalMode, OrganiserType } from '../types';
 import { supabaseSignUp, supabaseSignIn, supabaseSignInWithGoogle, isSupabaseConfigured } from '../lib/supabase';
 import { toPersistableUrl } from '../lib/localMedia';
 import { MediaUploader } from './MediaUploader';
-import { CollegeDatalist, COLLEGE_DATALIST_ID } from './CollegeDatalist';
+import { CollegeAutocomplete } from './CollegeAutocomplete';
 
 interface CreateAccountModalProps {
   isOpen: boolean;
@@ -528,7 +528,6 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
 
               {/* Form Elements */}
               <form onSubmit={handleSubmit} className="space-y-3.5">
-                <CollegeDatalist />
                 {!isLoginMode && role === 'organiser' && (
                   <div>
                     <div className="mb-3">
@@ -570,12 +569,10 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                           <GraduationCap className="w-3.5 h-3.5 text-zinc-400" />
                           <span>College / Institution Name</span>
                         </label>
-                        <input
+                        <CollegeAutocomplete
                           id="signup-college-name"
-                          type="text"
-                          list={COLLEGE_DATALIST_ID}
                           value={collegeName}
-                          onChange={(e) => setCollegeName(e.target.value)}
+                          onChange={setCollegeName}
                           placeholder="e.g. Indian Institute of Technology Delhi"
                           className="w-full bg-[#FAF8F5] border border-[#E5E0D6] focus:border-[#E45826] focus:bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 outline-none transition-all placeholder:text-zinc-400 shadow-2xs"
                         />
@@ -622,12 +619,10 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                           <span>College / Institution Name</span>
                           <span className="text-red-500">*</span>
                         </label>
-                        <input
+                        <CollegeAutocomplete
                           id="signup-artist-college"
-                          type="text"
-                          list={COLLEGE_DATALIST_ID}
                           value={collegeName}
-                          onChange={(e) => setCollegeName(e.target.value)}
+                          onChange={setCollegeName}
                           placeholder="e.g. St. Xavier's College, Mumbai"
                           className="w-full bg-[#FAF8F5] border border-[#E5E0D6] focus:border-[#E45826] focus:bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 outline-none transition-all placeholder:text-zinc-400 shadow-2xs"
                         />

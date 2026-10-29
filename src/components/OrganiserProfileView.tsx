@@ -18,7 +18,7 @@ import {
 import { OrganiserProfile, OrganiserType } from '../types';
 import { KalaStar } from './KalaLogo';
 import { StudentTag } from './HostTypeTag';
-import { CollegeDatalist, COLLEGE_DATALIST_ID } from './CollegeDatalist';
+import { CollegeAutocomplete } from './CollegeAutocomplete';
 import { MediaPreview } from './MediaPreview';
 import { MediaUploader } from './MediaUploader';
 
@@ -139,7 +139,6 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
               <div className="min-w-0">
                 {isEditing && (
                   <div className="mb-3">
-                    <CollegeDatalist />
                     <div className="grid grid-cols-2 p-1 bg-[#FAF8F5] border border-[#E8E2D8] rounded-2xl">
                       <button
                         id="profile-org-type-venue"
@@ -159,14 +158,14 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
                       </button>
                     </div>
                     {editOrgType === 'society' && (
-                      <input
+                      <CollegeAutocomplete
                         value={editCollege}
-                        onChange={(e) => setEditCollege(e.target.value)}
+                        onChange={setEditCollege}
                         maxLength={100}
-                        list={COLLEGE_DATALIST_ID}
-                        aria-label="College name"
+                        ariaLabel="College name"
                         placeholder="e.g. Indian Institute of Technology Delhi"
-                        className="mt-2 w-full bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-2 text-xs outline-none focus:border-[#E45826]"
+                        wrapperClassName="mt-2"
+                        className="w-full bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-2 text-xs outline-none focus:border-[#E45826]"
                       />
                     )}
                     <label className="mt-2 flex items-center gap-2 text-xs font-bold text-zinc-700 cursor-pointer select-none">
@@ -180,14 +179,14 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
                       I'm a college student
                     </label>
                     {editCollegeStudent && editOrgType !== 'society' && (
-                      <input
+                      <CollegeAutocomplete
                         value={editCollege}
-                        onChange={(e) => setEditCollege(e.target.value)}
+                        onChange={setEditCollege}
                         maxLength={100}
-                        list={COLLEGE_DATALIST_ID}
-                        aria-label="Your college name"
+                        ariaLabel="Your college name"
                         placeholder="e.g. University of Mumbai"
-                        className="mt-2 w-full bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-2 text-xs outline-none focus:border-[#E45826]"
+                        wrapperClassName="mt-2"
+                        className="w-full bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-2 text-xs outline-none focus:border-[#E45826]"
                       />
                     )}
                   </div>
