@@ -18,6 +18,7 @@ import {
 import { OrganiserProfile, OrganiserType } from '../types';
 import { KalaStar } from './KalaLogo';
 import { StudentTag } from './HostTypeTag';
+import { CollegeDatalist, COLLEGE_DATALIST_ID } from './CollegeDatalist';
 import { MediaPreview } from './MediaPreview';
 import { MediaUploader } from './MediaUploader';
 
@@ -25,14 +26,17 @@ interface OrganiserProfileViewProps {
   profile: OrganiserProfile;
   userEmail: string;
   onUpdateProfile?: (updated: OrganiserProfile) => void;
+  onLogoChange?: (url: string) => void;
 }
 
 export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
   profile,
   userEmail,
   onUpdateProfile,
+  onLogoChange,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingLogo, setIsEditingLogo] = useState(false);
   const [editName, setEditName] = useState('');
   const [editCity, setEditCity] = useState('');
   const [editState, setEditState] = useState('');
@@ -114,19 +118,28 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
           <div className="p-6 sm:p-8 relative">
             <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 mb-6">
               <div className="flex items-start sm:items-end gap-5">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden ring-4 ring-white shadow-lg bg-[#FAF2EB] shrink-0">
-                  {profile.logo && (
-                    <MediaPreview
-                      src={profile.logo}
-                      alt={profile.name}
-                      mediaClassName="w-full h-full object-cover"
-                    />
-                  )}
-                </div>
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden ring-4 ring-white shadow-lg bg-[#FAF2EB] shrink-0 relative group/logo">
+                {profile.logo && (
+                  <MediaPreview
+                    src={profile.logo}
+                    alt={profile.name}
+                    mediaClassName="w-full h-full object-cover"
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsEditingLogo(!isEditingLogo)}
+                  className="absolute inset-0 rounded-3xl bg-black/40 opacity-0 group-hover/logo:opacity-100 flex items-center justify-center text-white transition-opacity cursor-pointer"
+                  title="Update logo"
+                >
+                  <Camera className="w-5 h-5" />
+                </button>
+              </div>
 
               <div className="min-w-0">
                 {isEditing && (
                   <div className="mb-3">
+                    <CollegeDatalist />
                     <div className="grid grid-cols-2 p-1 bg-[#FAF8F5] border border-[#E8E2D8] rounded-2xl">
                       <button
                         id="profile-org-type-venue"
@@ -150,6 +163,7 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
                         value={editCollege}
                         onChange={(e) => setEditCollege(e.target.value)}
                         maxLength={100}
+                        list={COLLEGE_DATALIST_ID}
                         aria-label="College name"
                         placeholder="e.g. Indian Institute of Technology Delhi"
                         className="mt-2 w-full bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-2 text-xs outline-none focus:border-[#E45826]"
@@ -170,6 +184,7 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
                         value={editCollege}
                         onChange={(e) => setEditCollege(e.target.value)}
                         maxLength={100}
+                        list={COLLEGE_DATALIST_ID}
                         aria-label="Your college name"
                         placeholder="e.g. University of Mumbai"
                         className="mt-2 w-full bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-2 text-xs outline-none focus:border-[#E45826]"
@@ -279,6 +294,30 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
               </p>
             )}
           </div>
+
+          {/* Logo Uploader */}
+          {isEditingLogo && (
+            <div className="mt-4 p-4 rounded-2xl bg-[#FAF8F5] border border-[#EBE4DA] animate-in fade-in duration-150">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-zinc-800">Update Venue Logo</span>
+                <button
+                  onClick={() => setIsEditingLogo(false)}
+                  className="text-xs text-zinc-500 hover:text-zinc-800"
+                >
+                  Close
+                </button>
+              </div>
+              <MediaUploader
+                resourceType="image"
+                folder="kala-venues/logos"
+                value={profile.logo}
+                onChange={(url) => {
+                  onLogoChange?.(url);
+                  setIsEditingLogo(false);
+                }}
+              />
+            </div>
+          )}
         </div>
       </div>
 

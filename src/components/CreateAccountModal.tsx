@@ -27,6 +27,7 @@ import { PortalMode, OrganiserType } from '../types';
 import { supabaseSignUp, supabaseSignIn, supabaseSignInWithGoogle, isSupabaseConfigured } from '../lib/supabase';
 import { toPersistableUrl } from '../lib/localMedia';
 import { MediaUploader } from './MediaUploader';
+import { CollegeDatalist, COLLEGE_DATALIST_ID } from './CollegeDatalist';
 
 interface CreateAccountModalProps {
   isOpen: boolean;
@@ -527,6 +528,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
 
               {/* Form Elements */}
               <form onSubmit={handleSubmit} className="space-y-3.5">
+                <CollegeDatalist />
                 {!isLoginMode && role === 'organiser' && (
                   <div>
                     <div className="mb-3">
@@ -571,6 +573,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                         <input
                           id="signup-college-name"
                           type="text"
+                          list={COLLEGE_DATALIST_ID}
                           value={collegeName}
                           onChange={(e) => setCollegeName(e.target.value)}
                           placeholder="e.g. Indian Institute of Technology Delhi"
@@ -622,6 +625,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                         <input
                           id="signup-artist-college"
                           type="text"
+                          list={COLLEGE_DATALIST_ID}
                           value={collegeName}
                           onChange={(e) => setCollegeName(e.target.value)}
                           placeholder="e.g. St. Xavier's College, Mumbai"

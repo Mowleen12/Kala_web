@@ -11,6 +11,7 @@ import { MediaUploader } from './MediaUploader';
 import { getDraft, setDraft, clearDraft } from '../lib/drafts';
 import { isLocalMediaUrl, resolveMediaUrl } from '../lib/localMedia';
 import { buildDateRange, buildCompensation, PRICE_PRESETS } from '../lib/offer';
+import { CollegeDatalist, COLLEGE_DATALIST_ID } from './CollegeDatalist';
 import { validatePostForm, PostFormErrors } from '../lib/postForm';
 
 interface PostOpportunityDraft {
@@ -341,11 +342,13 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
               {/* College Details — society organisers only */}
               {society && (
                 <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-[#EFEBE4] space-y-3">
+                  <CollegeDatalist />
                   <div>
                     <label className="text-xs font-bold text-zinc-700 block mb-1">College / Institution <span className="text-[#E45826]">*</span></label>
                     <input
                       id="post-college"
                       type="text"
+                      list={COLLEGE_DATALIST_ID}
                       value={college}
                       onChange={(e) => { clearErr('college'); setCollege(e.target.value); }}
                       placeholder="e.g. IIT Delhi"
