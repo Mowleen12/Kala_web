@@ -146,9 +146,9 @@ export const FeaturedOpportunities: React.FC<FeaturedOpportunitiesProps> = ({
             </div>
 
             {/* Card Footer with Price & CTA */}
-            <div className="px-4 pb-4 sm:px-5 sm:pb-5 pt-2 flex items-center justify-between border-t border-zinc-100 mt-auto">
-              <div>
-                <span className="text-sm font-bold text-[#E45826]">
+            <div className="px-4 pb-4 sm:px-5 sm:pb-5 pt-2 flex flex-wrap items-end justify-between gap-x-3 gap-y-2 border-t border-zinc-100 mt-auto">
+              <div className="min-w-0">
+                <span className="text-sm font-bold text-[#E45826] break-words">
                   {opp.compensation}
                 </span>
               </div>
@@ -157,7 +157,7 @@ export const FeaturedOpportunities: React.FC<FeaturedOpportunitiesProps> = ({
                 id={`apply-btn-${opp.id}`}
                 onClick={() => onApply(opp)}
                 disabled={appliedIds.has(opp.id)}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold shadow-2xs transition-all ${
+                className={`shrink-0 whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold shadow-2xs transition-all ${
                   appliedIds.has(opp.id)
                     ? 'bg-zinc-100 text-zinc-500 border border-zinc-200 cursor-default'
                     : 'bg-[#E45826] hover:bg-[#D44716] active:scale-95 text-white cursor-pointer'

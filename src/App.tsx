@@ -62,7 +62,7 @@ import {
   fetchCategoryCounts,
   schemaMissing,
 } from './lib/listings';
-import { computeProfileCompletion, initialProfileCompletion, loadProfileSkills, loadProfileText, isDeviceLocalAvatarUrl, persistAvatarToAccount, upgradeLocalAvatarToHosted } from './lib/profile';
+import { computeProfileCompletion, initialProfileCompletion, loadProfileSkills, loadProfileText, isDeviceLocalAvatarUrl, persistAvatarToAccount, upgradeLocalAvatarToHosted, fetchAccountAvatar } from './lib/profile';
 import { ThreadModal } from './components/ThreadModal';
 
 import { 
@@ -327,16 +327,25 @@ export default function App() {
     let alive = true;
     (async () => {
       const stored = await resolveMediaUrlDeep(loadProfileMedia(currentUser.id));
+      // Cross-device copy: the avatar bound to the account itself. This is what
+      // survives a logout/login (and a cleared localStorage).
+      const accountAvatar = await fetchAccountAvatar(currentUser.id);
       const rawAvatar = currentUser.avatarUrl || currentUser.avatar;
       const resolvedAvatar =
         ((await resolveMediaUrl(rawAvatar)) as string | undefined) || rawAvatar;
       if (!alive) return;
 
-      // Device-local avatar refs (IndexedDB, e.g. the pre-session signup
-      // avatar) are re-hosted into the shared media bucket once a session
-      // exists, so the avatar is permanently bound to the account.
-      let avatar = stored.avatar || resolvedAvatar;
+      // Prefer a shared (hosted) URL from any source over a device-only ref,
+      // then fall back to whatever we have.
+      const candidates = [stored.avatar, accountAvatar, resolvedAvatar].filter(
+        (u): u is string => Boolean(u)
+      );
+      let avatar =
+        candidates.find((u) => !isDeviceLocalAvatarUrl(u)) || candidates[0] || '';
       if (avatar && isDeviceLocalAvatarUrl(avatar)) {
+        // Device-local avatar refs (IndexedDB, e.g. the pre-session signup
+        // avatar) are re-hosted into shared storage once a session exists, so
+        // the avatar is permanently bound to the account.
         const hosted = await upgradeLocalAvatarToHosted(avatar);
         if (hosted) avatar = hosted;
       }
@@ -347,6 +356,7 @@ export default function App() {
       if (avatar && avatar !== stored.avatar) {
         saveProfileMedia(currentUser.id, media);
       }
+      if (avatar) persistAvatarToAccount(avatar);
       setCurrentUser((prev) => {
         if (!prev || prev.id !== currentUser.id) return prev;
         const mirrorAvatar = avatar || resolvedAvatar;
@@ -369,12 +379,29 @@ export default function App() {
     setProfileMedia(next);
     saveProfileMedia(currentUser.id, next);
     if ('avatar' in patch) {
+      const picked = patch.avatar || null;
       setCurrentUser((prev) =>
-        prev ? { ...prev, avatarUrl: patch.avatar || prev.avatarUrl } : prev
+        prev ? { ...prev, avatarUrl: picked || prev.avatarUrl } : prev
       );
       // Bind the avatar to the Supabase account too, so it survives
       // logout/login on any device — not just this browser's localStorage.
-      persistAvatarToAccount(patch.avatar || null);
+      if (picked && isDeviceLocalAvatarUrl(picked)) {
+        // Device-only ref: upload it to shared storage first, then persist the
+        // hosted URL (local draft + account) so the picture is permanent.
+        upgradeLocalAvatarToHosted(picked).then((hosted) => {
+          if (!hosted) return;
+          setProfileMedia((prevMedia) => {
+            const merged: ProfileMedia = { ...prevMedia, avatar: hosted };
+            saveProfileMedia(currentUser.id, merged);
+            return merged;
+          });
+          setCurrentUser((prev) =>
+            prev ? { ...prev, avatar: hosted, avatarUrl: hosted } : prev
+          );
+        });
+      } else {
+        persistAvatarToAccount(picked);
+      }
     }
   };
 

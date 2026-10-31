@@ -39,7 +39,14 @@ export function mapSupabaseUserToAuthUser(user: SupabaseUser): AuthUser {
   const metadata = user.user_metadata || {};
   const role: PortalMode = metadata.role === 'organiser' ? 'organiser' : 'artist';
   const provider = user.app_metadata?.provider || (metadata.iss?.includes('google') ? 'google' : 'email');
-  const avatar = metadata.avatar_url || metadata.picture || undefined;
+  // `kala_avatar_url` is OUR key. Google/OAuth providers rewrite `avatar_url`
+  // and `picture` on every sign-in, which is exactly why an uploaded picture
+  // used to vanish after logout → login. Our key is never touched by a provider.
+  const avatar =
+    metadata.kala_avatar_url ||
+    metadata.avatar_url ||
+    metadata.picture ||
+    undefined;
 
   return {
     id: user.id,

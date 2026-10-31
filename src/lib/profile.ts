@@ -66,12 +66,21 @@ export function isDeviceLocalAvatarUrl(url: string | null | undefined): boolean 
  * Write the avatar URL onto the user's Supabase account (auth metadata +
  * profiles row) so it survives logout/login on every device, not just the
  * browser's localStorage. Failures are swallowed — the local copy still works.
+ *
+ * Only shared (hosted) URLs are ever written: a `blob:`/`kala-idb:` ref can
+ * only resolve inside the browser that produced it, so binding one to the
+ * account would guarantee a broken avatar on the next sign-in.
  */
 export async function persistAvatarToAccount(url: string | null | undefined): Promise<void> {
   if (!supabase) return;
-  const value = toPersistableUrl(url) || null;
+  if (url && isDeviceLocalAvatarUrl(url)) return; // call upgradeLocalAvatarToHosted first
+  const value = url || null;
   try {
-    await supabase.auth.updateUser({ data: { avatar_url: value } });
+    // `kala_avatar_url` is provider-safe; `avatar_url` is kept in sync for
+    // email/password accounts and for anything already reading it.
+    await supabase.auth.updateUser({
+      data: { kala_avatar_url: value, avatar_url: value },
+    });
   } catch {}
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -82,6 +91,26 @@ export async function persistAvatarToAccount(url: string | null | undefined): Pr
         .eq('id', user.id);
     }
   } catch {}
+}
+
+/**
+ * The avatar bound to the account (profiles row) — the cross-device copy that
+ * survives a cleared localStorage or a fresh browser. Null when unavailable.
+ */
+export async function fetchAccountAvatar(userId: string): Promise<string | null> {
+  if (!supabase || !userId) return null;
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('avatar_url')
+      .eq('id', userId)
+      .maybeSingle();
+    if (error) return null;
+    const url = (data as { avatar_url?: string | null } | null)?.avatar_url;
+    return url && !isDeviceLocalAvatarUrl(url) ? url : null;
+  } catch {
+    return null;
+  }
 }
 
 /**

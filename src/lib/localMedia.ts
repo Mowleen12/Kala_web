@@ -91,8 +91,14 @@ export async function resolveMediaUrl(url: string | null | undefined): Promise<s
   }
 }
 
-/** Persist a file in IndexedDB; returns the live object URL for immediate rendering. */
-export async function storeLocalMedia(file: File): Promise<string> {
+// In‑memory mapping of userId -> array of IndexedDB keys they own
+const userScopedKeys = new Map<string, string[]>();
+
+/**
+ * Store a file in IndexedDB, optionally scoped to a user.
+ * Returns the live object URL for immediate rendering.
+ */
+export async function storeLocalMedia(file: File, userId?: string): Promise<string> {
   const ext =
     (file.name.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '') ||
     (file.type.startsWith('video/') ? 'mp4' : file.type.startsWith('audio/') ? 'mp3' : 'jpg');
@@ -102,7 +108,47 @@ export async function storeLocalMedia(file: File): Promise<string> {
   const objectUrl = URL.createObjectURL(file);
   objectUrlByStable.set(stableUrl, objectUrl);
   stableByObjectUrl.set(objectUrl, stableUrl);
+
+  if (userId) {
+    userScopedKeys.set(userId, [...(userScopedKeys.get(userId) || []), key]);
+  }
+
   return objectUrl;
+}
+
+/** Clean up all IndexedDB entries for a given user. */
+export async function cleanupUserMedia(userId: string): Promise<void> {
+  const keys = userScopedKeys.get(userId) || [];
+  if (keys.length === 0) return;
+
+  // Delete from IndexedDB
+  for (const k of keys) {
+    await idbDelete(k);
+  }
+
+  // Remove from in‑memory maps and revoke object URLs
+  for (const k of keys) {
+    const stableUrl = `${PREFIX}${k}`;
+    const obj = objectUrlByStable.get(stableUrl);
+    if (obj) {
+      URL.revokeObjectURL(obj);
+      stableByObjectUrl.delete(obj);
+    }
+    objectUrlByStable.delete(stableUrl);
+  }
+
+  userScopedKeys.delete(userId);
+}
+
+/** Helper: delete a specific key from IndexedDB */
+async function idbDelete(key: string): Promise<void> {
+  const db = await openDb();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).delete(key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
 }
 
 /* -------------------------------------------------------------------------- */
