@@ -65,6 +65,8 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
 
   // Modal / Play state
   const [inspectApplicant, setInspectApplicant] = useState<ApplicantReview | null>(null);
+  /** Applicant id awaiting a second tap before being declined. */
+  const [confirmingDeclineId, setConfirmingDeclineId] = useState<string | null>(null);
 
   // Count active filters
   const activeFilterCount = [
@@ -752,14 +754,36 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                   )}
 
                   {app.status !== 'rejected' && (
-                    <button
-                      onClick={() => onUpdateApplicantStatus(app.id, 'rejected')}
-                      className="p-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-600 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E45826]"
-                      title="Decline"
-                      aria-label={`Decline ${app.artistName}`}
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+                    confirmingDeclineId === app.id ? (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => {
+                            onUpdateApplicantStatus(app.id, 'rejected');
+                            setConfirmingDeclineId(null);
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold transition-colors cursor-pointer"
+                        >
+                          Decline
+                        </button>
+                        <button
+                          onClick={() => setConfirmingDeclineId(null)}
+                          className="px-2.5 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[11px] font-semibold transition-colors cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        // Two-step: rejecting drops someone out of the pipeline,
+                        // so the first click only opens the confirmation.
+                        onClick={() => setConfirmingDeclineId(app.id)}
+                        className="p-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-600 transition-colors cursor-pointer"
+                        title="Decline"
+                        aria-label={`Decline ${app.artistName}`}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )
                   )}
                 </div>
               </div>

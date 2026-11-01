@@ -64,6 +64,7 @@ import {
 } from './lib/listings';
 import { computeProfileCompletion, initialProfileCompletion, loadProfileSkills, loadProfileText, isDeviceLocalAvatarUrl, persistAvatarToAccount, upgradeLocalAvatarToHosted, fetchAccountAvatar } from './lib/profile';
 import { ThreadModal } from './components/ThreadModal';
+import { WorkspaceSkeleton } from './components/Skeletons';
 
 import { 
   NavTab, 
@@ -1037,10 +1038,7 @@ export default function App() {
         {/* Dynamic Main Body Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1580px] w-full mx-auto">
           {!listingsLoaded ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-32 text-sm text-zinc-500 tracking-wide">
-              <KalaStar size={30} className="w-7 h-7 text-[#E45826] animate-spin" />
-              <span>Loading your workspace…</span>
-            </div>
+            <WorkspaceSkeleton />
           ) : (
           <AnimatePresence mode="wait">
             <motion.div

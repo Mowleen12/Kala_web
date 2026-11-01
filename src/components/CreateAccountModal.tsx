@@ -328,7 +328,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                       </div>
                       <div>
                         <h5 className="text-xs font-bold text-zinc-900">Showcase your talent</h5>
-                        <p className="text-[11px] text-zinc-500 leading-tight mt-0.5">
+                        <p className="text-xs text-zinc-500 leading-snug mt-0.5">
                           Get discovered by leading curators, theatres, and concert festivals across India.
                         </p>
                       </div>
@@ -340,7 +340,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                       </div>
                       <div>
                         <h5 className="text-xs font-bold text-zinc-900">Build your network</h5>
-                        <p className="text-[11px] text-zinc-500 leading-tight mt-0.5">
+                        <p className="text-xs text-zinc-500 leading-snug mt-0.5">
                           Collaborate, audition, and connect with ensembles, bands, and directors.
                         </p>
                       </div>
@@ -358,7 +358,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                       <Building2 className="w-4 h-4 text-[#E45826]" />
                       <span>Host & Venue Management Desk</span>
                     </div>
-                    <p className="text-[11px] text-zinc-500 leading-relaxed">
+                    <p className="text-xs text-zinc-500 leading-relaxed">
                       Publish open audition calls, review applications with ratings, and message artists directly from your pipeline.
                     </p>
                   </div>
@@ -370,7 +370,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                       </div>
                       <div>
                         <h5 className="text-xs font-bold text-zinc-900">Confidential Curatorial Pipeline</h5>
-                        <p className="text-[11px] text-zinc-500 leading-tight mt-0.5">
+                        <p className="text-xs text-zinc-500 leading-snug mt-0.5">
                           Isolated stage programming, applicant shortlist notes, and contract commissioning.
                         </p>
                       </div>
@@ -382,7 +382,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                       </div>
                       <div>
                         <h5 className="text-xs font-bold text-zinc-900">Screen Reels In-App</h5>
-                        <p className="text-[11px] text-zinc-500 leading-tight mt-0.5">
+                        <p className="text-xs text-zinc-500 leading-snug mt-0.5">
                           Listen to audio reels and watch video submissions directly in your review room.
                         </p>
                       </div>
@@ -790,7 +790,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
               </button>
             </div>
 
-            <p className="text-[11px] text-zinc-400 text-center mt-5 leading-relaxed">
+            <p className="text-xs text-zinc-400 text-center mt-5 leading-relaxed">
               By creating an account, you agree to our{' '}
               <a href="#terms" className="text-[#E45826] hover:underline font-medium">
                 Terms of Service

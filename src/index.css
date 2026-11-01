@@ -7,6 +7,18 @@
     background-color: #FAF8F5;
     color: #18181B;
   }
+
+  /*
+   * One keyboard-focus convention for the whole app. Individual components
+   * mostly rely on hover/active styling only, which leaves keyboard users
+   * without a visible position. `:focus-visible` keeps it off for mouse
+   * clicks, and the explicit outline overrides utility-level outline-none.
+   */
+  :where(a, button, [role='button'], input, select, textarea, summary):focus-visible {
+    outline: 2px solid #E45826;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 }
 
 .font-script {

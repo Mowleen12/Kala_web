@@ -125,7 +125,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
   if (!isOpen) return null;
 
   const fieldError = (k: keyof PostFormErrors) =>
-    fieldErrors[k] ? <p className="text-[11px] text-rose-600 mt-1">{fieldErrors[k]}</p> : null;
+    fieldErrors[k] ? <p className="text-xs text-rose-600 mt-1">{fieldErrors[k]}</p> : null;
   const inputCls = (k: keyof PostFormErrors) =>
     `w-full bg-[#FAF8F5] border rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none ${
       fieldErrors[k] ? 'border-rose-400' : 'border-[#E0D9CD] focus:border-[#E45826]'
@@ -445,7 +445,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                 </div>
                 {fieldError('startDate')}
                 {fieldError('endDate')}
-                <p className="text-[11px] text-zinc-400 mt-1">
+                <p className="text-xs text-zinc-400 mt-1">
                   Preview: {buildDateRange(startDate, endDate, eventTime) || '—'}
                 </p>
               </div>
@@ -511,7 +511,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                     </div>
                   </>
                 )}
-                <p className="text-[11px] text-zinc-400 mt-1">
+                <p className="text-xs text-zinc-400 mt-1">
                   Preview: {buildCompensation(priceChoice, customMin, customMax)}
                 </p>
               </div>
@@ -530,7 +530,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                 {fieldError('imageUrl')}
 
                 <div>
-                  <span className="text-[11px] font-semibold text-zinc-500 block mb-1.5">Or choose a curated stage preset:</span>
+                  <span className="text-xs font-semibold text-zinc-500 block mb-1.5">Or choose a curated stage preset:</span>
                   <div className="flex gap-2 overflow-x-auto pb-1">
                     {PRESET_IMAGES.map((img) => (
                       <button
