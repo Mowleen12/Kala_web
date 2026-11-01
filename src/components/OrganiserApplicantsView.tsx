@@ -739,8 +739,9 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                     <button
                       onClick={() => onUpdateApplicantStatus(app.id, 'interview')}
                       className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 transition-colors cursor-pointer"
+                      title="Invite this artist to audition — they are messaged the invite"
                     >
-                      Schedule Audition
+                      Invite to Audition
                     </button>
                   )}
 
@@ -748,6 +749,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                     <button
                       onClick={() => onUpdateApplicantStatus(app.id, 'selected')}
                       className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold border border-emerald-200 transition-colors cursor-pointer"
+                      title="Commission this artist — they are sent a congratulations message"
                     >
                       Commission Artist
                     </button>

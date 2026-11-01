@@ -359,6 +359,11 @@ export async function updateApplicationStatus(
   id: string,
   patch: { status?: ApplicationStatus; rating?: number | null }
 ): Promise<{ error: string | null }> {
+  // Without a live database there is no row to update — return a usable message
+  // instead of throwing a TypeError out of the click handler.
+  if (!(await isListingsReady())) {
+    return { error: 'Changes need a live connection to the Kalā database. Please try again once you are online.' };
+  }
   const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (patch.status) payload.status = patch.status;
   if (patch.rating !== undefined) payload.rating = patch.rating;

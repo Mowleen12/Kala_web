@@ -65,6 +65,8 @@ import {
 import { computeProfileCompletion, initialProfileCompletion, loadProfileSkills, loadProfileText, isDeviceLocalAvatarUrl, persistAvatarToAccount, upgradeLocalAvatarToHosted, fetchAccountAvatar } from './lib/profile';
 import { ThreadModal } from './components/ThreadModal';
 import { WorkspaceSkeleton } from './components/Skeletons';
+import { SelectionNoticeModal } from './components/SelectionNoticeModal';
+import { deriveSelectionNotices, markNoticesSeen, markStatusSeen, SelectionNotice } from './lib/notifications';
 
 import { 
   NavTab, 
@@ -466,6 +468,25 @@ export default function App() {
     () => new Set(myApplications.map((a) => a.opportunityId)),
     [myApplications]
   );
+
+  // Outcomes the artist has not acknowledged yet: drives the bell entries and
+  // the one-time congratulations card.
+  const [noticesVersion, setNoticesVersion] = useState(0);
+  const selectionNotices = useMemo(
+    () =>
+      currentUser
+        ? deriveSelectionNotices(myApplications, currentUser.id, (app) =>
+            opportunities.find((o) => o.id === app.opportunityId)?.organizer
+          )
+        : [],
+    // noticesVersion re-derives after the artist acknowledges one
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [myApplications, currentUser?.id, opportunities, noticesVersion]
+  );
+  const congratulations = useMemo(
+    () => (portalMode === 'artist' ? selectionNotices.find((n) => n.kind === 'selected') || null : null),
+    [selectionNotices, portalMode]
+  );
   const societyCalls = useMemo(
     () => opportunities.filter(
       (o) => o.organiserType === 'society' || o.category === 'College Societies & Clubs'
@@ -815,6 +836,59 @@ export default function App() {
     return { ok: true };
   };
 
+  /**
+   * Send the artist an organiser message for an outcome change.
+   *
+   * `threads_insert` only permits the artist to open a thread, so an organiser
+   * can post into an existing thread but cannot create one for a silent
+   * applicant. Returns whether the message actually landed, which lets the
+   * toast tell the truth instead of claiming a notification was sent.
+   */
+  const notifyApplicantOfOutcome = async (
+    review: ApplicantReview,
+    kind: 'interview' | 'selected'
+  ): Promise<boolean> => {
+    if (!currentUser || !review.artistId) return false;
+
+    const { thread, error } = await ensureArtistThread({
+      opportunityId: review.opportunityId,
+      opportunityTitle: review.opportunityTitle,
+      user: {
+        id: review.artistId,
+        name: review.artistName || 'Artist',
+        email: '',
+        role: 'artist',
+        avatarUrl: review.artistAvatar || undefined,
+      },
+      organiserName: currentUser.orgName || currentUser.name,
+      organiserAvatar: currentUser.avatarUrl || currentUser.avatar,
+      organiserType: currentUser.orgType,
+      // Marks the thread as organiser-originated so `threads_insert_organiser`
+      // authorises the insert (see supabase/schema.sql).
+      organiserId: currentUser.role === 'organiser' ? currentUser.id : undefined,
+    });
+    if (error || !thread) return false;
+
+    const body =
+      kind === 'selected'
+        ? `Congratulations, ${review.artistName || 'artist'}! You've been selected for "${review.opportunityTitle}". We'll confirm the schedule, fee, and production details here — please reply with your availability.`
+        : `You've been invited to audition for "${review.opportunityTitle}". We'd like to hear you live — reply here with your availability and we'll confirm the slot.`;
+
+    const { error: sendError } = await sendMessage({
+      threadId: thread.id,
+      sender: currentUser,
+      senderRole: 'organiser',
+      body,
+      clientId: `msg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    });
+    if (sendError) return false;
+
+    // The sender's own message must not light their bell.
+    await markRead(thread.id, 'organiser');
+    setThreads(await fetchThreads());
+    return true;
+  };
+
   const handleUpdateApplicantStatus = async (
     reviewId: string,
     newStatus: ApplicantReview['status']
@@ -832,52 +906,48 @@ export default function App() {
       prev.map((app) => (app.id === reviewId ? { ...app, status: newStatus } : app))
     );
 
-    const statusLabels: Record<ApplicantReview['status'], string> = {
-      under_review: 'marked as Under Review',
-      interview: 'scheduled for live audition soundcheck',
-      selected: 'selected for performance commission',
-      rejected: 'archived',
-    };
+    const name = review?.artistName || 'the artist';
 
-    // Selection lands in the artist's thread as an organiser message — it then
-    // lights the bell + unread pill through the normal thread unread path.
-    if (changed && newStatus === 'selected' && review?.artistId && currentUser) {
-      const { thread } = await ensureArtistThread({
-        opportunityId: review.opportunityId,
-        opportunityTitle: review.opportunityTitle,
-        user: {
-          id: review.artistId,
-          name: review.artistName || 'Artist',
-          email: '',
-          role: 'artist',
-          avatarUrl: review.artistAvatar || undefined,
-        },
-        organiserName: currentUser.orgName || currentUser.name,
-        organiserAvatar: currentUser.avatarUrl || currentUser.avatar,
-        organiserType: currentUser.orgType,
-      });
-      if (thread) {
-        const body = `Congratulations, ${review.artistName || 'artist'}! You've been selected for "${review.opportunityTitle}". Our team will reach out with the schedule and next steps soon.`;
-        const { error: sendError } = await sendMessage({
-          threadId: thread.id,
-          sender: currentUser,
-          senderRole: 'organiser',
-          body,
-          clientId: `msg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
-        });
-        if (!sendError) {
-          // Sender's own message must not light their bell.
-          await markRead(thread.id, 'organiser');
-          setThreads(await fetchThreads());
-        }
-      }
+    // Outcomes the artist must be told about. The status change is already
+    // durable and visible to them; the message makes it impossible to miss.
+    if (changed && review && (newStatus === 'selected' || newStatus === 'interview')) {
+      const delivered = await notifyApplicantOfOutcome(review, newStatus);
+      showToast(
+        newStatus === 'selected'
+          ? delivered
+            ? `Commissioned ${name} — congratulations message sent.`
+            : `Commissioned ${name}. They'll see it under My Applications; open a thread from Messages to add a note.`
+          : delivered
+            ? `Audition invited — ${name} has been messaged.`
+            : `Audition invited for ${name}. They'll see it under My Applications.`
+      );
+      return;
     }
 
-    showToast(`Applicant status updated: ${statusLabels[newStatus] || newStatus}`);
+    const statusLabels: Record<ApplicantReview['status'], string> = {
+      under_review: 'moved back to Under Review',
+      interview: 'invited to audition',
+      selected: 'commissioned',
+      rejected: 'declined',
+    };
+
+    showToast(`${name}: ${statusLabels[newStatus] || newStatus}`);
   };
 
-  const handleRateApplicant = async (reviewId: string, rating: number) => {
-    const { error } = await updateApplicationStatus(reviewId, { rating });
+  /** Artist acknowledged one outcome: stop showing it in the bell / card. */
+  const acknowledgeNotice = (notice: SelectionNotice) => {
+    if (!currentUser) return;
+    markStatusSeen(currentUser.id, notice.applicationId, notice.kind);
+    setNoticesVersion((v) => v + 1);
+  };
+
+  const handleMarkNoticesSeen = () => {
+    if (!currentUser) return;
+    markNoticesSeen(currentUser.id, selectionNotices);
+    setNoticesVersion((v) => v + 1);
+  };
+
+  const handleRateApplicant = async (reviewId: string, rating: number) => {    const { error } = await updateApplicationStatus(reviewId, { rating });
     if (error) {
       showToast(error);
       return;
@@ -982,6 +1052,8 @@ export default function App() {
         <Header
           portalMode={portalMode}
           threads={threads}
+          notices={selectionNotices}
+          onMarkNoticesSeen={handleMarkNoticesSeen}
           onMarkThreadsRead={async () => {
             const role = currentUser?.role === 'organiser' ? 'organiser' : 'artist';
             await Promise.all(
@@ -1325,6 +1397,22 @@ export default function App() {
         onClose={closeThread}
         thread={activeThread}
         currentUser={currentUser}
+      />
+
+      {/* Newly selected / invited artist — one-time congratulations card */}
+      <SelectionNoticeModal
+        notice={congratulations}
+        artistName={currentUser.name}
+        organiserName={
+          congratulations
+            ? opportunities.find((o) => o.id === congratulations.opportunityId)?.organizer || ''
+            : ''
+        }
+        onDismiss={() => congratulations && acknowledgeNotice(congratulations)}
+        onViewApplications={() => {
+          if (congratulations) acknowledgeNotice(congratulations);
+          setCurrentArtistTab('applications');
+        }}
       />
 
       {/* 2. Onboarding / Loading Transition Screen */}

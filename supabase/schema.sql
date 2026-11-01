@@ -269,6 +269,26 @@ drop policy if exists threads_insert on public.threads;
 create policy threads_insert on public.threads
   for insert with check (artist_id = auth.uid());
 
+-- Organisers must be able to open the conversation for someone who applied to
+-- their own call: commissioning an artist is pointless if the artist is never
+-- told. Scoped tightly — the thread must be organiser-owned, created by an
+-- organiser, and tied to a real application on one of that organiser's calls.
+drop policy if exists threads_insert_organiser on public.threads;
+create policy threads_insert_organiser on public.threads
+  for insert to authenticated
+  with check (
+    organiser_id = auth.uid()
+    and public.is_organiser()
+    and exists (
+      select 1
+        from public.applications a
+        join public.opportunities o on o.id = a.opportunity_id
+       where a.opportunity_id = threads.opportunity_id
+         and a.applicant_id = threads.artist_id
+         and o.organiser_id = auth.uid()
+    )
+  );
+
 drop policy if exists threads_claim on public.threads;
 create policy threads_claim on public.threads
   for update using (

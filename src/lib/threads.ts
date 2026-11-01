@@ -203,6 +203,8 @@ export async function ensureArtistThread(input: {
   organiserName?: string;
   organiserAvatar?: string;
   organiserType?: OrganiserType;
+  /** Set when an organiser opens the thread (commission / audition invite). */
+  organiserId?: string;
 }): Promise<{ thread: Thread | null; error: string | null }> {
   const key = localThreadKey(input.opportunityId, input.user.id);
 
@@ -216,7 +218,7 @@ export async function ensureArtistThread(input: {
         artistId: input.user.id,
         artistName: input.user.name,
         artistAvatar: input.user.avatarUrl || input.user.avatar || null,
-        organiserId: null,
+        organiserId: input.organiserId || null,
         organiserName: input.organiserName || null,
         organiserAvatar: input.organiserAvatar || null,
         organiserType: input.organiserType || null,
@@ -249,6 +251,7 @@ export async function ensureArtistThread(input: {
       artist_id: input.user.id,
       artist_name: input.user.name,
       artist_avatar: input.user.avatarUrl || input.user.avatar || null,
+      organiser_id: input.organiserId || null,
       organiser_name: input.organiserName || null,
       organiser_avatar: input.organiserAvatar || null,
       organiser_type: input.organiserType || null,

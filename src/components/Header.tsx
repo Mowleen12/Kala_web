@@ -13,11 +13,15 @@ import {
 import { KalaLogo } from './KalaLogo';
 import { PortalMode, Thread } from '../types';
 import { isUnread } from '../lib/threads';
+import { SelectionNotice } from '../lib/notifications';
 
 interface HeaderProps {
   portalMode: PortalMode;
   threads: Thread[];
   onMarkThreadsRead?: () => void;
+  /** Unacknowledged selection / audition outcomes (artist portal). */
+  notices?: SelectionNotice[];
+  onMarkNoticesSeen?: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onToggleFilters: () => void;
@@ -36,6 +40,8 @@ export const Header: React.FC<HeaderProps> = ({
   portalMode,
   threads,
   onMarkThreadsRead,
+  notices,
+  onMarkNoticesSeen,
   searchQuery,
   onSearchChange,
   onToggleFilters,
@@ -52,10 +58,10 @@ export const Header: React.FC<HeaderProps> = ({
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
-  // Notifications are the real message alerts for the active portal — unread
-  // threads only. Nothing fabricated, nothing to clear client-side.
+  // Notifications are the real alerts for the active portal: unread message
+  // threads, plus (artist side) outcomes the artist has not acknowledged yet.
   const role = portalMode === 'artist' ? 'artist' : 'organiser';
-  const allNotifs = threads
+  const threadNotifs = threads
     .filter((t) => isUnread(t, role))
     .map((t) => ({
       id: `thread-${t.id}`,
@@ -71,12 +77,29 @@ export const Header: React.FC<HeaderProps> = ({
         minute: '2-digit',
       }),
       unread: true,
+      /** Selection outcomes are highlighted so they are not mistaken for chat. */
+      highlight: false,
     }));
+
+  const noticeNotifs = (notices || []).map((n) => ({
+    id: n.id,
+    title: n.title,
+    message: n.message,
+    time: new Date(n.createdAt).toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+    }),
+    unread: true,
+    highlight: true,
+  }));
+
+  const allNotifs = [...noticeNotifs, ...threadNotifs];
 
   const unreadCount = allNotifs.length;
 
   const markAllAsRead = () => {
     onMarkThreadsRead?.();
+    onMarkNoticesSeen?.();
   };
 
   const effectiveEmail = userEmail || '';
@@ -188,11 +211,21 @@ export const Header: React.FC<HeaderProps> = ({
                   <div
                     key={notif.id}
                     className={`py-2.5 px-2 rounded-xl transition-colors ${
-                      notif.unread ? 'bg-[#FFF8F5]' : 'hover:bg-zinc-50'
+                      notif.highlight
+                        ? 'bg-[#FDEEE7] border border-[#FAD7C8]'
+                        : notif.unread
+                          ? 'bg-[#FFF8F5]'
+                          : 'hover:bg-zinc-50'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-xs font-semibold text-zinc-900">{notif.title}</p>
+                      <p
+                        className={`text-xs font-semibold ${
+                          notif.highlight ? 'text-[#C73E0E]' : 'text-zinc-900'
+                        }`}
+                      >
+                        {notif.title}
+                      </p>
                       <span className="text-[10px] text-zinc-400 whitespace-nowrap">{notif.time}</span>
                     </div>
                     <p className="text-xs text-zinc-600 mt-1 leading-relaxed">{notif.message}</p>
