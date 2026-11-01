@@ -12,8 +12,7 @@ import {
   Search, 
   Building2, 
   Plus,
-  Palette,
-  ArrowLeftRight
+  Palette
 } from 'lucide-react';
 import { KalaLogo, KalaStar } from './KalaLogo';
 import { NavTab, OrganiserNavTab, PortalMode } from '../types';
@@ -25,7 +24,6 @@ interface SidebarProps {
   onSelectArtistTab: (tab: NavTab) => void;
   onSelectOrgTab: (tab: OrganiserNavTab) => void;
   onOpenSignUp: () => void;
-  onSwitchPortalAccount?: (targetPortal: PortalMode) => void;
   onPostOpportunity?: () => void;
   orgName?: string;
 }
@@ -37,7 +35,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectArtistTab,
   onSelectOrgTab,
   onOpenSignUp,
-  onSwitchPortalAccount,
   onPostOpportunity,
   orgName = '',
 }) => {
@@ -195,20 +192,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Bottom Section */}
         <div className="space-y-3">
-          {/* Switch Portal Account Link */}
-          {onSwitchPortalAccount && (
-            <button
-              onClick={() => onSwitchPortalAccount(portalMode === 'artist' ? 'organiser' : 'artist')}
-              className="w-full py-2 px-3 rounded-xl bg-white hover:bg-zinc-100 border border-[#EDE8E0] text-zinc-700 text-xs font-bold flex items-center justify-between transition-colors cursor-pointer shadow-2xs"
-            >
-              <span className="flex items-center gap-1.5">
-                <ArrowLeftRight className="w-3.5 h-3.5 text-[#E45826]" />
-                <span>Switch to {portalMode === 'artist' ? 'Host Portal' : 'Artist Portal'}</span>
-              </span>
-              <span className="text-[10px] text-zinc-400">&rarr;</span>
-            </button>
-          )}
-
           {/* Bottom Inspirational Promo Card */}
           <div className="bg-[#F6EFE6] rounded-2xl p-4 border border-[#E9DFD2] relative overflow-hidden">
             <div className="relative z-10">

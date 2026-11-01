@@ -27,7 +27,6 @@ interface HeaderProps {
   onOpenSignUp: () => void;
   onOpenSignIn?: () => void;
   onSignOut?: () => void;
-  onSwitchPortalAccount?: (targetPortal: PortalMode) => void;
   userName?: string;
   userEmail?: string;
   orgName?: string;
@@ -47,7 +46,6 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSignUp,
   onOpenSignIn,
   onSignOut,
-  onSwitchPortalAccount,
   userName = '',
   userEmail,
   orgName = '',

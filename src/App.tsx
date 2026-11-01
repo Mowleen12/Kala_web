@@ -661,12 +661,6 @@ export default function App() {
     showToast(`Signed out of ${prevRole === 'artist' ? 'Artist' : 'Organiser'} Portal. Select a portal to log in.`);
   };
 
-  const handleSwitchPortalAccount = (_targetPortal: PortalMode) => {
-    // Demo logins are gone: switching portals means signing out and logging
-    // in again on the other side.
-    handleSignOut();
-  };
-
   const handleLoadingComplete = () => {
     setIsLoadingScreenOpen(false);
     if (currentUser?.role === 'artist') {
@@ -974,7 +968,6 @@ export default function App() {
         onSelectArtistTab={setCurrentArtistTab}
         onSelectOrgTab={setCurrentOrgTab}
         onOpenSignUp={() => handleOpenSignUp(portalMode)}
-        onSwitchPortalAccount={handleSwitchPortalAccount}
         onPostOpportunity={() => setIsPostModalOpen(true)}
         orgName={organiserProfile.name || currentUser.orgName}
       />
@@ -1017,7 +1010,6 @@ export default function App() {
           onOpenSignUp={() => handleOpenSignUp(portalMode)}
           onOpenSignIn={() => handleOpenSignIn(portalMode)}
           onSignOut={handleSignOut}
-          onSwitchPortalAccount={handleSwitchPortalAccount}
           userName={currentUser.name}
           userEmail={currentUser.email}
           orgName={organiserProfile.name || currentUser.orgName}
