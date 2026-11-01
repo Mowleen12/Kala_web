@@ -9,7 +9,6 @@ import {
   Building2, 
   Palette, 
   LogOut, 
-  ArrowLeftRight, 
   LogIn 
 } from 'lucide-react';
 import { KalaLogo } from './KalaLogo';
@@ -83,16 +82,6 @@ export const Header: React.FC<HeaderProps> = ({
 
   const markAllAsRead = () => {
     onMarkThreadsRead?.();
-  };
-
-  const handleSwitchClick = () => {
-    setShowUserMenu(false);
-    const target = portalMode === 'artist' ? 'organiser' : 'artist';
-    if (onSwitchPortalAccount) {
-      onSwitchPortalAccount(target);
-    } else {
-      onOpenSignUp();
-    }
   };
 
   const effectiveEmail = userEmail || '';
@@ -353,16 +342,6 @@ export const Header: React.FC<HeaderProps> = ({
                     </button>
                   )}
 
-                  <button
-                    onClick={handleSwitchClick}
-                    className="w-full text-left px-3 py-2 text-xs font-bold text-zinc-800 hover:bg-[#FAF8F5] rounded-lg transition-colors cursor-pointer flex items-center justify-between"
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <ArrowLeftRight className="w-3.5 h-3.5 text-[#E45826]" />
-                      <span>Switch to {portalMode === 'artist' ? 'Organiser Portal' : 'Artist Portal'}</span>
-                    </span>
-                  </button>
-
                   {onSignOut && (
                     <button
                       onClick={() => {
@@ -372,7 +351,7 @@ export const Header: React.FC<HeaderProps> = ({
                       className="w-full text-left px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
                     >
                       <LogOut className="w-3.5 h-3.5" />
-                      <span>Log Out of Supabase Session</span>
+                      <span>Logout</span>
                     </button>
                   )}
                 </div>

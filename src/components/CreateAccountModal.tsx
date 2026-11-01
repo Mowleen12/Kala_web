@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { 
   X, 
@@ -52,7 +52,6 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const [role, setRole] = useState<PortalMode>(initialRole);
   const [fullName, setFullName] = useState('');
   const [orgName, setOrgName] = useState('');
   const [orgType, setOrgType] = useState<OrganiserType>('venue');
@@ -72,9 +71,9 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
   /** Shown when signup succeeded but Supabase still needs an email confirmation. */
   const [notice, setNotice] = useState('');
 
-  useEffect(() => {
-    if (isOpen) setRole(initialRole);
-  }, [isOpen, initialRole]);
+  // The portal is decided by the card the user clicked — never re-asked. It is
+  // the same value for the whole lifetime of the modal.
+  const role: PortalMode = initialRole;
 
   if (!isOpen) return null;
 
@@ -415,37 +414,24 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                 </span>
               </div>
 
-              {/* Portal Role Selector Segmented Control */}
-              <div className="mb-6">
-                <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-2">
-                  Select Portal to {isLoginMode ? 'Log In' : 'Register'}:
-                </label>
-                <div className="grid grid-cols-2 p-1 bg-[#FAF8F5] border border-[#E8E2D8] rounded-2xl">
-                  <button
-                    type="button"
-                    onClick={() => setRole('artist')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                      role === 'artist'
-                        ? 'bg-[#E45826] text-white shadow-2xs'
-                        : 'text-zinc-600 hover:text-zinc-900'
-                    }`}
-                  >
-                    <Palette className="w-3.5 h-3.5" />
-                    <span>Artist & Creator</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRole('organiser')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                      role === 'organiser'
-                        ? 'bg-[#E45826] text-white shadow-2xs'
-                        : 'text-zinc-600 hover:text-zinc-900'
-                    }`}
-                  >
-                    <Building2 className="w-3.5 h-3.5" />
-                    <span>Host & Venue</span>
-                  </button>
-                </div>
+              {/* Portal is fixed by the card the user clicked — shown, not chosen */}
+              <div className="mb-5 flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FDEEE7] border border-[#FAD7C8] text-[#E45826] text-[11px] font-bold">
+                  {role === 'artist' ? (
+                    <>
+                      <Palette className="w-3.5 h-3.5" />
+                      <span>Artist &amp; Creator</span>
+                    </>
+                  ) : (
+                    <>
+                      <Building2 className="w-3.5 h-3.5" />
+                      <span>Host &amp; Venue</span>
+                    </>
+                  )}
+                </span>
+                <span className="text-[11px] text-zinc-500">
+                  {isLoginMode ? 'Logging in to this portal' : 'Registering in this portal'}
+                </span>
               </div>
 
               {/* Title & Sub */}
