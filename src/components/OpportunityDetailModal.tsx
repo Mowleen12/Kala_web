@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { X, MapPin, Calendar, Building, CheckCircle2, ArrowRight } from 'lucide-react';
 import { Opportunity } from '../types';
 import { HostTypeTag, CollegeOnlyTag } from './HostTypeTag';
+import { callTypeLabel } from '../lib/offer';
 
 interface OpportunityDetailModalProps {
   opportunity: Opportunity | null;
@@ -47,8 +48,15 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
           
           <div className="absolute bottom-4 left-6 right-6 text-white">
-            <div className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-[#E45826] mb-2">
-              {opportunity.category}
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              {opportunity.callType && (
+                <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide bg-white text-zinc-900">
+                  {callTypeLabel(opportunity.callType)}
+                </span>
+              )}
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-[#E45826]">
+                {opportunity.category}
+              </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               {opportunity.title}

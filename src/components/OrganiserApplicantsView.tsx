@@ -5,7 +5,6 @@ import {
   Search, 
   CheckCircle2, 
   MapPin, 
-  Star, 
   Play, 
   ExternalLink, 
   Mail, 
@@ -34,7 +33,6 @@ interface OrganiserApplicantsViewProps {
   applicants: ApplicantReview[];
   opportunities: Opportunity[];
   onUpdateApplicantStatus: (applicantId: string, newStatus: ApplicantReview['status']) => void;
-  onRateApplicant: (applicantId: string, rating: number) => void;
   threads: Thread[];
   onOpenThread?: (opportunityId: string, artistId: string) => void;
   selectedOpportunityId?: string;
@@ -44,7 +42,6 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
   applicants,
   opportunities,
   onUpdateApplicantStatus,
-  onRateApplicant,
   threads,
   onOpenThread,
   selectedOpportunityId: initialOppId,
@@ -56,10 +53,9 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
   const [statusFilter, setStatusFilter] = useState<string>('selected');
   const [experienceFilter, setExperienceFilter] = useState<string>('all');
   const [cityFilter, setCityFilter] = useState<string>('all');
-  const [ratingFilter, setRatingFilter] = useState<string>('all');
   const [hasReelFilter, setHasReelFilter] = useState<boolean>(false);
   const [collegeOnlyFilter, setCollegeOnlyFilter] = useState<boolean>(false);
-  const [sortBy, setSortBy] = useState<'rating' | 'experience' | 'newest'>('rating');
+  const [sortBy, setSortBy] = useState<'experience' | 'newest'>('newest');
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
@@ -74,7 +70,6 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
     statusFilter !== 'all',
     experienceFilter !== 'all',
     cityFilter !== 'all',
-    ratingFilter !== 'all',
     hasReelFilter,
     collegeOnlyFilter,
     searchQuery.trim().length > 0,
@@ -85,11 +80,10 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
     setStatusFilter('all');
     setExperienceFilter('all');
     setCityFilter('all');
-    setRatingFilter('all');
     setHasReelFilter(false);
     setCollegeOnlyFilter(false);
     setSearchQuery('');
-    setSortBy('rating');
+    setSortBy('newest');
   };
 
   const filteredApplicants = useMemo(() => {
@@ -124,31 +118,23 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
         cityFilter === 'all' || 
         (app.artistLocation || '').toLowerCase().includes(cityFilter.toLowerCase());
 
-      // Rating filter
-      let matchesRating = true;
-      if (ratingFilter === '4') {
-        matchesRating = (app.rating || 0) >= 4;
-      } else if (ratingFilter === '5') {
-        matchesRating = (app.rating || 0) >= 5;
-      }
-
       // Has reel
       const matchesReel = !hasReelFilter || Boolean(app.reelUrl);
 
       const matchesCollege = !collegeOnlyFilter || Boolean(app.artistCollege);
 
-      return matchesOpp && matchesStatus && matchesSearch && matchesExp && matchesCity && matchesRating && matchesReel && matchesCollege;
+      return matchesOpp && matchesStatus && matchesSearch && matchesExp && matchesCity && matchesReel && matchesCollege;
     });
 
     // Sorting
-    if (sortBy === 'rating') {
-      list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-    } else if (sortBy === 'experience') {
+    if (sortBy === 'experience') {
       list.sort((a, b) => (b.experienceYears || 0) - (a.experienceYears || 0));
+    } else {
+      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
 
     return list;
-  }, [applicants, selectedOppFilter, statusFilter, experienceFilter, cityFilter, ratingFilter, hasReelFilter, collegeOnlyFilter, sortBy, searchQuery]);
+  }, [applicants, selectedOppFilter, statusFilter, experienceFilter, cityFilter, hasReelFilter, collegeOnlyFilter, sortBy, searchQuery]);
 
   const getStatusBadge = (status: ApplicantReview['status']) => {
     switch (status) {
@@ -289,9 +275,8 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
             onChange={(e) => setSortBy(e.target.value as any)}
             className="px-3 py-2 bg-white border border-[#E0D9CD] rounded-2xl text-xs font-semibold text-zinc-800 outline-none cursor-pointer focus:border-[#E45826]"
           >
-            <option value="rating">Sort: Highest Rating</option>
+            <option value="newest">Sort: Newest First</option>
             <option value="experience">Most Experienced</option>
-            <option value="newest">Submission Date</option>
           </select>
         </div>
       </div>
@@ -318,7 +303,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Specific Opportunity Call */}
             <div>
               <label className="text-xs font-bold text-zinc-600 block mb-1.5">
@@ -373,23 +358,6 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                 <option value="Delhi">Delhi NCR</option>
                 <option value="Pune">Pune</option>
                 <option value="Chennai">Chennai</option>
-              </select>
-            </div>
-
-            {/* Minimum Rating */}
-            <div>
-              <label className="text-xs font-bold text-zinc-600 block mb-1.5 flex items-center gap-1">
-                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
-                Curator Rating
-              </label>
-              <select
-                value={ratingFilter}
-                onChange={(e) => setRatingFilter(e.target.value)}
-                className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3 py-2 text-xs font-semibold text-zinc-800 outline-none focus:border-[#E45826]"
-              >
-                <option value="all">All Ratings</option>
-                <option value="4">4+ Stars (Recommended)</option>
-                <option value="5">5 Stars (Top Pick)</option>
               </select>
             </div>
           </div>
@@ -454,13 +422,6 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[#FDEEE7] text-[#E45826] border border-[#FAD7C8]">
               <span>City: {cityFilter}</span>
               <X className="w-3 h-3 cursor-pointer hover:opacity-75" onClick={() => setCityFilter('all')} />
-            </span>
-          )}
-
-          {ratingFilter !== 'all' && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[#FDEEE7] text-[#E45826] border border-[#FAD7C8]">
-              <span>Rating: {ratingFilter}+ Stars</span>
-              <X className="w-3 h-3 cursor-pointer hover:opacity-75" onClick={() => setRatingFilter('all')} />
             </span>
           )}
 
@@ -574,24 +535,6 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                       <h3 className="text-base font-bold text-zinc-900 flex items-center gap-1.5 truncate">
                         {app.artistName}
                       </h3>
-                      <div className="flex items-center gap-0.5 mt-0.5" title={app.rating ? `Rated ${app.rating}/5` : 'Rate this applicant'}>
-                        {[1, 2, 3, 4, 5].map((v) => (
-                          <button
-                            key={v}
-                            type="button"
-                            onClick={() => onRateApplicant(app.id, v)}
-                            className="cursor-pointer hover:scale-110 transition-transform"
-                            title={`Rate ${v} star${v > 1 ? 's' : ''}`}
-                          >
-                            <Star className={`w-3.5 h-3.5 ${app.rating && app.rating >= v ? 'fill-amber-400 text-amber-400' : 'text-zinc-300'}`} />
-                          </button>
-                        ))}
-                        {app.rating ? (
-                          <span className="text-xs font-bold text-amber-500 ml-1">{app.rating}</span>
-                        ) : (
-                          <span className="text-[11px] text-zinc-400 ml-1">Unrated</span>
-                        )}
-                      </div>
                       <p className="text-xs font-medium text-zinc-600 mt-0.5">
                         {app.artistRole || 'Artist'}
                         {app.experienceYears != null && ` • ${app.experienceYears} yrs exp`}

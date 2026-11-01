@@ -1,5 +1,6 @@
 import { supabase as supabaseClient, isSupabaseConfigured } from './supabase';
-import { Application, ApplicationStatus, Opportunity, OpportunityStatus, OrganiserType, PlatformStats } from '../types';
+import { Application, ApplicationStatus, CallType, Opportunity, OpportunityStatus, OrganiserType, PlatformStats } from '../types';
+import { isCallType } from './offer';
 
 const supabase = supabaseClient!;
 
@@ -65,6 +66,7 @@ const rowToOpportunity = (r: any): Opportunity => ({
   title: r.title,
   category: r.category,
   categorySlug: slugify(r.category),
+  callType: isCallType(r.call_type) ? r.call_type : undefined,
   statusBadge: deriveStatusBadge({ status: r.status, deadline: r.deadline }),
   location: r.location || r.venue || r.city || '',
   venue: r.venue || '',
@@ -191,6 +193,7 @@ export async function fetchOpportunities(): Promise<{ data: Opportunity[]; error
 export interface OpportunityInput {
   title: string;
   category: string;
+  callType?: CallType;
   description: string;
   venue: string;
   city: string;
@@ -221,6 +224,7 @@ export async function createOpportunity(
       organiser_avatar: owner.avatar || null,
       title: input.title,
       category: input.category,
+      call_type: input.callType || 'audition',
       description: input.description,
       requirements: input.requirements?.length ? input.requirements : null,
       venue: input.venue,

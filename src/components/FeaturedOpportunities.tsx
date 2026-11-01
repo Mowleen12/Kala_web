@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { ArrowRight, MapPin, Calendar } from 'lucide-react';
 import { KalaStar } from './KalaLogo';
 import { HostTypeTag, CollegeOnlyTag } from './HostTypeTag';
+import { CallTypeBadge } from './CallTypeBadge';
 import { Opportunity } from '../types';
 
 interface FeaturedOpportunitiesProps {
@@ -102,6 +103,7 @@ export const FeaturedOpportunities: React.FC<FeaturedOpportunitiesProps> = ({
                 
                 {/* Overlay Badges */}
                 <div className="absolute top-3 left-3 right-3 flex flex-wrap items-center gap-2 pr-20">
+                  <CallTypeBadge callType={opp.callType} />
                   <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide shadow-xs ${getCategoryBadgeStyle(opp.category)}`}>
                     {opp.category}
                   </span>

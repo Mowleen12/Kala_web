@@ -806,6 +806,7 @@ export default function App() {
       {
         title: newOpp.title,
         category: newOpp.category,
+        callType: newOpp.callType,
         description: newOpp.description ?? '',
         requirements: newOpp.requirements,
         location: newOpp.location,
@@ -945,16 +946,6 @@ export default function App() {
     if (!currentUser) return;
     markNoticesSeen(currentUser.id, selectionNotices);
     setNoticesVersion((v) => v + 1);
-  };
-
-  const handleRateApplicant = async (reviewId: string, rating: number) => {    const { error } = await updateApplicationStatus(reviewId, { rating });
-    if (error) {
-      showToast(error);
-      return;
-    }
-    setApplications((prev) =>
-      prev.map((app) => (app.id === reviewId ? { ...app, rating } : app))
-    );
   };
 
   const handleSaveOrganiserProfile = (updated: OrganiserProfile) => {
@@ -1336,7 +1327,6 @@ export default function App() {
                   opportunities={myOpportunities}
                   onOpenThread={openOrganiserThread}
                   onUpdateApplicantStatus={handleUpdateApplicantStatus}
-                  onRateApplicant={handleRateApplicant}
                 />
               )}
 

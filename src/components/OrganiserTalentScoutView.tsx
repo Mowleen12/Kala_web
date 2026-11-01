@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Star, MapPin, Users, SlidersHorizontal, X, ExternalLink } from 'lucide-react';
+import { Search, MapPin, Users, SlidersHorizontal, X, ExternalLink } from 'lucide-react';
 import { ApplicantReview } from '../types';
 import { buildScoutArtists } from '../lib/scout';
 import { KalaStar } from './KalaLogo';
@@ -15,7 +15,7 @@ export const OrganiserTalentScoutView: React.FC<OrganiserTalentScoutViewProps> =
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSkill, setSelectedSkill] = useState<string>('All');
-  const [sortBy, setSortBy] = useState<'rating' | 'experience' | 'name'>('rating');
+  const [sortBy, setSortBy] = useState<'experience' | 'name'>('experience');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const artists = useMemo(() => buildScoutArtists(applicants), [applicants]);
@@ -43,9 +43,7 @@ export const OrganiserTalentScoutView: React.FC<OrganiserTalentScoutViewProps> =
       return matchesSearch && matchesSkill;
     });
 
-    if (sortBy === 'rating') {
-      list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-    } else if (sortBy === 'experience') {
+    if (sortBy === 'experience') {
       list.sort((a, b) => (b.experienceYears || 0) - (a.experienceYears || 0));
     } else {
       list.sort((a, b) => a.name.localeCompare(b.name));
@@ -132,10 +130,9 @@ export const OrganiserTalentScoutView: React.FC<OrganiserTalentScoutViewProps> =
 
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'rating' | 'experience' | 'name')}
+            onChange={(e) => setSortBy(e.target.value as 'experience' | 'name')}
             className="px-3 py-2 bg-white border border-[#E0D9CD] rounded-2xl text-xs font-semibold text-zinc-800 outline-none cursor-pointer focus:border-[#E45826]"
           >
-            <option value="rating">Highest Rated</option>
             <option value="experience">Most Experienced</option>
             <option value="name">Alphabetical</option>
           </select>
@@ -145,13 +142,13 @@ export const OrganiserTalentScoutView: React.FC<OrganiserTalentScoutViewProps> =
       {isFilterOpen && (
         <div className="bg-white rounded-3xl p-5 border border-[#EDE8E0] shadow-md flex items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-200">
           <span className="text-xs font-bold text-zinc-600">
-            Sorting by {sortBy === 'rating' ? 'highest rating' : sortBy === 'experience' ? 'most experienced' : 'name'}
+            Sorting by {sortBy === 'experience' ? 'most experienced' : 'name'}
           </span>
           <button
             onClick={() => {
               setSelectedSkill('All');
               setSearchQuery('');
-              setSortBy('rating');
+              setSortBy('experience');
             }}
             className="text-xs text-[#E45826] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
           >
@@ -225,9 +222,10 @@ export const OrganiserTalentScoutView: React.FC<OrganiserTalentScoutViewProps> =
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-xs font-bold text-amber-700 shrink-0">
-                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                    <span>{artist.rating ?? '—'}</span>
+                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FDEEE7] border border-[#FAD7C8] text-xs font-bold text-[#C73E0E] shrink-0">
+                    <span>
+                      {artist.applicationCount} application{artist.applicationCount === 1 ? '' : 's'}
+                    </span>
                   </div>
                 </div>
 

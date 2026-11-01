@@ -10,18 +10,20 @@ import { KalaStar } from './KalaLogo';
 import { MediaUploader } from './MediaUploader';
 import { getDraft, setDraft, clearDraft } from '../lib/drafts';
 import { isLocalMediaUrl, resolveMediaUrl } from '../lib/localMedia';
-import { buildDateRange, buildCompensation, PRICE_PRESETS } from '../lib/offer';
+import { buildDateRange, buildCompensation, PRICE_PRESETS, CALL_TYPES, CallType } from '../lib/offer';
 import { CollegeAutocomplete } from './CollegeAutocomplete';
 import { validatePostForm, PostFormErrors } from '../lib/postForm';
 
 interface PostOpportunityDraft {
   title?: string;
   category?: string;
+  callType?: CallType;
   venue?: string;
   city?: string;
   startDate?: string;
   endDate?: string;
-  eventTime?: string;
+  startTime?: string;
+  endTime?: string;
   priceChoice?: string;
   customMin?: string;
   customMax?: string;
@@ -30,7 +32,6 @@ interface PostOpportunityDraft {
   description?: string;
   college?: string;
   fest?: string;
-  collegeOnly?: boolean;
 }
 
 const DRAFT_KEY = 'kala_draft_post';
@@ -65,11 +66,13 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
   const savedDraft = useRef(getDraft<PostOpportunityDraft>(DRAFT_KEY)).current;
   const [title, setTitle] = useState(savedDraft?.title ?? '');
   const [category, setCategory] = useState(savedDraft?.category ?? 'Music & Dance');
+  const [callType, setCallType] = useState<CallType>(savedDraft?.callType ?? 'audition');
   const [venue, setVenue] = useState(savedDraft?.venue ?? '');
   const [city, setCity] = useState(savedDraft?.city ?? '');
   const [startDate, setStartDate] = useState(savedDraft?.startDate ?? '');
   const [endDate, setEndDate] = useState(savedDraft?.endDate ?? '');
-  const [eventTime, setEventTime] = useState(savedDraft?.eventTime ?? '');
+  const [startTime, setStartTime] = useState(savedDraft?.startTime ?? '');
+  const [endTime, setEndTime] = useState(savedDraft?.endTime ?? '');
   const [priceChoice, setPriceChoice] = useState(savedDraft?.priceChoice ?? 'custom');
   const [customMin, setCustomMin] = useState(savedDraft?.customMin ?? '');
   const [customMax, setCustomMax] = useState(savedDraft?.customMax ?? '');
@@ -78,7 +81,6 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
   const [description, setDescription] = useState(savedDraft?.description ?? DEFAULT_DESCRIPTION);
   const [college, setCollege] = useState(savedDraft?.college ?? collegeName);
   const [fest, setFest] = useState(savedDraft?.fest ?? '');
-  const [collegeOnly, setCollegeOnly] = useState(savedDraft?.collegeOnly ?? false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<PostFormErrors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -88,11 +90,13 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
     setDraft(DRAFT_KEY, {
       title,
       category,
+      callType,
       venue,
       city,
       startDate,
       endDate,
-      eventTime,
+      startTime,
+      endTime,
       priceChoice,
       customMin,
       customMax,
@@ -103,9 +107,8 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
       description,
       college,
       fest,
-      collegeOnly,
     });
-  }, [title, category, venue, city, startDate, endDate, eventTime, priceChoice, customMin, customMax, deadlineDays, selectedImage, description, college, fest, collegeOnly]);
+  }, [title, category, callType, venue, city, startDate, endDate, startTime, endTime, priceChoice, customMin, customMax, deadlineDays, selectedImage, description, college, fest]);
 
   // Resolve a locally-stored cover ref (kala-idb:) into a live object URL
   // while the modal is open; fall back to the preset if the blob is gone.
@@ -161,6 +164,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
       id: `opp-${Date.now().toString().slice(-4)}`,
       title: title.trim(),
       category: category,
+      callType,
       categorySlug: category.toLowerCase().replace(/[^a-z0-9]/g, '-'),
       statusBadge: {
         label: `Closes in ${deadlineDays} days`,
@@ -169,7 +173,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
       location: [venue, city].filter(Boolean).join(' • '),
       venue: venue,
       city: city,
-      dateRange: buildDateRange(startDate, endDate, eventTime),
+      dateRange: buildDateRange(startDate, endDate, startTime, endTime),
       compensation: buildCompensation(priceChoice, customMin, customMax),
       imageUrl: selectedImage,
       organizer: organizerName,
@@ -177,7 +181,6 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
       requirements: [],
       collegeName: society ? college.trim() || undefined : undefined,
       festName: society ? fest.trim() || undefined : undefined,
-      collegeOnly: society && collegeOnly,
       applicantCount: 0,
       status: 'active',
       deadline: deadlineIso,
@@ -305,6 +308,34 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                 {fieldError('title')}
               </div>
 
+              {/* What kind of call this is — artists see this as the card's type */}
+              <div>
+                <label className="text-xs font-bold text-zinc-700 block mb-1">
+                  Call type <span className="text-[#E45826]">*</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {CALL_TYPES.map((type) => (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => setCallType(type.value)}
+                      aria-pressed={callType === type.value}
+                      title={type.hint}
+                      className={`px-3 py-2 rounded-xl text-xs font-semibold border text-left transition-all cursor-pointer ${
+                        callType === type.value
+                          ? 'bg-[#FDEEE7] border-[#E45826] text-[#C73E0E] shadow-2xs'
+                          : 'bg-[#FAF8F5] border-[#E0D9CD] text-zinc-700 hover:border-[#E45826]/50'
+                      }`}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-zinc-400 mt-1">
+                  {CALL_TYPES.find((t) => t.value === callType)?.hint}
+                </p>
+              </div>
+
               {/* Category & Deadline Days */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -365,16 +396,6 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                       className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
                     />
                   </div>
-                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-zinc-700">
-                    <input
-                      id="post-college-only"
-                      type="checkbox"
-                      checked={collegeOnly}
-                      onChange={(e) => setCollegeOnly(e.target.checked)}
-                      className="w-4 h-4 rounded text-[#E45826] focus:ring-[#E45826] border-zinc-300"
-                    />
-                    Open to college students only
-                  </label>
                 </div>
               )}
 
@@ -408,10 +429,10 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                 </div>
               </div>
 
-              {/* Dates & Time */}
+              {/* Dates */}
               <div>
-                <label className="text-xs font-bold text-zinc-700 block mb-1">Event Dates & Time <span className="text-[#E45826]">*</span></label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label className="text-xs font-bold text-zinc-700 block mb-1">Event Dates <span className="text-[#E45826]">*</span></label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input
                     id="post-start-date"
                     type="date"
@@ -435,18 +456,47 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                     {...inputAria('endDate')}
                     className={inputCls('endDate')}
                   />
-                  <input
-                    type="time"
-                    aria-label="Event start time"
-                    value={eventTime}
-                    onChange={(e) => setEventTime(e.target.value)}
-                    className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
-                  />
                 </div>
                 {fieldError('startDate')}
                 {fieldError('endDate')}
+              </div>
+
+              {/* Optional time window */}
+              <div>
+                <div className="flex items-baseline justify-between gap-2 mb-1">
+                  <label className="text-xs font-bold text-zinc-700">Time window</label>
+                  <span className="text-[11px] font-medium text-zinc-400">Optional</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="relative">
+                    <input
+                      id="post-start-time"
+                      type="time"
+                      aria-label="Start time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
+                    />
+                    <span className="pointer-events-none absolute -top-0 right-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                      From
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      id="post-end-time"
+                      type="time"
+                      aria-label="End time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      className="w-full bg-[#FAF8F5] border border-[#E0D9CD] rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#E45826]"
+                    />
+                    <span className="pointer-events-none absolute -top-0 right-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                      To
+                    </span>
+                  </div>
+                </div>
                 <p className="text-xs text-zinc-400 mt-1">
-                  Preview: {buildDateRange(startDate, endDate, eventTime) || '—'}
+                  Preview: {buildDateRange(startDate, endDate, startTime, endTime) || '—'}
                 </p>
               </div>
 

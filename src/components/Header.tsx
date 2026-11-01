@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Search, 
   SlidersHorizontal, 
@@ -57,6 +57,37 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Popovers close on any click outside them, and on Escape — a menu that only
+  // closes by re-clicking its own button feels stuck.
+  useEffect(() => {
+    if (!showNotifications && !showUserMenu) return;
+    const onPointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+      if (showNotifications && notificationsRef.current && !notificationsRef.current.contains(target)) {
+        setShowNotifications(false);
+      }
+      if (showUserMenu && userMenuRef.current && !userMenuRef.current.contains(target)) {
+        setShowUserMenu(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowNotifications(false);
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('touchstart', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('touchstart', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [showNotifications, showUserMenu]);
 
   // Notifications are the real alerts for the active portal: unread message
   // threads, plus (artist side) outcomes the artist has not acknowledged yet.
@@ -164,7 +195,7 @@ export const Header: React.FC<HeaderProps> = ({
             "Artist Portal" badge above covers sm and up. */}
 
         {/* Notification Bell */}
-        <div className="relative">
+        <div className="relative" ref={notificationsRef}>
           <button
             id="notifications-bell-btn"
             onClick={() => {
@@ -237,7 +268,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* User Pill / Profile Dropdown */}
-        <div className="relative">
+        <div className="relative" ref={userMenuRef}>
           <button
             id="user-profile-menu-btn"
             onClick={() => {

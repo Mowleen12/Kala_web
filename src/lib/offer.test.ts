@@ -1,9 +1,41 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildDateRange, buildCompensation, fmtTime12, PRICE_PRESETS } from './offer';
+import {
+  buildDateRange,
+  buildCompensation,
+  fmtTime12,
+  formatTimeRange,
+  PRICE_PRESETS,
+  CALL_TYPES,
+  callTypeLabel,
+  isCallType,
+} from './offer';
 
 test('buildDateRange composes start/end/time', () => {
   assert.equal(buildDateRange('2026-11-18', '2026-11-22', '18:30'), '18 Nov – 22 Nov 2026 • 6:30 PM');
+});
+
+test('buildDateRange renders an explicit time window', () => {
+  assert.equal(
+    buildDateRange('2026-11-18', '2026-11-18', '18:30', '21:00'),
+    '18 Nov 2026 • 6:30 PM – 9:00 PM'
+  );
+});
+
+test('formatTimeRange handles one-sided and empty windows', () => {
+  assert.equal(formatTimeRange('', ''), '');
+  assert.equal(formatTimeRange('09:00', ''), '9:00 AM');
+  assert.equal(formatTimeRange('', '21:15'), '9:15 PM');
+  assert.equal(formatTimeRange('10:00', '10:00'), '10:00 AM');
+});
+
+test('call type helpers stay in sync with the options list', () => {
+  for (const type of CALL_TYPES) {
+    assert.ok(isCallType(type.value), `${type.value} should be a valid call type`);
+    assert.equal(callTypeLabel(type.value), type.label);
+  }
+  assert.equal(isCallType('screening'), false);
+  assert.equal(callTypeLabel(undefined), 'Open call');
 });
 
 test('buildDateRange single day', () => {

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { KalaStar } from './KalaLogo';
 import { HostTypeTag, CollegeOnlyTag } from './HostTypeTag';
+import { CallTypeBadge } from './CallTypeBadge';
 import { Opportunity } from '../types';
 
 interface DiscoverViewProps {
@@ -488,6 +489,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                     className="w-full h-full object-cover group-hover:scale-104 transition-transform duration-500"
                   />
                   <div className="absolute top-3 left-3 right-3 flex flex-wrap items-center gap-2 pr-20">
+                    <CallTypeBadge callType={opp.callType} />
                     <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#E45826] text-white shadow-xs">
                       {opp.category}
                     </span>

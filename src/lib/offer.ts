@@ -8,7 +8,23 @@ export function fmtTime12(t: string): string {
   return `${hr}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
-export function buildDateRange(start: string, end: string, time: string): string {
+/**
+ * Optional time window for a call: '' when neither bound is set, a single time
+ * when only one is, and "6:30 PM – 9:00 PM" for a real interval.
+ */
+export function formatTimeRange(start: string, end: string): string {
+  const a = start ? fmtTime12(start) : '';
+  const b = end ? fmtTime12(end) : '';
+  if (a && b) return a === b ? a : `${a} – ${b}`;
+  return a || b;
+}
+
+export function buildDateRange(
+  start: string,
+  end: string,
+  startTime = '',
+  endTime = ''
+): string {
   if (!start) return '';
   const day = (iso: string) => {
     const [y, m, d] = iso.split('-').map(Number);
@@ -17,8 +33,8 @@ export function buildDateRange(start: string, end: string, time: string): string
   };
   const year = start.slice(0, 4);
   const span = end && end !== start ? `${day(start)} – ${day(end)}` : day(start);
-  const t = time ? ` • ${fmtTime12(time)}` : '';
-  return `${span} ${year}${t}`;
+  const time = formatTimeRange(startTime, endTime);
+  return `${span} ${year}${time ? ` • ${time}` : ''}`;
 }
 
 export const PRICE_PRESETS: Record<string, string> = {
@@ -33,4 +49,29 @@ export function buildCompensation(choice: string, min: string, max: string): str
   const lo = Math.min(Number(min) || 0, Number(max) || 0);
   const hi = Math.max(Number(min) || 0, Number(max) || 0);
   return `₹${lo.toLocaleString('en-IN')} – ₹${hi.toLocaleString('en-IN')}`;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Call type — what the artist is actually being invited to                    */
+/* -------------------------------------------------------------------------- */
+
+import type { CallType } from '../types';
+
+export type { CallType };
+
+export const CALL_TYPES: { value: CallType; label: string; hint: string }[] = [
+  { value: 'audition', label: 'Audition', hint: 'Casting call — artists submit a reel to be considered' },
+  { value: 'competition', label: 'Competition', hint: 'Contest with rankings, prizes, or a final round' },
+  { value: 'event', label: 'Event / Performance', hint: 'A booked slot to perform at a specific show' },
+  { value: 'residency', label: 'Residency', hint: 'A multi-day or multi-week placement' },
+  { value: 'workshop', label: 'Workshop / Class', hint: 'Teaching, masterclass, or training engagement' },
+  { value: 'commission', label: 'Commission', hint: 'Paid creation of a new work' },
+];
+
+export function isCallType(value: unknown): value is CallType {
+  return CALL_TYPES.some((c) => c.value === value);
+}
+
+export function callTypeLabel(value: CallType | undefined | null): string {
+  return CALL_TYPES.find((c) => c.value === value)?.label ?? 'Open call';
 }

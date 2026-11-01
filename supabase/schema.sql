@@ -415,6 +415,15 @@ alter table public.opportunities add column if not exists college_name text;
 alter table public.opportunities add column if not exists fest_name text;
 alter table public.opportunities add column if not exists college_only boolean not null default false;
 
+-- What kind of call this is. Artists filter and read the card by this, instead
+-- of every listing being presented as an "audition".
+alter table public.opportunities add column if not exists call_type text;
+alter table public.opportunities drop constraint if exists opportunities_call_type_chk;
+alter table public.opportunities add constraint opportunities_call_type_chk
+  check (call_type is null or call_type in
+    ('audition','competition','event','residency','workshop','commission'));
+update public.opportunities set call_type = 'audition' where call_type is null;
+
 -- Core-7 mandatory event fields: backfill legacy rows, then hold new writes.
 update public.opportunities set venue       = '' where venue is null;
 update public.opportunities set city        = '' where city is null;
@@ -592,7 +601,7 @@ revoke all on table public.applications  from anon;
 
 grant select, insert, delete on table public.opportunities to authenticated;
 revoke update on table public.opportunities from authenticated;
-grant update (title, category, description, requirements, location, venue,
+grant update (title, category, call_type, description, requirements, location, venue,
               city, date_range, deadline, compensation, image_url, status,
               featured, updated_at)
   on table public.opportunities to authenticated;

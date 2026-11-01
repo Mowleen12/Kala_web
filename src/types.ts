@@ -8,11 +8,25 @@ export type OrganiserNavTab = 'overview' | 'listings' | 'applicants' | 'scout' |
 export type OpportunityStatus = 'active' | 'closed';
 export type ApplicationStatus = 'under_review' | 'interview' | 'selected' | 'rejected';
 
+/**
+ * What the artist is actually being invited to. Shown as the card's type badge
+ * instead of labelling every open call an "audition".
+ */
+export type CallType =
+  | 'audition'
+  | 'competition'
+  | 'event'
+  | 'residency'
+  | 'workshop'
+  | 'commission';
+
 export interface Opportunity {
   id: string;
   title: string;
   category: string;
   categorySlug: string;
+  /** Absent on older rows — the UI falls back to "Open call". */
+  callType?: CallType;
   statusBadge: {
     label: string;
     variant: 'countdown' | 'open' | 'closed';
