@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
 import { 
   User, 
   MapPin, 
@@ -20,10 +19,10 @@ import {
 import { KalaStar } from './KalaLogo';
 import { MediaUploader } from './MediaUploader';
 import { MediaPreview } from './MediaPreview';
+import { SkillsInput } from './SkillsInput';
 import { getDraft, setDraft } from '../lib/drafts';
 import { computeProfileCompletion, ProfileFields } from '../lib/profile';
 import { VIDEO_MAX_BYTES, formatMB } from '../lib/limits';
-import { suggestSkills } from '../lib/skills';
 import { StudentTag } from './HostTypeTag';
 
 export interface ProfileMedia {
@@ -135,23 +134,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     const stored = getDraft<string[]>(skillsKey);
     return stored && stored.length > 0 ? stored : [];
   });
-  const [newSkill, setNewSkill] = useState('');
-  const [skillsFocused, setSkillsFocused] = useState(false);
-  const [skillHighlight, setSkillHighlight] = useState(0);
-
-  const skillSuggestions = suggestSkills(newSkill, skills);
-
-  const addSkill = (value: string) => {
-    const trimmed = value.trim();
-    if (trimmed && !skills.some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
-      const next = [...skills, trimmed];
-      setSkills(next);
-      setDraft(skillsKey, next);
-      recomputeCompletion({ skills: next });
-    }
-    setNewSkill('');
-    setSkillHighlight(0);
-  };
 
   const handleReelUploaded = (url: string) => {
     onProfileMediaChange?.({ reel: url });
@@ -412,81 +394,24 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           Skills & Disciplines
         </h3>
 
-        <div className="flex flex-wrap gap-2 mb-4">
-          {skills.length === 0 && (
-            <p className="text-xs text-zinc-400">No skills listed yet — add your first one below.</p>
-          )}
-          {skills.map((skill) => (
-            <motion.span
-              key={skill}
-              layout
-              initial={{ opacity: 0, scale: 0.7 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 500, damping: 32 }}
-              className="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#FAF8F5] border border-[#EDE7DE] text-zinc-700"
-            >
-              {skill}
-            </motion.span>
-          ))}
-        </div>
+        {skills.length === 0 && (
+          <p className="text-xs text-zinc-400 mb-3">
+            No skills listed yet — start typing below and pick from the suggestions.
+          </p>
+        )}
 
-        <div className="relative max-w-sm">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newSkill}
-              onChange={(e) => {
-                setNewSkill(e.target.value);
-                setSkillHighlight(0);
-              }}
-              onFocus={() => setSkillsFocused(true)}
-              onBlur={() => setSkillsFocused(false)}
-              onKeyDown={(e) => {
-                if (e.key === 'ArrowDown') {
-                  e.preventDefault();
-                  setSkillHighlight((h) => Math.min(h + 1, skillSuggestions.length - 1));
-                } else if (e.key === 'ArrowUp') {
-                  e.preventDefault();
-                  setSkillHighlight((h) => Math.max(h - 1, 0));
-                } else if (e.key === 'Enter') {
-                  e.preventDefault();
-                  const picked = skillsFocused ? skillSuggestions[skillHighlight] : undefined;
-                  addSkill(picked ?? newSkill);
-                } else if (e.key === 'Escape') {
-                  setSkillsFocused(false);
-                }
-              }}
-              placeholder="Add another skill (e.g. Cinema 4D)..."
-              className="flex-1 bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-1.5 text-xs text-zinc-900 outline-none focus:border-[#E45826]"
-            />
-            <button
-              onClick={() => addSkill(newSkill)}
-              className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold cursor-pointer"
-            >
-              Add
-            </button>
-          </div>
-          {skillsFocused && skillSuggestions.length > 0 && (
-            <ul className="absolute z-10 left-0 right-0 mt-1 bg-white border border-[#E5E0D6] rounded-xl shadow-lg py-1 max-h-48 overflow-auto">
-              {skillSuggestions.map((skill, i) => (
-                <li key={skill}>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => addSkill(skill)}
-                    onMouseEnter={() => setSkillHighlight(i)}
-                    className={`w-full text-left px-3 py-1.5 text-xs cursor-pointer ${
-                      i === skillHighlight
-                        ? 'bg-[#FDEEE7] text-[#E45826] font-semibold'
-                        : 'text-zinc-700 hover:bg-[#FAF8F5]'
-                    }`}
-                  >
-                    {skill}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+        <div className="max-w-lg">
+          <SkillsInput
+            id="profile-skills"
+            value={skills}
+            onChange={(next) => {
+              setSkills(next);
+              setDraft(skillsKey, next);
+              recomputeCompletion({ skills: next });
+            }}
+            ariaLabel="Add a skill"
+            placeholder="e.g. Hindustani Vocals, Bharatanatyam, Cinematography"
+          />
         </div>
       </div>
     </div>

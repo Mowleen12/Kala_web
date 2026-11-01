@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { X, MapPin, Calendar, Link2, Sparkles, AlertCircle } from 'lucide-react';
+import { X, MapPin, Calendar, Link2, AlertCircle } from 'lucide-react';
 import { Opportunity } from '../types';
 import { MediaUploader } from './MediaUploader';
+import { SkillsInput } from './SkillsInput';
 import { HostTypeTag, CollegeOnlyTag, StudentTag } from './HostTypeTag';
 import { getDraft, setDraft, clearDraft } from '../lib/drafts';
 import { isLocalMediaUrl, resolveMediaUrl } from '../lib/localMedia';
@@ -15,7 +16,8 @@ interface ApplyDraft {
   statement?: string;
   mediaUrl?: string;
   experienceYears?: string;
-  skills?: string;
+  /** Array in new drafts; older drafts stored a comma-separated string. */
+  skills?: string[] | string;
   city?: string;
 }
 
@@ -60,7 +62,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
   const [mediaUrl, setMediaUrl] = useState('');
   const [mediaType, setMediaType] = useState<'video' | 'image' | 'auto'>('auto');
   const [experienceYears, setExperienceYears] = useState('');
-  const [skills, setSkills] = useState('');
+  const [skills, setSkills] = useState<string[]>([]);
   const [city, setCity] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -77,7 +79,13 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
     setPortfolioUrl(draft?.portfolioUrl ?? '');
     setStatement(draft?.statement ?? profile.bio ?? '');
     setExperienceYears(draft?.experienceYears ?? '');
-    setSkills(draft?.skills ?? (profileSkills.length ? profileSkills.join(', ') : ''));
+    const draftSkills = Array.isArray(draft?.skills)
+      ? draft!.skills
+      : (draft?.skills || '')
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+    setSkills(draftSkills.length > 0 ? draftSkills : profileSkills);
     setCity(draft?.city ?? profile.location ?? '');
     setSubmitError(null);
     setFieldErrors({});
@@ -120,7 +128,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
-    const errs = validateApplyForm({ experienceYears, city, skills });
+    const errs = validateApplyForm({ experienceYears, city, skills: skills.join(', ') });
     setFieldErrors(errs);
     if (Object.keys(errs).length > 0) return;
     setIsSubmitting(true);
@@ -132,10 +140,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
       reelUrl: mediaUrl || null,
       fileName: mediaName,
       experienceYears: experienceYears.trim() ? Number(experienceYears) || undefined : undefined,
-      skills: skills
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean),
+      skills,
       city: city.trim() || undefined,
     });
     setIsSubmitting(false);
@@ -269,21 +274,17 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
           </div>
 
           <div>
-            <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-700 mb-1">
-              <Sparkles className="w-3.5 h-3.5 text-zinc-400" />
-              <span>Skills (comma-separated) <span className="text-red-500">*</span></span>
-            </label>
-            <input
-              type="text"
+            <SkillsInput
+              id="apply-skills"
+              label="Skills"
               value={skills}
-              onChange={(e) => {
-                setSkills(e.target.value);
+              onChange={(next) => {
+                setSkills(next);
                 clearFieldError('skills');
               }}
+              ariaLabel="Your skills"
               placeholder="e.g. Carnatic Vocals, Sitar, Live Improvisation"
-              className={`w-full bg-[#FAF8F5] border focus:border-[#E45826] focus:bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 outline-none transition-all shadow-2xs ${
-                fieldErrors.skills ? 'border-red-400' : 'border-[#E5E0D6]'
-              }`}
+              invalid={Boolean(fieldErrors.skills)}
             />
             {fieldErrors.skills && (
               <p className="mt-1 text-[11px] font-medium text-red-600">{fieldErrors.skills}</p>
