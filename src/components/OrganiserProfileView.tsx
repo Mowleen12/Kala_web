@@ -17,10 +17,20 @@ import {
 } from 'lucide-react';
 import { OrganiserProfile, OrganiserType } from '../types';
 import { KalaStar } from './KalaLogo';
-import { StudentTag } from './HostTypeTag';
 import { CollegeAutocomplete } from './CollegeAutocomplete';
 import { MediaPreview } from './MediaPreview';
 import { MediaUploader } from './MediaUploader';
+
+/** Focus areas an organiser can claim — the same taxonomy artists browse by. */
+const FOCUS_OPTIONS = [
+  'Music & Dance',
+  'Film & Photography',
+  'Visual Arts',
+  'Theatre & Performance',
+  'Writing & Content',
+  'Design & Fashion',
+  'College Societies & Clubs',
+];
 
 interface OrganiserProfileViewProps {
   profile: OrganiserProfile;
@@ -45,7 +55,7 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
   const [editCoverImage, setEditCoverImage] = useState('');
   const [editOrgType, setEditOrgType] = useState<OrganiserType>('venue');
   const [editCollege, setEditCollege] = useState('');
-  const [editCollegeStudent, setEditCollegeStudent] = useState(false);
+  const [editFocus, setEditFocus] = useState<string[]>([]);
 
   const startEditing = () => {
     setEditName(profile.name);
@@ -56,14 +66,21 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
     setEditCoverImage(profile.coverImage);
     setEditOrgType(profile.orgType || 'venue');
     setEditCollege(profile.collegeName || '');
-    setEditCollegeStudent(profile.collegeStudent ?? false);
+    setEditFocus(profile.focusDisciplines || []);
     setIsEditing(true);
+  };
+
+  const toggleFocus = (name: string) => {
+    setEditFocus((prev) =>
+      prev.includes(name) ? prev.filter((f) => f !== name) : [...prev, name]
+    );
   };
 
   const saveProfile = () => {
     const name = editName.trim();
     if (!name) return;
-    if (editCollegeStudent && !editCollege.trim()) return;
+    // A society profile has to name its institution; a venue does not.
+    if (editOrgType === 'society' && !editCollege.trim()) return;
     onUpdateProfile?.({
       ...profile,
       name,
@@ -73,13 +90,8 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
       about: editAbout.trim(),
       coverImage: editCoverImage,
       orgType: editOrgType,
-      collegeName:
-        editOrgType === 'society'
-          ? editCollege.trim()
-          : editCollegeStudent
-            ? editCollege.trim()
-            : profile.collegeName || '',
-      collegeStudent: editCollegeStudent,
+      collegeName: editOrgType === 'society' ? editCollege.trim() : '',
+      focusDisciplines: editFocus,
     });
     setIsEditing(false);
   };
@@ -116,8 +128,8 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
 
           {/* Profile Details Container */}
           <div className="p-6 sm:p-8 relative">
-            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 mb-6">
-              <div className="flex items-start sm:items-end gap-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 sm:gap-6 mb-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 sm:gap-5 w-full min-w-0">
               <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden ring-4 ring-white shadow-lg bg-[#FAF2EB] shrink-0 relative group/logo">
                 {profile.logo && (
                   <MediaPreview
@@ -136,10 +148,10 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
                 </button>
               </div>
 
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 {isEditing && (
                   <div className="mb-3">
-                    <div className="grid grid-cols-2 p-1 bg-[#FAF8F5] border border-[#E8E2D8] rounded-2xl">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 p-1 bg-[#FAF8F5] border border-[#E8E2D8] rounded-2xl gap-1">
                       <button
                         id="profile-org-type-venue"
                         type="button"
@@ -168,61 +180,37 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
                         className="w-full bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-2 text-xs outline-none focus:border-[#E45826]"
                       />
                     )}
-                    <label className="mt-2 flex items-center gap-2 text-xs font-bold text-zinc-700 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        id="profile-college-student"
-                        checked={editCollegeStudent}
-                        onChange={(e) => setEditCollegeStudent(e.target.checked)}
-                        className="w-4 h-4 accent-[#E45826] cursor-pointer"
-                      />
-                      I'm a college student
-                    </label>
-                    {editCollegeStudent && editOrgType !== 'society' && (
-                      <CollegeAutocomplete
-                        value={editCollege}
-                        onChange={setEditCollege}
-                        maxLength={100}
-                        ariaLabel="Your college name"
-                        placeholder="e.g. University of Mumbai"
-                        wrapperClassName="mt-2"
-                        className="w-full bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-2 text-xs outline-none focus:border-[#E45826]"
-                      />
-                    )}
                   </div>
                 )}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 min-w-0">
                   {isEditing ? (
                     <input
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
                       maxLength={60}
                       aria-label="Venue name"
-                      className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-1 outline-none focus:border-[#E45826] w-full sm:w-72"
+                      className="text-xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-1 outline-none focus:border-[#E45826] w-full sm:w-72"
                     />
                   ) : (
                     <>
-                      <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight">
+                      <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight break-words">
                         {profile.name || 'Your venue'}
                       </h1>
-                      {profile.collegeStudent && profile.collegeName && (
-                        <StudentTag college={profile.collegeName} className="mb-1" />
-                      )}
                     </>
                   )}
                 </div>
                 <p className="text-xs text-zinc-500 flex flex-wrap items-center gap-2 mt-1">
-                  <span className="flex items-center gap-1">
+                  <span className="flex flex-wrap items-center gap-1 w-full sm:w-auto">
                     <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
                     {isEditing ? (
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
                         <input
                           value={editCity}
                           onChange={(e) => setEditCity(e.target.value)}
                           maxLength={60}
                           aria-label="City"
                           placeholder="City"
-                          className="w-32 bg-[#FAF8F5] border border-[#E5E0D6] rounded-lg px-2 py-1 text-xs outline-none focus:border-[#E45826]"
+                          className="min-w-0 flex-1 sm:flex-none sm:w-32 bg-[#FAF8F5] border border-[#E5E0D6] rounded-lg px-2 py-1 text-xs outline-none focus:border-[#E45826]"
                         />
                         <input
                           value={editState}
@@ -230,7 +218,7 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
                           maxLength={60}
                           aria-label="State"
                           placeholder="State"
-                          className="w-32 bg-[#FAF8F5] border border-[#E5E0D6] rounded-lg px-2 py-1 text-xs outline-none focus:border-[#E45826]"
+                          className="min-w-0 flex-1 sm:flex-none sm:w-32 bg-[#FAF8F5] border border-[#E5E0D6] rounded-lg px-2 py-1 text-xs outline-none focus:border-[#E45826]"
                         />
                       </span>
                     ) : (
@@ -247,12 +235,12 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               {isEditing ? (
                 <>
                   <button
                     onClick={saveProfile}
-                    disabled={!editName.trim() || (editCollegeStudent && !editCollege.trim())}
+                    disabled={!editName.trim() || (editOrgType === 'society' && !editCollege.trim())}
                     className="px-4 py-2 rounded-full bg-[#E45826] hover:bg-[#D44716] text-white text-xs font-semibold shadow-xs cursor-pointer disabled:opacity-50 transition-all"
                   >
                     Save Changes
@@ -353,19 +341,47 @@ export const OrganiserProfileView: React.FC<OrganiserProfileViewProps> = ({
               <Sparkles className="w-4 h-4 text-[#E45826]" />
               Programming Focus
             </h3>
-            <div className="flex flex-wrap gap-2">
-              {profile.focusDisciplines.length === 0 && (
-                <span className="text-xs text-zinc-400">No focus disciplines set yet.</span>
-              )}
-              {profile.focusDisciplines.map((d) => (
-                <span
-                  key={d}
-                  className="px-3 py-1 rounded-full text-xs font-semibold bg-[#FAF2EB] text-[#E45826] border border-[#FAD7C8]"
-                >
-                  {d}
-                </span>
-              ))}
-            </div>
+            {isEditing ? (
+              <>
+                <div className="flex flex-wrap gap-2">
+                  {FOCUS_OPTIONS.map((discipline) => {
+                    const active = editFocus.includes(discipline);
+                    return (
+                      <button
+                        key={discipline}
+                        type="button"
+                        onClick={() => toggleFocus(discipline)}
+                        aria-pressed={active}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors cursor-pointer ${
+                          active
+                            ? 'bg-[#FDEEE7] text-[#C73E0E] border-[#E45826]'
+                            : 'bg-white text-zinc-600 border-[#E0D9CD] hover:border-[#E45826]/50'
+                        }`}
+                      >
+                        {discipline}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-zinc-400 mt-2">
+                  Tap the disciplines you programme. Saved with the rest of your profile.
+                </p>
+              </>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {profile.focusDisciplines.length === 0 && (
+                  <span className="text-xs text-zinc-400">No focus disciplines set yet.</span>
+                )}
+                {profile.focusDisciplines.map((d) => (
+                  <span
+                    key={d}
+                    className="px-3 py-1 rounded-full text-xs font-semibold bg-[#FAF2EB] text-[#E45826] border border-[#FAD7C8]"
+                  >
+                    {d}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="bg-white rounded-3xl p-6 border border-[#EDE8E0] shadow-xs">

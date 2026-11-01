@@ -127,8 +127,8 @@ export interface OrganiserProfile {
   state: string;
   about: string;
   orgType?: OrganiserType;
+  /** Only meaningful for a college society/club; empty for venues. */
   collegeName: string;
-  collegeStudent?: boolean;
   focusDisciplines: string[];
 }
 

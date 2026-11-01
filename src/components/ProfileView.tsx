@@ -172,8 +172,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     <div className="space-y-6 pb-12 animate-in fade-in duration-200">
       {/* Header Profile Banner */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EDE8E0] shadow-xs">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-center gap-5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 sm:gap-6">
+          <div className="flex items-center gap-4 sm:gap-5 w-full min-w-0">
             <div className="relative group">
               {currentAvatar ? (
                 <img
@@ -196,7 +196,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               </button>
             </div>
 
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 {isEditingProfile ? (
                   <input
@@ -204,33 +204,33 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     onChange={(e) => setEditName(e.target.value)}
                     maxLength={60}
                     aria-label="Display name"
-                    className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-1 outline-none focus:border-[#E45826] w-full sm:w-64"
+                    className="text-xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight bg-[#FAF8F5] border border-[#E5E0D6] rounded-xl px-3 py-1 outline-none focus:border-[#E45826] w-full sm:w-64"
                   />
                 ) : (
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight">
+                  <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight break-words">
                     {displayName}
                   </h1>
                 )}
               </div>
-              <p className="text-xs sm:text-sm text-zinc-500 mt-1 flex flex-wrap items-center gap-3">
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-zinc-400" />
+              <p className="text-xs sm:text-sm text-zinc-500 mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="flex flex-wrap items-center gap-1 min-w-0">
+                  <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
                   {isEditingProfile ? (
                     <input
                       value={editLocation}
                       onChange={(e) => setEditLocation(e.target.value)}
                       maxLength={60}
                       aria-label="Location"
-                      className="w-44 bg-[#FAF8F5] border border-[#E5E0D6] rounded-lg px-2 py-1 text-xs outline-none focus:border-[#E45826]"
+                      className="min-w-0 w-full sm:w-44 bg-[#FAF8F5] border border-[#E5E0D6] rounded-lg px-2 py-1 text-xs outline-none focus:border-[#E45826]"
                     />
                   ) : (
                     location || 'Location not set'
                   )}
                 </span>
-                <span>•</span>
-                <span className="flex items-center gap-1">
-                  <Mail className="w-3.5 h-3.5 text-zinc-400" />
-                  {userEmail}
+                <span className="hidden sm:inline">•</span>
+                <span className="flex items-center gap-1 min-w-0">
+                  <Mail className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                  <span className="truncate">{userEmail}</span>
                 </span>
               </p>
               {collegeName && (
@@ -252,7 +252,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               />
             </div>
             {isEditingProfile ? (
-              <div className="flex items-center gap-2 mt-3">
+              <div className="flex flex-wrap items-center gap-2 mt-3">
                 <button
                   onClick={saveProfileText}
                   disabled={!editName.trim()}
@@ -356,7 +356,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
       {/* Portfolio Stills & Gallery (Cloudinary Storage) */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EDE8E0] shadow-xs">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
             <h3 className="text-base font-bold text-zinc-900 flex items-center gap-2">
               <Camera className="w-4 h-4 text-[#E45826]" />
