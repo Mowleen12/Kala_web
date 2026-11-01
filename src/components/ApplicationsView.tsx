@@ -6,7 +6,7 @@ import { MediaPreview } from './MediaPreview';
 import { Application, Opportunity, Thread } from '../types';
 import { isUnread } from '../lib/threads';
 import { getOptimizedCloudinaryUrl } from '../lib/cloudinary';
-import { isDirectMediaUrl, isDeviceLocalUrl, mediaKind, linkHost } from '../lib/media';
+import { isDirectMediaUrl, isDeviceLocalUrl, mediaKind, linkHost, safeHttpUrl } from '../lib/media';
 import { StudentTag } from './HostTypeTag';
 
 interface ApplicationsViewProps {
@@ -152,9 +152,9 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
                         mediaClassName="w-full h-full object-contain"
                       />
                     )
-                  ) : (
+                  ) : safeHttpUrl(app.mediaUrl) ? (
                     <a
-                      href={app.mediaUrl}
+                      href={safeHttpUrl(app.mediaUrl)!}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FAF2EB] border border-[#FAD7C8] text-[#E45826] text-[11px] font-bold hover:bg-[#FCE4D9] transition-colors"
@@ -164,6 +164,10 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
                       <span className="text-zinc-400 font-medium">{linkHost(app.mediaUrl)}</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
+                  ) : (
+                    <p className="text-[11px] text-zinc-500 italic">
+                      Submitted link is not a valid web address.
+                    </p>
                   )}
                 </div>
               )}

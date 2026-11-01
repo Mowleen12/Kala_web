@@ -189,6 +189,9 @@ export async function supabaseSignInWithGoogle(
             };
 
             const handleMessage = (e: MessageEvent) => {
+              // Only our own OAuth popup may hand us a user object; without the
+              // origin check any framed/opened page could inject a fake one.
+              if (e.origin !== window.location.origin) return;
               if (e.data?.type === 'KALA_AUTH_SUCCESS' && e.data?.user) {
                 finishWithUser(e.data.user);
               }

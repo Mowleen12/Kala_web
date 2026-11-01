@@ -27,3 +27,23 @@ export const linkHost = (url: string): string => {
     return 'Open link';
   }
 };
+
+/**
+ * Only `http:`/`https:` URLs may reach an `href`.
+ *
+ * Portfolio/reel links are typed by one user and rendered for another, so a
+ * `javascript:` (or `data:`/`vbscript:`) URL would run script in this origin on
+ * click — where the Supabase session lives. Anything not plainly http(s) is
+ * rejected here, at the last point before it becomes a link.
+ */
+export const safeHttpUrl = (url: string | null | undefined): string | null => {
+  if (!url) return null;
+  try {
+    // Absolute URLs only — a bare path or scheme-relative value is not a
+    // portfolio link, and `new URL` rejects it.
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : null;
+  } catch {
+    return null;
+  }
+};

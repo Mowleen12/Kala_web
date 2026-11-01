@@ -244,7 +244,10 @@ export default function App() {
       supabaseGetCurrentUser().then((user) => {
         if (user) {
           try {
-            window.opener.postMessage({ type: 'KALA_AUTH_SUCCESS', user }, '*');
+            // Same-origin only: with '*' any page that opened this window could
+            // read the signed-in user's id/email/name. Our own OAuth popup is
+            // same-origin, so the legit flow is unaffected.
+            window.opener.postMessage({ type: 'KALA_AUTH_SUCCESS', user }, window.location.origin);
           } catch {}
           setTimeout(() => {
             try {

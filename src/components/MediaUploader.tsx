@@ -267,8 +267,9 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
               <button
                 type="button"
                 onClick={handleClear}
-                className="p-1 rounded-lg hover:bg-red-50 text-zinc-400 hover:text-red-600 transition-colors cursor-pointer"
+                className="p-1 rounded-lg hover:bg-red-50 text-zinc-400 hover:text-red-600 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E45826]"
                 title="Remove media"
+                aria-label="Remove uploaded media"
               >
                 <X className="w-4 h-4" />
               </button>

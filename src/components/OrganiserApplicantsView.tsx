@@ -28,7 +28,7 @@ import { StudentTag } from './HostTypeTag';
 import { MediaPreview } from './MediaPreview';
 import { isUnread } from '../lib/threads';
 import { getOptimizedCloudinaryUrl } from '../lib/cloudinary';
-import { isDirectMediaUrl, isDeviceLocalUrl, mediaKind, linkHost } from '../lib/media';
+import { isDirectMediaUrl, isDeviceLocalUrl, mediaKind, linkHost, safeHttpUrl } from '../lib/media';
 
 interface OrganiserApplicantsViewProps {
   applicants: ApplicantReview[];
@@ -669,9 +669,9 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                         />
                       )
                     )}
-                    {app.reelUrl && !isDirectMediaUrl(app.reelUrl) && (
+                    {app.reelUrl && !isDirectMediaUrl(app.reelUrl) && safeHttpUrl(app.reelUrl) && (
                       <a
-                        href={app.reelUrl}
+                        href={safeHttpUrl(app.reelUrl)!}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
@@ -693,10 +693,10 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                         Submitted media is no longer available — it was uploaded before shared storage was connected.
                       </p>
                     )}
-                    {app.portfolioUrl && (
+                    {app.portfolioUrl && safeHttpUrl(app.portfolioUrl) && (
                       <div className="flex justify-end">
                         <a
-                          href={app.portfolioUrl}
+                          href={safeHttpUrl(app.portfolioUrl)!}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-xs font-semibold text-[#E45826] hover:underline flex items-center gap-1 shrink-0"
@@ -754,8 +754,9 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                   {app.status !== 'rejected' && (
                     <button
                       onClick={() => onUpdateApplicantStatus(app.id, 'rejected')}
-                      className="p-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-600 transition-colors cursor-pointer"
+                      className="p-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-600 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E45826]"
                       title="Decline"
+                      aria-label={`Decline ${app.artistName}`}
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
