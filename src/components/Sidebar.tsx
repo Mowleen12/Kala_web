@@ -213,9 +213,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </p>
               <button
                 id="sidebar-cta-btn"
-                onClick={portalMode === 'artist' ? onOpenSignUp : onPostOpportunity}
-                aria-label={portalMode === 'artist' ? 'Join as an artist' : 'Post opportunity call'}
-                className="w-8 h-8 rounded-full bg-[#E45826] text-white flex items-center justify-center shadow-xs hover:bg-[#D44716] active:scale-95 transition-all cursor-pointer"
+                // Signed-in users should be taken to work, not to a sign-up form.
+                onClick={
+                  portalMode === 'artist'
+                    ? () => onSelectArtistTab('discover')
+                    : onPostOpportunity
+                }
+                aria-label={
+                  portalMode === 'artist' ? 'Discover opportunities' : 'Post opportunity call'
+                }
+                className="w-9 h-9 rounded-full bg-[#E45826] text-white flex items-center justify-center shadow-xs hover:bg-[#D44716] active:scale-95 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E45826] focus-visible:ring-offset-2"
               >
                 <ArrowRight className="w-4 h-4" />
               </button>

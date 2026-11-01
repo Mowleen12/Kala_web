@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
   Plus, 
@@ -22,6 +22,7 @@ import { KalaStar } from './KalaLogo';
 interface OrganiserListingsViewProps {
   opportunities: Opportunity[];
   initialCategory?: string;
+  initialSearch?: string;
   isOpenFiltersInitially?: boolean;
   onPostOpportunity: () => void;
   onReviewOpportunityApplicants: (opp: Opportunity) => void;
@@ -31,6 +32,7 @@ interface OrganiserListingsViewProps {
 export const OrganiserListingsView: React.FC<OrganiserListingsViewProps> = ({
   opportunities,
   initialCategory,
+  initialSearch = '',
   isOpenFiltersInitially = false,
   onPostOpportunity,
   onReviewOpportunityApplicants,
@@ -43,8 +45,14 @@ export const OrganiserListingsView: React.FC<OrganiserListingsViewProps> = ({
   const [selectedApplicantVolume, setSelectedApplicantVolume] = useState<string>('All');
   const [selectedUrgency, setSelectedUrgency] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'applicants' | 'deadline' | 'title'>('applicants');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(isOpenFiltersInitially);
+
+  // Adopt the header search value whenever it changes so the top bar and this
+  // page's own search input stay one filter, not two competing ones.
+  useEffect(() => {
+    setSearchQuery(initialSearch);
+  }, [initialSearch]);
 
   const categories = [
     'All',

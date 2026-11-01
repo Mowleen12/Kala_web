@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
   Search, 
@@ -45,6 +45,13 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
   const [sortBy, setSortBy] = useState<'recommended' | 'deadline' | 'compensation' | 'applicants'>('recommended');
   const [search, setSearch] = useState<string>(initialSearch);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState<boolean>(isOpenFiltersInitially);
+
+  // The header search box is the shared entry point: when its value changes we
+  // adopt it here too, so typing in the top bar filters this list immediately
+  // rather than only after a remount.
+  useEffect(() => {
+    setSearch(initialSearch);
+  }, [initialSearch]);
 
   const categories = [
     'All',

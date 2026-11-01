@@ -45,6 +45,18 @@ export const OrganiserFeaturedCalls: React.FC<OrganiserFeaturedCallsProps> = ({
       </div>
 
       {/* Cards Grid */}
+      {featured.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-[#E0D7CB] bg-white p-10 text-center">
+          <div className="w-11 h-11 mx-auto rounded-2xl bg-[#FDEEE7] text-[#E45826] flex items-center justify-center mb-3">
+            <Calendar className="w-5 h-5" />
+          </div>
+          <p className="text-sm font-bold text-zinc-900">No active calls yet</p>
+          <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto leading-relaxed">
+            Publish your first production call and applicants will appear in the pipeline
+            below with their reels ready to review.
+          </p>
+        </div>
+      ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {featured.map((opp) => (
           <div
@@ -110,6 +122,7 @@ export const OrganiserFeaturedCalls: React.FC<OrganiserFeaturedCallsProps> = ({
           </div>
         ))}
       </div>
+      )}
     </section>
   );
 };

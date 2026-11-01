@@ -8,8 +8,7 @@ import {
   X, 
   Building2, 
   Palette, 
-  LogOut, 
-  LogIn 
+  LogOut 
 } from 'lucide-react';
 import { KalaLogo } from './KalaLogo';
 import { PortalMode, Thread } from '../types';
@@ -25,7 +24,6 @@ interface HeaderProps {
   onSelectArtistTab: (tab: any) => void;
   onSelectOrgTab: (tab: any) => void;
   onOpenSignUp: () => void;
-  onOpenSignIn?: () => void;
   onSignOut?: () => void;
   userName?: string;
   userEmail?: string;
@@ -44,7 +42,6 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectArtistTab,
   onSelectOrgTab,
   onOpenSignUp,
-  onOpenSignIn,
   onSignOut,
   userName = '',
   userEmail,
@@ -327,19 +324,6 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
 
                 <div className="pt-1 mt-1 border-t border-zinc-100 space-y-0.5">
-                  {onOpenSignIn && (
-                    <button
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        onOpenSignIn();
-                      }}
-                      className="w-full text-left px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-[#FAF8F5] rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
-                    >
-                      <LogIn className="w-3.5 h-3.5 text-zinc-400" />
-                      <span>Log In to Existing Account</span>
-                    </button>
-                  )}
-
                   {onSignOut && (
                     <button
                       onClick={() => {

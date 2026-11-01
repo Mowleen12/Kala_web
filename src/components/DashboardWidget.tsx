@@ -28,6 +28,12 @@ export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
   onContinueApplications,
   onCompleteProfile,
 }) => {
+  // Greeting follows the clock — a hardcoded "Good morning" at 9 pm reads as a
+  // template bug.
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
   return (
     <div className="space-y-5">
       {/* Primary Dashboard Card */}
@@ -46,14 +52,14 @@ export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
           </button>
         </div>
 
-        {/* Morning Greeting */}
+        {/* Time-aware Greeting */}
         <div className="flex items-start gap-3 pt-4 pb-4">
           <div className="w-9 h-9 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center shrink-0 mt-0.5">
             <Sun className="w-5 h-5" />
           </div>
           <div>
             <h4 className="text-sm font-bold text-zinc-900">
-              Good morning{userName ? `, ${userName}` : ''}
+              {greeting}{userName ? `, ${userName}` : ''}
             </h4>
             <p className="text-xs text-zinc-500 mt-0.5">
               Keep creating, keep moving.

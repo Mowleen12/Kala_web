@@ -658,6 +658,9 @@ export default function App() {
       // Ignore
     }
     setCurrentUser(null);
+    // A stale header query would otherwise pre-filter the next person's landing
+    // page (Discover/Listings read it as their initial search).
+    setSearchQuery('');
     showToast(`Signed out of ${prevRole === 'artist' ? 'Artist' : 'Organiser'} Portal. Select a portal to log in.`);
   };
 
@@ -1008,7 +1011,6 @@ export default function App() {
           onSelectArtistTab={setCurrentArtistTab}
           onSelectOrgTab={setCurrentOrgTab}
           onOpenSignUp={() => handleOpenSignUp(portalMode)}
-          onOpenSignIn={() => handleOpenSignIn(portalMode)}
           onSignOut={handleSignOut}
           userName={currentUser.name}
           userEmail={currentUser.email}
@@ -1128,6 +1130,7 @@ export default function App() {
                   opportunities={opportunities}
                   appliedIds={appliedOppIds}
                   initialCategory={selectedCategory}
+                  initialSearch={searchQuery}
                   isOpenFiltersInitially={openFiltersInitially}
                   onApply={handleApplyClick}
                   onViewDetails={handleViewDetails}
@@ -1243,6 +1246,7 @@ export default function App() {
                 <OrganiserListingsView
                   opportunities={myOpportunities}
                   initialCategory={selectedOrgCategory}
+                  initialSearch={searchQuery}
                   isOpenFiltersInitially={openOrgFiltersInitially}
                   onPostOpportunity={() => setIsPostModalOpen(true)}
                   onReviewOpportunityApplicants={(opp) => {
