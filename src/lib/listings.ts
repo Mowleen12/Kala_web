@@ -1,6 +1,7 @@
 import { supabase as supabaseClient, isSupabaseConfigured } from './supabase';
-import { Application, ApplicationStatus, CallType, Opportunity, OpportunityStatus, OrganiserType, PlatformStats } from '../types';
+import { Application, ApplicationStatus, CallType, Opportunity, OpportunityStatus, OrganiserType, PlatformStats, VideoAttachment, ScriptAttachment } from '../types';
 import { isCallType } from './offer';
+import { isDirectMediaUrl, mediaKind } from './media';
 
 const supabase = supabaseClient!;
 
@@ -90,8 +91,56 @@ const rowToOpportunity = (r: any): Opportunity => ({
   createdAt: r.created_at,
 });
 
+const extraMediaKey = (appId: string) => `kala_app_extra_media_${appId}`;
+
+export function saveApplicationExtraMedia(
+  appId: string,
+  extra: {
+    photographs?: string[];
+    videos?: VideoAttachment[];
+    scripts?: ScriptAttachment[];
+  }
+) {
+  try {
+    localStorage.setItem(extraMediaKey(appId), JSON.stringify(extra));
+  } catch {}
+}
+
+export function getApplicationExtraMedia(appId: string): {
+  photographs?: string[];
+  videos?: VideoAttachment[];
+  scripts?: ScriptAttachment[];
+} | null {
+  try {
+    const raw = localStorage.getItem(extraMediaKey(appId));
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 const rowToApplication = (r: any): Application => {
   const opp = r.opportunities || {};
+  const extra = getApplicationExtraMedia(r.id);
+
+  // Formulate multiple photos fallback from single photo if none uploaded
+  let photographs: string[] = r.photographs || extra?.photographs || [];
+  if (photographs.length === 0 && r.reel_url && isDirectMediaUrl(r.reel_url) && mediaKind(r.reel_url) === 'image') {
+    photographs = [r.reel_url];
+  }
+
+  // Formulate multiple videos fallback from reel_url if none uploaded
+  let videos: VideoAttachment[] = r.videos || extra?.videos || [];
+  if (videos.length === 0 && r.reel_url && (!isDirectMediaUrl(r.reel_url) || mediaKind(r.reel_url) === 'video')) {
+    videos = [{ id: `v-${r.id}-1`, title: 'Main Performance Video', url: r.reel_url }];
+  }
+
+  // Formulate multiple scripts fallback
+  let scripts: ScriptAttachment[] = r.scripts || extra?.scripts || [];
+  if (scripts.length === 0 && r.portfolio_url) {
+    scripts = [{ id: `doc-${r.id}-1`, name: r.file_name || 'Portfolio / Script', url: r.portfolio_url }];
+  }
+
   return {
     id: r.id,
     opportunityId: r.opportunity_id,
@@ -116,6 +165,9 @@ const rowToApplication = (r: any): Application => {
     mediaUrl: r.reel_url || null,
     fileName: r.file_name || null,
     rating: r.rating ?? null,
+    photographs,
+    videos,
+    scripts,
   };
 };
 
@@ -224,7 +276,7 @@ export async function createOpportunity(
       organiser_avatar: owner.avatar || null,
       title: input.title,
       category: input.category,
-      call_type: input.callType || 'audition',
+      call_type: input.callType || 'competition',
       description: input.description,
       requirements: input.requirements?.length ? input.requirements : null,
       venue: input.venue,
@@ -251,6 +303,7 @@ export async function setOpportunityStatus(
   id: string,
   status: OpportunityStatus
 ): Promise<{ error: string | null }> {
+  if (!supabase) return { error: 'Database unavailable' };
   const { error } = await supabase
     .from('opportunities')
     .update({ status, updated_at: new Date().toISOString() })
@@ -259,6 +312,7 @@ export async function setOpportunityStatus(
 }
 
 export async function deleteOpportunity(id: string): Promise<{ error: string | null }> {
+  if (!supabase) return { error: 'Database unavailable' };
   const { error } = await supabase.from('opportunities').delete().eq('id', id);
   return { error: error ? friendlyListingError(error.message) : null };
 }
@@ -325,6 +379,9 @@ export interface ApplyInput {
   reelUrl?: string | null;
   fileName?: string | null;
   artistCollege?: string | null;
+  photographs?: string[];
+  videos?: VideoAttachment[];
+  scripts?: ScriptAttachment[];
 }
 
 export async function applyToOpportunity(
@@ -335,6 +392,11 @@ export async function applyToOpportunity(
   }
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { data: null, error: 'Your session has expired — please sign in again.' };
+
+  const firstVideo = input.videos?.[0]?.url || input.reelUrl || null;
+  const firstDoc = input.scripts?.[0]?.url || input.portfolioUrl || null;
+  const firstDocName = input.scripts?.[0]?.name || input.fileName || null;
+
   const { data, error } = await supabase
     .from('applications')
     .insert({
@@ -348,14 +410,24 @@ export async function applyToOpportunity(
       skills: input.skills?.length ? input.skills.join(', ') : null,
       experience_years: input.experienceYears ?? null,
       statement: input.statement || null,
-      portfolio_url: input.portfolioUrl || null,
-      reel_url: input.reelUrl || null,
-      file_name: input.fileName || null,
+      portfolio_url: firstDoc,
+      reel_url: firstVideo,
+      file_name: firstDocName,
       status: 'under_review',
     })
     .select(APPLICATION_SELECT)
     .single();
+
   if (error) return { data: null, error: friendlyListingError(error.message) };
+
+  if (data?.id) {
+    saveApplicationExtraMedia(data.id, {
+      photographs: input.photographs,
+      videos: input.videos,
+      scripts: input.scripts,
+    });
+  }
+
   return { data: rowToApplication(data), error: null };
 }
 

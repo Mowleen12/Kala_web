@@ -15,7 +15,7 @@ interface DashboardWidgetProps {
   stats: UserStats;
   userName?: string;
   onViewAll: () => void;
-  onFindAuditions: () => void;
+  onFindOpportunities?: () => void;
   onContinueApplications: () => void;
   onCompleteProfile: () => void;
 }
@@ -24,10 +24,11 @@ export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
   stats,
   userName = '',
   onViewAll,
-  onFindAuditions,
+  onFindOpportunities,
   onContinueApplications,
   onCompleteProfile,
 }) => {
+  const handleFind = onFindOpportunities || onViewAll;
   // Greeting follows the clock — a hardcoded "Good morning" at 9 pm reads as a
   // template bug.
   const hour = new Date().getHours();
@@ -138,13 +139,13 @@ export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
           </span>
           <div className="space-y-2.5">
             <button
-              id="qa-find-auditions"
-              onClick={onFindAuditions}
+              id="qa-find-opportunities"
+              onClick={handleFind}
               className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-[#E45826] hover:bg-[#D44716] active:scale-98 text-white text-xs font-semibold shadow-2xs transition-all cursor-pointer"
             >
               <span className="flex items-center gap-2">
                 <Radio className="w-3.5 h-3.5" />
-                Find Auditions
+                Find Events & Calls
               </span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
@@ -175,7 +176,7 @@ export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
           </p>
           <button
             id="promo-explore-btn"
-            onClick={onFindAuditions}
+            onClick={handleFind}
             aria-label="Discover opportunities"
             className="w-8 h-8 rounded-full bg-white border border-[#E45826] text-[#E45826] flex items-center justify-center shadow-2xs hover:bg-[#FDEEE7] active:scale-95 transition-all cursor-pointer"
           >

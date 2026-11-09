@@ -341,7 +341,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                       <div>
                         <h5 className="text-xs font-bold text-zinc-900">Build your network</h5>
                         <p className="text-xs text-zinc-500 leading-snug mt-0.5">
-                          Collaborate, audition, and connect with ensembles, bands, and directors.
+                          Collaborate, perform, and connect with ensembles, bands, and directors.
                         </p>
                       </div>
                     </div>
@@ -350,7 +350,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
               ) : (
                 <>
                   <p className="text-xs sm:text-sm font-medium text-zinc-600 leading-snug mb-6">
-                    India's leading stage and auditorium network for programming, auditions, and talent scouting.
+                    India's leading stage and auditorium network for programming, competitions, and talent scouting.
                   </p>
 
                   <div className="bg-white rounded-2xl p-4 border border-[#EDE8E0] shadow-2xs mb-6 space-y-3">
@@ -359,7 +359,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                       <span>Host & Venue Management Desk</span>
                     </div>
                     <p className="text-xs text-zinc-500 leading-relaxed">
-                      Publish open audition calls, review applications with ratings, and message artists directly from your pipeline.
+                      Publish open calls and competitions, review applications with ratings, and message artists directly from your pipeline.
                     </p>
                   </div>
 
@@ -443,7 +443,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                 </h3>
                 <p className="text-xs sm:text-sm text-zinc-500 mt-1">
                   {isLoginMode
-                    ? (role === 'artist' ? 'Access your auditions, applications, and artist portfolio.' : 'Access your production calls, casting review rooms, and stages.')
+                    ? (role === 'artist' ? 'Access your competitions, applications, and artist portfolio.' : 'Access your production calls, casting review rooms, and stages.')
                     : (role === 'artist' ? 'Join India\'s leading network of musicians, dancers, and creators.' : 'Register your auditorium, theatre, festival, or cultural house.')}
                 </p>
               </div>
@@ -627,7 +627,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder={role === 'artist' ? 'you@example.com' : 'auditions@venue.org'}
+                    placeholder={role === 'artist' ? 'you@example.com' : 'events@venue.org'}
                     className="w-full bg-[#FAF8F5] border border-[#E5E0D6] focus:border-[#E45826] focus:bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-zinc-900 outline-none transition-all placeholder:text-zinc-400 shadow-2xs"
                   />
                 </div>

@@ -39,7 +39,7 @@ interface MediaUploaderProps {
 
 export const MediaUploader: React.FC<MediaUploaderProps> = ({
   label = "Upload Media",
-  description = "Supports images (PNG, JPG, WEBP) and video audition reels (MP4, MOV, WEBM)",
+  description = "Supports images (PNG, JPG, WEBP) and video performance reels (MP4, MOV, WEBM)",
   value,
   resourceType = 'auto',
   folder = 'kala-arts',

@@ -18,12 +18,14 @@ interface PortalGatewayProps {
   onSelectPortal: (portal: PortalMode) => void;
   onOpenRegister: (portal: PortalMode) => void;
   onGoogleLogin?: (portal: PortalMode, isSignUp?: boolean) => void;
+  onOpenJudgePortal?: () => void;
 }
 
 export const PortalGateway: React.FC<PortalGatewayProps> = ({
   onSelectPortal,
   onOpenRegister,
   onGoogleLogin,
+  onOpenJudgePortal,
 }) => {
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-zinc-900 flex flex-col justify-between p-4 sm:p-8 lg:p-12 relative overflow-hidden">
@@ -79,18 +81,18 @@ export const PortalGateway: React.FC<PortalGatewayProps> = ({
                 Artist Portal
               </h2>
               <p className="text-xs sm:text-sm text-zinc-600 mt-2 leading-relaxed">
-                For vocalists, instrumentalists, dancers, theatre actors, and visual artists seeking auditions, fellowships, and commissioned gigs.
+                For vocalists, instrumentalists, dancers, theatre actors, and visual artists seeking competitions, stage showcases, residencies, and production commissions.
               </p>
 
               {/* Feature Bullet Points */}
               <div className="mt-6 space-y-3 pt-5 border-t border-zinc-100">
                 <div className="flex items-start gap-2.5 text-xs text-zinc-700">
                   <CheckCircle2 className="w-4 h-4 text-[#E45826] shrink-0 mt-0.5" />
-                  <span>Browse live audition calls and track every application you submit</span>
+                  <span>Browse verified events &amp; competitions, and track every registration you submit</span>
                 </div>
                 <div className="flex items-start gap-2.5 text-xs text-zinc-700">
                   <CheckCircle2 className="w-4 h-4 text-[#E45826] shrink-0 mt-0.5" />
-                  <span>Submit audio audition reels & track application status</span>
+                  <span>Submit multi-video performances, photos, and preview media directly before submission</span>
                 </div>
               </div>
             </div>
@@ -175,18 +177,18 @@ export const PortalGateway: React.FC<PortalGatewayProps> = ({
                 Organiser Portal
               </h2>
               <p className="text-xs sm:text-sm text-zinc-600 mt-2 leading-relaxed">
-                For cultural centres, theatres, festival directors, and production houses commissioning artists and managing audition pipelines.
+                For cultural centres, theatres, festival directors, and production houses commissioning artists, programming events, and managing evaluation pipelines.
               </p>
 
               {/* Feature Bullet Points */}
               <div className="mt-6 space-y-3 pt-5 border-t border-zinc-100">
                 <div className="flex items-start gap-2.5 text-xs text-zinc-700">
                   <CheckCircle2 className="w-4 h-4 text-[#E45826] shrink-0 mt-0.5" />
-                  <span>Publish production calls with stage & honorarium specifications</span>
+                  <span>Publish production calls with stage &amp; honorarium specifications</span>
                 </div>
                 <div className="flex items-start gap-2.5 text-xs text-zinc-700">
                   <CheckCircle2 className="w-4 h-4 text-[#E45826] shrink-0 mt-0.5" />
-                  <span>Curatorial review room with audition reel evaluation & ratings</span>
+                  <span>Generate unique Judge QR codes &amp; track jury evaluations live</span>
                 </div>
                 <div className="flex items-start gap-2.5 text-xs text-zinc-700">
                   <CheckCircle2 className="w-4 h-4 text-[#E45826] shrink-0 mt-0.5" />
@@ -253,6 +255,38 @@ export const PortalGateway: React.FC<PortalGatewayProps> = ({
             </div>
           </div>
         </div>
+
+        {/* ================================================================= */}
+        {/* 3. DEDICATED JUDGE & JURY ACCESS BANNER */}
+        {/* ================================================================= */}
+        {onOpenJudgePortal && (
+          <div className="mt-8 p-5 sm:p-6 bg-white rounded-3xl border-2 border-dashed border-[#E0D9CE] hover:border-[#E45826] transition-all flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
+            <div className="flex items-center gap-4 text-center sm:text-left">
+              <div className="w-12 h-12 rounded-2xl bg-zinc-950 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Sparkles className="w-6 h-6 text-[#E45826]" />
+              </div>
+              <div>
+                <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#E45826]">
+                  <span>Invited Jury Member?</span>
+                </div>
+                <h3 className="text-base font-extrabold text-zinc-950">
+                  Access Event Judge &amp; Evaluation Portal
+                </h3>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  Have an event QR code or access code PIN? Enter your evaluation room directly.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={onOpenJudgePortal}
+              className="px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-98 text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center gap-2 shrink-0"
+            >
+              <span>Enter Judge Portal</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </main>
 
       {/* Footer */}

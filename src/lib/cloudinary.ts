@@ -1,7 +1,7 @@
 /**
  * Cloudinary Media Storage Utility
  * Direct unsigned uploads for images (headshots, art stills, logos, cover photos)
- * and videos (audition reels, stage performances, venue tours).
+ * and videos (performance reels, stage recordings, venue tours).
  */
 
 import { storeLocalMedia } from './localMedia';

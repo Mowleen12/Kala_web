@@ -31,7 +31,7 @@ export const OrganiserFeaturedCalls: React.FC<OrganiserFeaturedCallsProps> = ({
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">
-            Real-time applicant pipelines, scheduled auditions, and stage programming.
+            Real-time applicant pipelines, jury evaluations, and stage programming.
           </p>
         </div>
 

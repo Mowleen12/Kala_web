@@ -50,7 +50,7 @@ export const OrganiserHeroSection: React.FC<OrganiserHeroSectionProps> = ({
 
           {/* Subtitle */}
           <p className="text-[15px] sm:text-base text-zinc-600 leading-relaxed max-w-md mb-8">
-            Publish open calls, listen to reels, run structured auditions, and commission India’s next generation of performers and creators.
+            Publish open calls, review talent reels, run structured jury evaluations, and commission India’s next generation of performers and creators.
           </p>
 
           {/* Action Buttons */}

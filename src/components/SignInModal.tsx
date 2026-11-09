@@ -228,7 +228,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={role === 'artist' ? "you@example.com" : "auditions@venue.org"}
+                placeholder={role === 'artist' ? "you@example.com" : "events@venue.org"}
                 className="w-full bg-[#FAF8F5] border border-[#E5DFD5] rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-zinc-900 placeholder:text-zinc-400 outline-none focus:border-[#E45826] transition-colors"
               />
               <Mail className="w-4 h-4 text-zinc-400 absolute left-3 top-3 pointer-events-none" />

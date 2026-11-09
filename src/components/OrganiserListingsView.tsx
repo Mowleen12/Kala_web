@@ -14,7 +14,9 @@ import {
   ArrowRight,
   X,
   Building2,
-  Sparkles
+  Sparkles,
+  QrCode,
+  Award
 } from 'lucide-react';
 import { Opportunity } from '../types';
 import { KalaStar } from './KalaLogo';
@@ -27,6 +29,8 @@ interface OrganiserListingsViewProps {
   onPostOpportunity: () => void;
   onReviewOpportunityApplicants: (opp: Opportunity) => void;
   onViewOpportunityDetails: (opp: Opportunity) => void;
+  onOpenJudgeQr?: (opp: Opportunity) => void;
+  onViewEvaluations?: (opp: Opportunity) => void;
 }
 
 export const OrganiserListingsView: React.FC<OrganiserListingsViewProps> = ({
@@ -37,6 +41,8 @@ export const OrganiserListingsView: React.FC<OrganiserListingsViewProps> = ({
   onPostOpportunity,
   onReviewOpportunityApplicants,
   onViewOpportunityDetails,
+  onOpenJudgeQr,
+  onViewEvaluations,
 }) => {
   // Filter states
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'reviewing'>('all');
@@ -179,13 +185,13 @@ export const OrganiserListingsView: React.FC<OrganiserListingsViewProps> = ({
         <div>
           <div className="flex items-center gap-2 text-xs font-bold text-[#E45826] uppercase tracking-wider mb-1">
             <KalaStar size={14} className="text-[#E45826]" />
-            Active Production Calls
+            Active Event &amp; Competition Calls
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight">
-            Manage Opportunities & Auditions
+            Manage Events &amp; Competitions
           </h1>
           <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-            Track incoming artist applications, shortlist audition reels, and program your upcoming calendar.
+            Track incoming artist applications, generate jury QR codes, and program your upcoming calendar.
           </p>
         </div>
 
@@ -230,7 +236,7 @@ export const OrganiserListingsView: React.FC<OrganiserListingsViewProps> = ({
                 : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            Auditioning ({opportunities.filter(o => (o.applicantCount || 0) > 0).length})
+            In Evaluation ({opportunities.filter(o => (o.applicantCount || 0) > 0).length})
           </button>
         </div>
 
@@ -283,7 +289,7 @@ export const OrganiserListingsView: React.FC<OrganiserListingsViewProps> = ({
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="w-4 h-4 text-[#E45826]" />
               <span className="text-xs font-bold text-zinc-900 uppercase tracking-wider">
-                Audition Call Filters & Constraints
+                Event &amp; Competition Filters &amp; Constraints
               </span>
             </div>
 
@@ -376,7 +382,7 @@ export const OrganiserListingsView: React.FC<OrganiserListingsViewProps> = ({
 
           {filterStatus !== 'all' && (
             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[#FDEEE7] text-[#E45826] border border-[#FAD7C8]">
-              <span>Status: {filterStatus === 'active' ? 'Open' : 'Auditioning'}</span>
+              <span>Status: {filterStatus === 'active' ? 'Open' : 'In Evaluation'}</span>
               <X className="w-3 h-3 cursor-pointer hover:opacity-75" onClick={() => setFilterStatus('all')} />
             </span>
           )}
@@ -502,7 +508,29 @@ export const OrganiserListingsView: React.FC<OrganiserListingsViewProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {onOpenJudgeQr && (
+                    <button
+                      onClick={() => onOpenJudgeQr(opp)}
+                      className="px-3 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                      title="Generate and Share Jury Evaluation QR Code"
+                    >
+                      <QrCode className="w-3.5 h-3.5 text-[#E45826]" />
+                      <span>Judge QR</span>
+                    </button>
+                  )}
+
+                  {onViewEvaluations && (
+                    <button
+                      onClick={() => onViewEvaluations(opp)}
+                      className="px-3 py-2.5 rounded-xl bg-white hover:bg-zinc-100 text-zinc-800 border border-zinc-200 text-xs font-bold shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                      title="View Jury Evaluations & Leaderboard"
+                    >
+                      <Award className="w-3.5 h-3.5 text-[#E45826]" />
+                      <span>Jury Scores</span>
+                    </button>
+                  )}
+
                   <button
                     onClick={() => onReviewOpportunityApplicants(opp)}
                     className="px-4 py-2.5 rounded-xl bg-[#E45826] hover:bg-[#D44716] text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"

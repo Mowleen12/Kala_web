@@ -203,7 +203,7 @@ export async function ensureArtistThread(input: {
   organiserName?: string;
   organiserAvatar?: string;
   organiserType?: OrganiserType;
-  /** Set when an organiser opens the thread (commission / audition invite). */
+  /** Set when an organiser opens the thread (commission / shortlist invite). */
   organiserId?: string;
 }): Promise<{ thread: Thread | null; error: string | null }> {
   const key = localThreadKey(input.opportunityId, input.user.id);

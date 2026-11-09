@@ -80,10 +80,10 @@ export function deriveSelectionNotices(
         opportunityId: app.opportunityId,
         opportunityTitle: app.opportunityTitle,
         createdAt: app.createdAt,
-        title: selected ? 'You were selected 🎉' : 'Audition invitation',
+        title: selected ? 'You were selected 🎉' : 'Shortlisted for Next Round',
         message: selected
           ? `${organiser ? `${organiser} · ` : ''}${app.opportunityTitle}`
-          : `${organiser ? `${organiser} · ` : ''}${app.opportunityTitle} — audition requested`,
+          : `${organiser ? `${organiser} · ` : ''}${app.opportunityTitle} — shortlisted for next stage`,
       };
     });
 }

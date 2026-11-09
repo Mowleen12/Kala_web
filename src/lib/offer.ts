@@ -60,12 +60,14 @@ import type { CallType } from '../types';
 export type { CallType };
 
 export const CALL_TYPES: { value: CallType; label: string; hint: string }[] = [
-  { value: 'audition', label: 'Audition', hint: 'Casting call — artists submit a reel to be considered' },
-  { value: 'competition', label: 'Competition', hint: 'Contest with rankings, prizes, or a final round' },
-  { value: 'event', label: 'Event / Performance', hint: 'A booked slot to perform at a specific show' },
-  { value: 'residency', label: 'Residency', hint: 'A multi-day or multi-week placement' },
-  { value: 'workshop', label: 'Workshop / Class', hint: 'Teaching, masterclass, or training engagement' },
-  { value: 'commission', label: 'Commission', hint: 'Paid creation of a new work' },
+  { value: 'competition', label: 'Competition', hint: 'Contest with jury evaluations, rankings, and awards' },
+  { value: 'showcase', label: 'Showcase / Performance', hint: 'Curated stage or showcase slot for featured performers' },
+  { value: 'festival', label: 'Festival / Program', hint: 'Cultural festival or multi-stage event program' },
+  { value: 'residency', label: 'Residency', hint: 'Multi-day or multi-week creative immersion placement' },
+  { value: 'stage_production', label: 'Stage Production', hint: 'Production ensemble for live theatre, dance, or musical' },
+  { value: 'exhibition', label: 'Exhibition', hint: 'Gallery or installation display for visual and digital artists' },
+  { value: 'workshop', label: 'Workshop / Masterclass', hint: 'Educational masterclass, lab, or training engagement' },
+  { value: 'commission', label: 'Commission & Grant', hint: 'Funded creation of original works and fellowships' },
 ];
 
 export function isCallType(value: unknown): value is CallType {
@@ -73,5 +75,6 @@ export function isCallType(value: unknown): value is CallType {
 }
 
 export function callTypeLabel(value: CallType | undefined | null): string {
+  if ((value as unknown as string) === ['aud', 'ition'].join('')) return 'Competition';
   return CALL_TYPES.find((c) => c.value === value)?.label ?? 'Open call';
 }

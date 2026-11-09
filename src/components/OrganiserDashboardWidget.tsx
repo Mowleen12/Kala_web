@@ -117,7 +117,7 @@ export const OrganiserDashboardWidget: React.FC<OrganiserDashboardWidgetProps> =
             </div>
           </div>
 
-          {/* Shortlisted / Auditions */}
+          {/* Shortlisted */}
           <div 
             onClick={onReviewApplicants}
             className="bg-white p-2.5 rounded-xl border border-zinc-100 shadow-2xs hover:border-[#E45826]/30 cursor-pointer transition-colors"
@@ -127,7 +127,7 @@ export const OrganiserDashboardWidget: React.FC<OrganiserDashboardWidgetProps> =
               {stats.interviewScheduled}
             </div>
             <div className="text-[10px] text-zinc-500 font-medium mt-0.5">
-              Auditions
+              Shortlisted
             </div>
           </div>
         </div>
@@ -145,7 +145,7 @@ export const OrganiserDashboardWidget: React.FC<OrganiserDashboardWidgetProps> =
             >
               <span className="flex items-center gap-2">
                 <Plus className="w-3.5 h-3.5" />
-                Post New Audition / Call
+                Post Event or Call
               </span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>

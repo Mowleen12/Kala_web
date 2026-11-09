@@ -26,6 +26,7 @@ interface DiscoverViewProps {
   isOpenFiltersInitially?: boolean;
   onApply: (opp: Opportunity) => void;
   onViewDetails: (opp: Opportunity) => void;
+  onViewOrganizerProfile?: (opp: Opportunity) => void;
 }
 
 export const DiscoverView: React.FC<DiscoverViewProps> = ({
@@ -36,6 +37,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
   isOpenFiltersInitially = false,
   onApply,
   onViewDetails,
+  onViewOrganizerProfile,
 }) => {
   // Filter States
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory || 'All');
@@ -216,10 +218,10 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
               Artist Opportunity Board
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight">
-              Discover Open Calls & Commissions
+              Discover Open Calls & Competitions
             </h1>
             <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-              Explore curated opportunities, stage auditions, residency grants, and collaborations with verified venues.
+              Explore curated opportunities, stage competitions, showcase calls, residency grants, and collaborations with verified venues.
             </p>
           </div>
 
@@ -320,7 +322,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
             <div>
               <label className="text-xs font-bold text-zinc-600 block mb-2 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-[#E45826]" />
-                Audition Deadline
+                Registration Deadline
               </label>
               <select
                 value={selectedDeadline}
@@ -517,6 +519,25 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                   <div className="flex items-center gap-1.5 text-zinc-500 text-xs mt-1.5">
                     <Calendar className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
                     <span>{opp.dateRange}</span>
+                  </div>
+
+                  {/* Host Info & Profile Link */}
+                  <div className="flex items-center justify-between gap-2 mt-3 pt-2.5 border-t border-zinc-100">
+                    <span className="text-[11px] text-zinc-500 truncate">
+                      Host: <strong className="font-semibold text-zinc-800">{opp.organizer || opp.organiserName || 'Verified Organizer'}</strong>
+                    </span>
+                    {onViewOrganizerProfile && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewOrganizerProfile(opp);
+                        }}
+                        className="text-[11px] font-semibold text-[#E45826] hover:underline shrink-0 cursor-pointer"
+                      >
+                        View Profile
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

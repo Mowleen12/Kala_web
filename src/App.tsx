@@ -29,6 +29,10 @@ import { OrganiserListingsView } from './components/OrganiserListingsView';
 import { OrganiserApplicantsView } from './components/OrganiserApplicantsView';
 import { OrganiserTalentScoutView } from './components/OrganiserTalentScoutView';
 import { OrganiserProfileView } from './components/OrganiserProfileView';
+import { OrganiserEvaluationsView } from './components/OrganiserEvaluationsView';
+import { JudgePortalView } from './components/JudgePortalView';
+import { JudgeQrModal } from './components/JudgeQrModal';
+import { OrganizerPublicProfileModal } from './components/OrganizerPublicProfileModal';
 import { PostOpportunityModal } from './components/PostOpportunityModal';
 import { KalaStar } from './components/KalaLogo';
 
@@ -150,8 +154,34 @@ export default function App() {
   const [authReady, setAuthReady] = useState(false);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
 
-  // Current active portal mode is strictly driven by currentUser's role
-  const portalMode: PortalMode = currentUser?.role || 'artist';
+  // Portal mode: can be overridden to 'judge' via direct link, QR scan, or button
+  const [overridePortalMode, setOverridePortalMode] = useState<PortalMode | null>(null);
+  const portalMode: PortalMode = overridePortalMode || currentUser?.role || 'artist';
+
+  // Judge event access state
+  const [judgeInitialCode, setJudgeInitialCode] = useState<string>('');
+  const [judgeInitialEventId, setJudgeInitialEventId] = useState<string>('');
+  const [isJudgeQrModalOpen, setIsJudgeQrModalOpen] = useState(false);
+  const [judgeQrOpportunity, setJudgeQrOpportunity] = useState<Opportunity | null>(null);
+
+  // Organizer public profile modal
+  const [isOrgProfileModalOpen, setIsOrgProfileModalOpen] = useState(false);
+  const [orgProfileOpportunity, setOrgProfileOpportunity] = useState<Opportunity | null>(null);
+
+  // Read URL search params on mount (?portal=judge, ?code=..., ?event=...)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const portalParam = params.get('portal');
+      const codeParam = params.get('code');
+      const eventParam = params.get('event');
+      if (portalParam === 'judge' || codeParam || eventParam) {
+        setOverridePortalMode('judge');
+        if (codeParam) setJudgeInitialCode(codeParam);
+        if (eventParam) setJudgeInitialEventId(eventParam);
+      }
+    } catch {}
+  }, []);
 
   // Navigation State
   const [currentArtistTab, setCurrentArtistTab] = useState<NavTab>('home');
@@ -658,7 +688,7 @@ export default function App() {
     if (userData.role === 'artist') {
       setLoadingScreenMessage({
         title: "Almost there...",
-        subtitle: `Welcome to the Artist Portal, ${newUser.name}! We're preparing your audition portfolio.`
+        subtitle: `Welcome to the Artist Portal, ${newUser.name}! We're preparing your artist portfolio.`
       });
       setCurrentArtistTab('home');
     } else {
@@ -748,6 +778,11 @@ export default function App() {
     setIsDetailOpen(true);
   };
 
+  const handleOpenOrganizerProfile = (opp: Opportunity) => {
+    setOrgProfileOpportunity(opp);
+    setIsOrgProfileModalOpen(true);
+  };
+
   const handleSubmitApplication = async (
     opp: Opportunity,
     appData: {
@@ -758,6 +793,9 @@ export default function App() {
       experienceYears?: number;
       skills?: string[];
       city?: string;
+      photographs?: string[];
+      videos?: any[];
+      scripts?: any[];
     }
   ): Promise<{ ok: boolean; error?: string }> => {
     if (!currentUser) return { ok: false, error: 'Please sign in to apply.' };
@@ -777,6 +815,9 @@ export default function App() {
       portfolioUrl: appData.portfolioUrl,
       reelUrl: appData.reelUrl,
       fileName: appData.fileName,
+      photographs: appData.photographs,
+      videos: appData.videos,
+      scripts: appData.scripts,
     });
     if (error || !data) {
       return { ok: false, error: error || 'Could not submit your application.' };
@@ -873,7 +914,7 @@ export default function App() {
     const body =
       kind === 'selected'
         ? `Congratulations, ${review.artistName || 'artist'}! You've been selected for "${review.opportunityTitle}". We'll confirm the schedule, fee, and production details here — please reply with your availability.`
-        : `You've been invited to audition for "${review.opportunityTitle}". We'd like to hear you live — reply here with your availability and we'll confirm the slot.`;
+        : `You've been shortlisted for "${review.opportunityTitle}". We'd like to proceed with your application — reply here with your availability and questions.`;
 
     const { error: sendError } = await sendMessage({
       threadId: thread.id,
@@ -919,15 +960,16 @@ export default function App() {
             ? `Commissioned ${name} — congratulations message sent.`
             : `Commissioned ${name}. They'll see it under My Applications; open a thread from Messages to add a note.`
           : delivered
-            ? `Audition invited — ${name} has been messaged.`
-            : `Audition invited for ${name}. They'll see it under My Applications.`
+            ? `Shortlisted — ${name} has been messaged.`
+            : `Shortlisted ${name}. They'll see it under My Applications.`
       );
       return;
     }
 
     const statusLabels: Record<ApplicantReview['status'], string> = {
       under_review: 'moved back to Under Review',
-      interview: 'invited to audition',
+      interview: 'shortlisted',
+      shortlisted: 'shortlisted',
       selected: 'commissioned',
       rejected: 'declined',
     };
@@ -984,6 +1026,38 @@ export default function App() {
   }
 
   // =========================================================================
+  // DEDICATED JUDGE PORTAL ROOM (Active when in judge mode via PIN or QR code)
+  // =========================================================================
+  if (portalMode === 'judge') {
+    return (
+      <div className="min-h-screen bg-[#FAF8F5] text-zinc-900">
+        <JudgePortalView
+          opportunities={opportunities}
+          applications={applications}
+          initialEventCode={judgeInitialCode}
+          initialEventId={judgeInitialEventId}
+          onExit={() => {
+            setOverridePortalMode(null);
+            setJudgeInitialCode('');
+            setJudgeInitialEventId('');
+          }}
+          onOpenThread={
+            currentUser
+              ? (oppId: string, artistId: string) => openOrganiserThread(oppId, artistId)
+              : undefined
+          }
+        />
+        {toastMessage && (
+          <div className="fixed bottom-6 right-6 z-50 bg-zinc-900 text-white px-5 py-3 rounded-2xl shadow-xl text-xs sm:text-sm font-medium flex items-center gap-3 animate-in slide-in-from-bottom-4 duration-200">
+            <div className="w-2 h-2 rounded-full bg-[#E45826]" />
+            <span>{toastMessage}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // =========================================================================
   // IF USER IS NOT LOGGED IN: SHOW DEDICATED PORTAL SELECTION / SIGN-IN GATEWAY
   // =========================================================================
   if (!currentUser) {
@@ -993,6 +1067,10 @@ export default function App() {
           onSelectPortal={(portal) => handleOpenSignIn(portal)}
           onOpenRegister={(portal) => handleOpenSignUp(portal)}
           onGoogleLogin={(portal, isSignUp) => handleGoogleAuth(portal, isSignUp)}
+          onOpenJudgePortal={(eventCode?: string) => {
+            if (eventCode) setJudgeInitialCode(eventCode);
+            setOverridePortalMode('judge');
+          }}
         />
         <SignInModal
           isOpen={isSignInOpen}
@@ -1147,6 +1225,7 @@ export default function App() {
                         appliedIds={appliedOppIds}
                         onApply={handleApplyClick}
                         onViewDetails={handleViewDetails}
+                        onViewOrganizerProfile={handleOpenOrganizerProfile}
                         onViewAll={() => setCurrentArtistTab('discover')}
                       />
 
@@ -1158,6 +1237,7 @@ export default function App() {
                           appliedIds={appliedOppIds}
                           onApply={handleApplyClick}
                           onViewDetails={handleViewDetails}
+                          onViewOrganizerProfile={handleOpenOrganizerProfile}
                           onViewAll={() => setCurrentArtistTab('discover')}
                         />
                       )}
@@ -1177,7 +1257,7 @@ export default function App() {
                         stats={userStats}
                         userName={currentUser.name}
                         onViewAll={() => setCurrentArtistTab('applications')}
-                        onFindAuditions={() => setCurrentArtistTab('discover')}
+                        onFindOpportunities={() => setCurrentArtistTab('discover')}
                         onContinueApplications={() => setCurrentArtistTab('applications')}
                         onCompleteProfile={() => setCurrentArtistTab('profile')}
                       />
@@ -1195,6 +1275,7 @@ export default function App() {
                   isOpenFiltersInitially={openFiltersInitially}
                   onApply={handleApplyClick}
                   onViewDetails={handleViewDetails}
+                  onViewOrganizerProfile={handleOpenOrganizerProfile}
                 />
               )}
 
@@ -1317,6 +1398,28 @@ export default function App() {
                     setSelectedOpportunity(opp);
                     setIsDetailOpen(true);
                   }}
+                  onOpenJudgeQr={(opp) => {
+                    setJudgeQrOpportunity(opp);
+                    setIsJudgeQrModalOpen(true);
+                  }}
+                  onViewEvaluations={(opp) => {
+                    setCurrentOrgTab('evaluations');
+                  }}
+                />
+              )}
+
+              {currentOrgTab === 'evaluations' && (
+                <OrganiserEvaluationsView
+                  opportunities={myOpportunities}
+                  applications={myApplicants}
+                  onOpenJudgeQr={(opp) => {
+                    setJudgeQrOpportunity(opp);
+                    setIsJudgeQrModalOpen(true);
+                  }}
+                  onSelectArtist={(reviewId: string) => {
+                    handleUpdateApplicantStatus(reviewId, 'selected');
+                  }}
+                  onOpenThread={openOrganiserThread}
                 />
               )}
 
@@ -1420,6 +1523,7 @@ export default function App() {
         isOpen={isApplyOpen}
         onClose={() => setIsApplyOpen(false)}
         onSubmitApplication={handleSubmitApplication}
+        onViewOrganizerProfile={handleOpenOrganizerProfile}
         userName={currentUser.name}
         userEmail={currentUser.email}
         collegeName={currentUser.collegeName}
@@ -1433,6 +1537,7 @@ export default function App() {
         isApplied={selectedOpportunity ? appliedOppIds.has(selectedOpportunity.id) : false}
         onClose={() => setIsDetailOpen(false)}
         onApply={handleApplyClick}
+        onViewOrganizerProfile={handleOpenOrganizerProfile}
       />
 
       {/* 5. Organiser Post New Opportunity Call Modal */}
@@ -1443,6 +1548,41 @@ export default function App() {
         organizerName={organiserProfile.name}
         society={currentUser.orgType === 'society'}
         collegeName={organiserProfile.collegeName || currentUser.collegeName}
+      />
+
+      {/* 6. Judge Event QR Code & Access Link Modal */}
+      <JudgeQrModal
+        isOpen={isJudgeQrModalOpen}
+        onClose={() => {
+          setIsJudgeQrModalOpen(false);
+          setJudgeQrOpportunity(null);
+        }}
+        opportunity={judgeQrOpportunity}
+        onOpenJudgePortal={(code: string) => {
+          setJudgeInitialCode(code);
+          setJudgeQrOpportunity(null);
+          setIsJudgeQrModalOpen(false);
+          setOverridePortalMode('judge');
+        }}
+      />
+
+      {/* 7. Organizer Public Profile Modal */}
+      <OrganizerPublicProfileModal
+        isOpen={isOrgProfileModalOpen}
+        onClose={() => {
+          setIsOrgProfileModalOpen(false);
+          setOrgProfileOpportunity(null);
+        }}
+        opportunity={orgProfileOpportunity}
+        allOpportunities={opportunities}
+        onApply={(opp: Opportunity) => {
+          setIsOrgProfileModalOpen(false);
+          handleApplyClick(opp);
+        }}
+        onViewDetails={(opp: Opportunity) => {
+          setIsOrgProfileModalOpen(false);
+          handleViewDetails(opp);
+        }}
       />
     </div>
   );

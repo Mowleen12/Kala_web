@@ -19,7 +19,7 @@ interface HeaderProps {
   portalMode: PortalMode;
   threads: Thread[];
   onMarkThreadsRead?: () => void;
-  /** Unacknowledged selection / audition outcomes (artist portal). */
+  /** Unacknowledged selection / shortlist outcomes (artist portal). */
   notices?: SelectionNotice[];
   onMarkNoticesSeen?: () => void;
   searchQuery: string;
@@ -172,7 +172,7 @@ export const Header: React.FC<HeaderProps> = ({
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={
               portalMode === 'artist'
-                ? "Search events, auditions, venues..."
+                ? "Search events, competitions, venues..."
                 : "Search applicants, reels, calls..."
             }
             className="w-full bg-[#F2EDE4] hover:bg-[#EFE8DE] focus:bg-white text-zinc-800 text-[14px] rounded-full pl-11 pr-11 py-2.5 outline-none border border-transparent focus:border-[#E45826]/40 transition-all placeholder:text-zinc-500 placeholder:text-sm shadow-2xs"
@@ -352,7 +352,7 @@ export const Header: React.FC<HeaderProps> = ({
                       }}
                       className="w-full text-left px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-[#FDEEE7] hover:text-[#E45826] rounded-lg transition-colors cursor-pointer"
                     >
-                      My Submissions & Auditions
+                      My Submissions &amp; Registrations
                     </button>
                   </>
                 ) : (
@@ -373,7 +373,7 @@ export const Header: React.FC<HeaderProps> = ({
                       }}
                       className="w-full text-left px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-[#FDEEE7] hover:text-[#E45826] rounded-lg transition-colors cursor-pointer"
                     >
-                      Manage Production Calls
+                      Manage Event &amp; Competition Calls
                     </button>
                     <button
                       onClick={() => {
@@ -382,7 +382,16 @@ export const Header: React.FC<HeaderProps> = ({
                       }}
                       className="w-full text-left px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-[#FDEEE7] hover:text-[#E45826] rounded-lg transition-colors cursor-pointer"
                     >
-                      Review Audition Pipeline
+                      Review Talent Pipeline
+                    </button>
+                    <button
+                      onClick={() => {
+                        onSelectOrgTab('evaluations');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-[#FDEEE7] hover:text-[#E45826] rounded-lg transition-colors cursor-pointer"
+                    >
+                      Jury &amp; Evaluations
                     </button>
                   </>
                 )}

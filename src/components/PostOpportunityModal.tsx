@@ -66,7 +66,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
   const savedDraft = useRef(getDraft<PostOpportunityDraft>(DRAFT_KEY)).current;
   const [title, setTitle] = useState(savedDraft?.title ?? '');
   const [category, setCategory] = useState(savedDraft?.category ?? 'Music & Dance');
-  const [callType, setCallType] = useState<CallType>(savedDraft?.callType ?? 'audition');
+  const [callType, setCallType] = useState<CallType>(savedDraft?.callType ?? 'competition');
   const [venue, setVenue] = useState(savedDraft?.venue ?? '');
   const [city, setCity] = useState(savedDraft?.city ?? '');
   const [startDate, setStartDate] = useState(savedDraft?.startDate ?? '');
@@ -225,7 +225,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight leading-tight mb-3">
-                Publish a Curated Audition Call
+                Publish an Event or Competition
               </h2>
               <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed mb-6">
                 Your call goes live instantly for every artist signed in to kalā — applications arrive with skills, experience and reels attached.
@@ -237,7 +237,7 @@ export const PostOpportunityModal: React.FC<PostOpportunityModalProps> = ({
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-zinc-900">Direct Audition Reels</h4>
+                    <h4 className="text-xs font-bold text-zinc-900">Direct Video Performances & Reels</h4>
                     <p className="text-[11px] text-zinc-500">Listen to high-res audio and video submissions directly inside your pipeline.</p>
                   </div>
                 </div>

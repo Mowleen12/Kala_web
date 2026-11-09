@@ -1,22 +1,23 @@
-export type PortalMode = 'artist' | 'organiser';
+export type PortalMode = 'artist' | 'organiser' | 'judge';
 
 export type OrganiserType = 'venue' | 'society';
 
 export type NavTab = 'home' | 'discover' | 'applications' | 'profile';
-export type OrganiserNavTab = 'overview' | 'listings' | 'applicants' | 'scout' | 'org_profile';
+export type OrganiserNavTab = 'overview' | 'listings' | 'applicants' | 'evaluations' | 'scout' | 'org_profile';
 
 export type OpportunityStatus = 'active' | 'closed';
-export type ApplicationStatus = 'under_review' | 'interview' | 'selected' | 'rejected';
+export type ApplicationStatus = 'under_review' | 'shortlisted' | 'selected' | 'rejected' | 'interview';
 
 /**
- * What the artist is actually being invited to. Shown as the card's type badge
- * instead of labelling every open call an "audition".
+ * Event and competition types. Clearly specifies what the artist is registering for.
  */
 export type CallType =
-  | 'audition'
   | 'competition'
-  | 'event'
+  | 'showcase'
   | 'residency'
+  | 'festival'
+  | 'exhibition'
+  | 'stage_production'
   | 'workshop'
   | 'commission';
 
@@ -25,7 +26,7 @@ export interface Opportunity {
   title: string;
   category: string;
   categorySlug: string;
-  /** Absent on older rows — the UI falls back to "Open call". */
+  /** Explicit classification of the event or competition */
   callType?: CallType;
   statusBadge: {
     label: string;
@@ -43,6 +44,7 @@ export interface Opportunity {
   deadline?: string | null;
   requirements?: string[];
   organizer?: string;
+  organiserName?: string;
   organiserType?: OrganiserType;
   organiserId?: string;
   organiserAvatar?: string | null;
@@ -60,6 +62,21 @@ export interface Category {
   icon: string;
   bgColor: string;
   iconColor: string;
+}
+
+export interface VideoAttachment {
+  id?: string;
+  url: string;
+  title?: string;
+  duration?: string;
+}
+
+export interface ScriptAttachment {
+  id?: string;
+  url: string;
+  title?: string;
+  name?: string;
+  size?: string;
 }
 
 export interface Application {
@@ -87,6 +104,10 @@ export interface Application {
   mediaUrl?: string | null;
   fileName?: string | null;
   rating?: number | null;
+  /** Multiple uploaded media files per category */
+  photographs?: string[];
+  videos?: VideoAttachment[];
+  scripts?: ScriptAttachment[];
 }
 
 /** The organiser-side review card is the same record, joined to its call. */
@@ -130,6 +151,88 @@ export interface OrganiserProfile {
   /** Only meaningful for a college society/club; empty for venues. */
   collegeName: string;
   focusDisciplines: string[];
+  email?: string;
+  phone?: string;
+  website?: string;
+  instagram?: string;
+  youtube?: string;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Judge & Evaluation System Models                                           */
+/* -------------------------------------------------------------------------- */
+
+export interface ScoringCriterion {
+  id: string;
+  name: string;
+  description: string;
+  maxScore: number;
+}
+
+export interface CriterionScore {
+  criterionId: string;
+  criterionName: string;
+  score: number;
+  maxScore: number;
+}
+
+export interface CandidateEvaluation {
+  candidateId: string;
+  candidateName: string;
+  scores: CriterionScore[];
+  totalScore: number;
+  maxTotalScore: number;
+  percentage: number;
+  rating: number; // 1 to 5 stars
+  selectionStatus: 'shortlisted' | 'selected' | 'under_review' | 'not_selected';
+  feedback: string;
+  strengths?: string;
+  recommendations?: string;
+  evaluatedAt: string;
+}
+
+export interface TopCandidateRemark {
+  candidateId: string;
+  candidateName: string;
+  rank: number;
+  selectionRationale: string;
+  keyObservations: string;
+  strengths: string;
+  recommendations: string;
+}
+
+export interface JudgeEvaluationSubmission {
+  id: string;
+  opportunityId: string;
+  opportunityTitle: string;
+  eventCategory?: string;
+  eventType?: string;
+  judgeId: string;
+  judgeName: string;
+  judgeEmail?: string;
+  judgeTitle?: string;
+  judgeAccessCode: string;
+  evaluations: Record<string, CandidateEvaluation>;
+  shortlistedCandidateIds: string[];
+  topSelectedRemarks: TopCandidateRemark[];
+  overallRemarks?: string;
+  isSubmitted: boolean;
+  submittedAt?: string | null;
+  updatedAt: string;
+}
+
+export interface JudgeEventAccess {
+  code: string;
+  opportunityId: string;
+  opportunityTitle: string;
+  category: string;
+  callType: string;
+  organizerName: string;
+  organizerId: string;
+  venue: string;
+  city: string;
+  createdAt: string;
+  active: boolean;
 }
 
 export interface AuthUser {

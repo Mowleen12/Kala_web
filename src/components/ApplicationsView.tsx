@@ -62,11 +62,11 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
           <div className="flex items-center gap-2">
             <KalaStar size={20} className="text-[#E45826]" />
             <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight">
-              My Applications & Auditions
+              My Applications & Registrations
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-            Track your proposals, auditions, and curator interview invitations.
+            Track your submissions, event registrations, and organizer updates.
           </p>
         </div>
 
@@ -87,8 +87,8 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
             </div>
             <h2 className="text-base font-bold text-zinc-900">No applications yet</h2>
             <p className="text-xs sm:text-sm text-zinc-500 mt-1 max-w-sm mx-auto leading-relaxed">
-              Once you apply to an audition or commission, it shows up here with its status,
-              your submitted reel, and any messages from the organiser.
+              Once you register for an event, competition, or commission, it shows up here with its status,
+              your submitted materials, and any messages from the organiser.
             </p>
             <button
               onClick={onExplore}

@@ -99,7 +99,7 @@ export const OrganiserBrowseCategories: React.FC<OrganiserBrowseCategoriesProps>
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
-            Filter calls, audition queues, and auditions across artistic disciplines.
+            Filter calls, submissions, and competitions across artistic disciplines.
           </p>
         </div>
 

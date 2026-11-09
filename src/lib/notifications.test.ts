@@ -46,7 +46,7 @@ test('selection produces a congratulations notice', () => {
   assert.match(notices[0].title, /selected/i);
 });
 
-test('audition invitation is its own notice kind', () => {
+test('shortlist invitation is its own notice kind', () => {
   store.clear();
   const notices = deriveSelectionNotices([app({ status: 'interview' })], 'artist-1');
   assert.equal(notices.length, 1);

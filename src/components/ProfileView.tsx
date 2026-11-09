@@ -308,22 +308,22 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       </div>
 
-      {/* Cloudinary Audition Reel Section */}
+      {/* Cloudinary Performance Reel Section */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EDE8E0] shadow-xs">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-base font-bold text-zinc-900 flex items-center gap-2">
               <Film className="w-4 h-4 text-[#E45826]" />
-              Audition Reel & Performance Video
+              Performance Video & Showreel
             </h3>
             <p className="text-xs text-zinc-500 mt-0.5">
-              Streamed securely. Directly attached to all your audition callbacks.
+              Streamed securely. Directly attached to all your event and competition submissions.
             </p>
           </div>
         </div>
 
         <MediaUploader
-          label="Upload Audition Reel (MP4 / MOV / WEBM)"
+          label="Upload Performance Reel (MP4 / MOV / WEBM)"
           description={`Drag & drop or click to upload your performance reel. Curators can play it directly in their review room. Max ${formatMB(VIDEO_MAX_BYTES)}.`}
           folder="kala-artists/reels"
           resourceType="video"

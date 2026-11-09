@@ -11,6 +11,7 @@ interface OpportunityDetailModalProps {
   isApplied: boolean;
   onClose: () => void;
   onApply: (opp: Opportunity) => void;
+  onViewOrganizerProfile?: (opp: Opportunity) => void;
 }
 
 export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
@@ -19,6 +20,7 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
   isApplied,
   onClose,
   onApply,
+  onViewOrganizerProfile,
 }) => {
   if (!isOpen || !opportunity) return null;
 
@@ -117,26 +119,34 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
 
           {/* Organizer */}
           {opportunity.organizer && (
-            <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white border border-zinc-200 flex items-center justify-center font-bold text-zinc-700">
-                <Building className="w-5 h-5 text-zinc-500" />
-              </div>
-              <div>
-                <p className="text-xs text-zinc-400 font-medium">Presented by</p>
-                <p className="text-sm font-bold text-zinc-900">{opportunity.organizer}</p>
-                <HostTypeTag organiserType={opportunity.organiserType} variant="inline" />
-                {opportunity.collegeOnly && (
-                  <div className="mt-1">
-                    <CollegeOnlyTag variant="inline" show />
+            <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-white border border-zinc-200 flex items-center justify-center font-bold text-zinc-700 shadow-2xs shrink-0 overflow-hidden">
+                  {opportunity.organiserAvatar ? (
+                    <img src={opportunity.organiserAvatar} alt={opportunity.organizer} className="w-full h-full object-cover" />
+                  ) : (
+                    <Building className="w-5 h-5 text-zinc-500" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-[11px] text-zinc-400 font-semibold uppercase tracking-wider">Presented &amp; Curated by</p>
+                  <p className="text-sm font-extrabold text-zinc-950">{opportunity.organizer}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <HostTypeTag organiserType={opportunity.organiserType} variant="inline" />
+                    {opportunity.collegeOnly && <CollegeOnlyTag variant="inline" show />}
                   </div>
-                )}
-                {opportunity.festName && (
-                  <p className="text-[11px] text-zinc-500 mt-1">Fest / Club: {opportunity.festName}</p>
-                )}
-                {opportunity.collegeName && (
-                  <p className="text-[11px] text-zinc-500">College: {opportunity.collegeName}</p>
-                )}
+                </div>
               </div>
+
+              {onViewOrganizerProfile && (
+                <button
+                  type="button"
+                  onClick={() => onViewOrganizerProfile(opportunity)}
+                  className="px-3.5 py-1.5 rounded-xl bg-white border border-zinc-300 hover:border-[#E45826] text-zinc-800 hover:text-[#E45826] font-bold text-xs shadow-2xs transition-all cursor-pointer self-start sm:self-auto"
+                >
+                  View Host Profile
+                </button>
+              )}
             </div>
           )}
         </div>

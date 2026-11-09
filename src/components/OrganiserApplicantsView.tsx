@@ -49,7 +49,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
   // Filter states
   const [selectedOppFilter, setSelectedOppFilter] = useState<string>(initialOppId || 'all');
   // The roster opens on the artists you have actually commissioned; everyone
-  // else stays one tap away in the Under Review / Audition / All tabs.
+  // else stays one tap away in the Under Review / Shortlisted / All tabs.
   const [statusFilter, setStatusFilter] = useState<string>('selected');
   const [experienceFilter, setExperienceFilter] = useState<string>('all');
   const [cityFilter, setCityFilter] = useState<string>('all');
@@ -149,7 +149,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
         return (
           <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1">
             <Calendar className="w-3 h-3" />
-            Audition Scheduled
+            Shortlisted
           </span>
         );
       case 'selected':
@@ -177,13 +177,13 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
           <div>
             <div className="flex items-center gap-2 text-xs font-bold text-[#E45826] uppercase tracking-wider mb-1">
               <KalaStar size={14} className="text-[#E45826]" />
-              Talent Pipeline & Casting Review
+              Talent Pipeline & Submission Review
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight">
               Applicant Review Room
             </h1>
             <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-              Review audition materials, listen to acoustic & video reels, and manage shortlists.
+              Review submission materials, watch performance videos, and manage shortlists.
             </p>
           </div>
 
@@ -226,7 +226,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                 : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            Audition Call ({applicants.filter(a => a.status === 'interview').length})
+            Shortlisted ({applicants.filter(a => a.status === 'interview').length})
           </button>
           <button
             onClick={() => setStatusFilter('selected')}
@@ -288,7 +288,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="w-4 h-4 text-[#E45826]" />
               <span className="text-xs font-bold text-zinc-900 uppercase tracking-wider">
-                Audition Review & Casting Filters
+                Submission Review & Candidate Filters
               </span>
             </div>
 
@@ -373,7 +373,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
               />
               <span className="flex items-center gap-1">
                 <Music className="w-3.5 h-3.5 text-[#E45826]" />
-                Show only submissions with acoustic / video audition reel
+                Show only submissions with acoustic / video performance reel
               </span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-zinc-700">
@@ -427,7 +427,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
 
           {hasReelFilter && (
             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[#FDEEE7] text-[#E45826] border border-[#FAD7C8]">
-              <span>Has Audition Reel</span>
+              <span>Has Performance Reel</span>
               <X className="w-3 h-3 cursor-pointer hover:opacity-75" onClick={() => setHasReelFilter(false)} />
             </span>
           )}
@@ -592,14 +592,14 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                   ))}
                 </div>
 
-                {/* Audition Reel & Portfolio */}
+                {/* Performance Reel & Portfolio */}
                 {(app.reelUrl || app.portfolioUrl) && (
                   <div className="p-3 rounded-2xl bg-[#FAF2EB] border border-[#FAD7C8] mb-4 space-y-2.5">
                     {app.reelUrl && isDirectMediaUrl(app.reelUrl) && !isDeviceLocalUrl(app.reelUrl) && (
                       mediaKind(app.reelUrl) === 'image' ? (
                         <MediaPreview
                           src={getOptimizedCloudinaryUrl(app.reelUrl, { width: 800, quality: 'auto' })}
-                          alt="Audition reel"
+                          alt="Performance reel"
                           wrapperClassName="relative block w-full h-40 rounded-xl overflow-hidden bg-zinc-100"
                           mediaClassName="w-full h-full object-cover"
                         />
@@ -608,7 +608,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                       ) : (
                         <MediaPreview
                           src={getOptimizedCloudinaryUrl(app.reelUrl, { width: 1280, quality: 'auto' })}
-                          alt="Audition reel"
+                          alt="Performance reel"
                           wrapperClassName="relative block w-full h-40 rounded-xl overflow-hidden bg-black"
                           mediaClassName="w-full h-full object-contain"
                         />
@@ -626,7 +626,7 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                         </span>
                         <div className="min-w-0">
                           <span className="text-[11px] font-bold text-zinc-800 block truncate">
-                            Audition Reel
+                            Performance Reel
                           </span>
                           <span className="text-[10px] text-zinc-500">{linkHost(app.reelUrl)}</span>
                         </div>
@@ -682,9 +682,9 @@ export const OrganiserApplicantsView: React.FC<OrganiserApplicantsViewProps> = (
                     <button
                       onClick={() => onUpdateApplicantStatus(app.id, 'interview')}
                       className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 transition-colors cursor-pointer"
-                      title="Invite this artist to audition — they are messaged the invite"
+                      title="Shortlist this artist — they are messaged the update"
                     >
-                      Invite to Audition
+                      Shortlist Candidate
                     </button>
                   )}
 

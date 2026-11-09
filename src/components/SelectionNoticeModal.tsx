@@ -14,7 +14,7 @@ interface SelectionNoticeModalProps {
 
 /**
  * One-time congratulations card for an artist whose status moved to "selected"
- * (or an audition invitation). Shown until acknowledged, then remembered by
+ * or "interview" (shortlist invitation). Shown until acknowledged, then remembered by
  * markStatusSeen so it never reappears for the same outcome.
  */
 export const SelectionNoticeModal: React.FC<SelectionNoticeModalProps> = ({
@@ -73,13 +73,13 @@ export const SelectionNoticeModal: React.FC<SelectionNoticeModalProps> = ({
             id="selection-notice-title"
             className="relative text-2xl font-extrabold text-zinc-950 tracking-tight"
           >
-            {selected ? 'Congratulations' : 'Audition invitation'}
+            {selected ? 'Congratulations' : 'Shortlist Invitation'}
             {artistName ? `, ${artistName.split(' ')[0]}` : ''}!
           </h2>
           <p className="relative text-sm text-zinc-700 mt-2 leading-relaxed">
             {selected
               ? 'You have been selected for a commissioned performance.'
-              : 'An organiser would like to see you audition for this call.'}
+              : 'An organiser has shortlisted you for the next round of evaluation.'}
           </p>
         </div>
 
@@ -88,7 +88,7 @@ export const SelectionNoticeModal: React.FC<SelectionNoticeModalProps> = ({
           <div className="rounded-2xl border border-[#F0EAE1] bg-[#FAF8F5] p-4">
             <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#E45826] mb-1">
               <KalaStar size={12} className="text-[#E45826]" />
-              <span>{selected ? 'Commissioned for' : 'Audition for'}</span>
+              <span>{selected ? 'Commissioned for' : 'Shortlisted for'}</span>
             </div>
             <p className="text-sm font-bold text-zinc-900 leading-snug">
               {notice.opportunityTitle}

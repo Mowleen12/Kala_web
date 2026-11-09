@@ -12,7 +12,8 @@ import {
   Search, 
   Building2, 
   Plus,
-  Palette
+  Palette,
+  Award
 } from 'lucide-react';
 import { KalaLogo, KalaStar } from './KalaLogo';
 import { NavTab, OrganiserNavTab, PortalMode } from '../types';
@@ -49,6 +50,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'overview' as OrganiserNavTab, label: 'Overview', icon: LayoutDashboard },
     { id: 'listings' as OrganiserNavTab, label: 'Manage Calls', icon: CalendarDays },
     { id: 'applicants' as OrganiserNavTab, label: 'Talent Pipeline', shortLabel: 'Pipeline', icon: Users },
+    { id: 'evaluations' as OrganiserNavTab, label: 'Jury & Evaluations', shortLabel: 'Jury', icon: Award },
     { id: 'scout' as OrganiserNavTab, label: 'Direct Scout', icon: Search },
     { id: 'org_profile' as OrganiserNavTab, label: 'Organiser Profile', icon: Building2 },
   ];
