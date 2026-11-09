@@ -256,34 +256,6 @@ export const PortalGateway: React.FC<PortalGatewayProps> = ({
           </div>
         </div>
 
-        {/* ================================================================= */}
-        {/* 3. DEDICATED JUDGE & JURY ACCESS BANNER */}
-        {/* ================================================================= */}
-        {onOpenJudgePortal && (
-          <div className="mt-8 p-5 sm:p-6 bg-white rounded-3xl border-2 border-dashed border-[#E0D9CE] hover:border-[#E45826] transition-all flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
-            <div className="flex items-center gap-4 text-center sm:text-left">
-              <div className="w-12 h-12 rounded-2xl bg-zinc-950 text-white flex items-center justify-center shrink-0 shadow-xs">
-                <Sparkles className="w-6 h-6 text-[#E45826]" />
-              </div>
-              <div>
-                <h3 className="text-base font-extrabold text-zinc-950">
-                  Access Event Judge &amp; Evaluation Portal
-                </h3>
-                <p className="text-xs text-zinc-500 mt-0.5">
-                  Have an event QR code or access code PIN? Enter your evaluation room directly.
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={onOpenJudgePortal}
-              className="px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-98 text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center gap-2 shrink-0"
-            >
-              <span>Enter Judge Portal</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
       </main>
 
       {/* Footer */}
