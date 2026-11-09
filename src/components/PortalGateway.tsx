@@ -266,9 +266,6 @@ export const PortalGateway: React.FC<PortalGatewayProps> = ({
                 <Sparkles className="w-6 h-6 text-[#E45826]" />
               </div>
               <div>
-                <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#E45826]">
-                  <span>Invited Jury Member?</span>
-                </div>
                 <h3 className="text-base font-extrabold text-zinc-950">
                   Access Event Judge &amp; Evaluation Portal
                 </h3>

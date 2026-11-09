@@ -132,7 +132,25 @@ export function findJudgeAccess(code: string, eventId?: string): JudgeEventAcces
     const codeMatches = a.code.toUpperCase() === trimmedCode;
     return eventId ? codeMatches && a.opportunityId === eventId : codeMatches;
   });
-  return match || null;
+  if (match) return match;
+
+  // Shared QR links are opened on devices that do not have the organizer's
+  // local access-code record. The event-bound code is reproducible from its ID.
+  if (!eventId || trimmedCode !== generateJudgeCode(eventId)) return null;
+
+  return {
+    code: trimmedCode,
+    opportunityId: eventId,
+    opportunityTitle: '',
+    category: '',
+    callType: 'competition',
+    organizerName: '',
+    organizerId: '',
+    venue: '',
+    city: '',
+    createdAt: '',
+    active: true,
+  };
 }
 
 /* -------------------------------------------------------------------------- */

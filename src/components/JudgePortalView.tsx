@@ -87,8 +87,8 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
     }
     return (
       opportunities[0] || {
-        id: 'default-competition',
-        title: 'National Talent Showcase',
+        id: activeOppId || 'default-competition',
+        title: 'Event Evaluation',
         category: 'Music & Dance',
         callType: 'competition',
         location: 'Grand Auditorium',
