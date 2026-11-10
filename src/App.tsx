@@ -314,10 +314,13 @@ export default function App() {
     }
 
     // 3. Clean URL hash and search query once Supabase processes OAuth tokens
+    const searchParams = new URLSearchParams(window.location.search);
+    const isJudgeInvite = searchParams.get('portal') === 'judge';
+    const hasOAuthQueryCode = searchParams.has('code') && !isJudgeInvite;
     if (
       window.location.hash.includes('access_token=') ||
       window.location.hash.includes('error=') ||
-      window.location.search.includes('code=') ||
+      hasOAuthQueryCode ||
       oauthError
     ) {
       setTimeout(() => {

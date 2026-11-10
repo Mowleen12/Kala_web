@@ -283,7 +283,7 @@ create policy threads_insert_organiser on public.threads
       select 1
         from public.applications a
         join public.opportunities o on o.id = a.opportunity_id
-       where a.opportunity_id = threads.opportunity_id
+       where a.opportunity_id::text = threads.opportunity_id
          and a.applicant_id = threads.artist_id
          and o.organiser_id = auth.uid()
     )
@@ -653,6 +653,128 @@ grant execute on function public.platform_stats() to authenticated;
 grant execute on function public.category_counts() to authenticated;
 
 -- ---------------------------------------------------------------------------
+-- 5.7 Judge QR access: bearer codes are issued to the owning organiser and
+--     expose only the event and applications attached to that event.
+-- ---------------------------------------------------------------------------
+create table if not exists public.judge_event_access_codes (
+  opportunity_id uuid primary key references public.opportunities(id) on delete cascade,
+  access_code text not null unique,
+  created_at timestamptz not null default now()
+);
+
+alter table public.judge_event_access_codes enable row level security;
+revoke all on table public.judge_event_access_codes from public, anon, authenticated;
+
+create or replace function public.get_or_create_judge_access(p_opportunity_id uuid)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  issued_code text;
+begin
+  if auth.uid() is null or not exists (
+    select 1
+      from public.opportunities
+     where id = p_opportunity_id
+       and organiser_id = auth.uid()
+  ) then
+    raise exception 'You may only create judge access for your own event.';
+  end if;
+
+  insert into public.judge_event_access_codes (opportunity_id, access_code)
+  values (p_opportunity_id, 'JDG-' || upper(encode(gen_random_bytes(16), 'hex')))
+  on conflict (opportunity_id) do nothing;
+
+  select access_code
+    into issued_code
+    from public.judge_event_access_codes
+   where opportunity_id = p_opportunity_id;
+
+  return issued_code;
+end;
+$$;
+
+create or replace function public.fetch_judge_event(p_access_code text)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select jsonb_build_object(
+    'opportunity',
+    jsonb_build_object(
+      'id', o.id,
+      'title', o.title,
+      'category', o.category,
+      'call_type', o.call_type,
+      'status', o.status,
+      'deadline', o.deadline,
+      'location', o.location,
+      'venue', o.venue,
+      'city', o.city,
+      'date_range', o.date_range,
+      'compensation', o.compensation,
+      'image_url', o.image_url,
+      'featured', o.featured,
+      'description', o.description,
+      'requirements', o.requirements,
+      'organiser_id', o.organiser_id,
+      'organiser_name', o.organiser_name,
+      'organiser_avatar', o.organiser_avatar,
+      'organiser_type', o.organiser_type,
+      'college_name', o.college_name,
+      'fest_name', o.fest_name,
+      'college_only', o.college_only,
+      'applicant_count', o.applicant_count,
+      'created_at', o.created_at
+    ),
+    'applications',
+    coalesce(
+      (
+        select jsonb_agg(
+          jsonb_build_object(
+            'id', a.id,
+            'opportunity_id', a.opportunity_id,
+            'applicant_id', a.applicant_id,
+            'applicant_name', a.applicant_name,
+            'applicant_avatar', a.applicant_avatar,
+            'applicant_role', a.applicant_role,
+            'applicant_city', a.applicant_city,
+            'applicant_college', a.applicant_college,
+            'experience_years', a.experience_years,
+            'skills', a.skills,
+            'statement', a.statement,
+            'portfolio_url', a.portfolio_url,
+            'reel_url', a.reel_url,
+            'file_name', a.file_name,
+            'status', a.status,
+            'rating', a.rating,
+            'created_at', a.created_at
+          )
+          order by a.created_at desc
+        )
+          from public.applications a
+         where a.opportunity_id::text = o.id::text
+      ),
+      '[]'::jsonb
+    )
+  )
+    from public.judge_event_access_codes c
+    join public.opportunities o on o.id = c.opportunity_id
+   where upper(c.access_code) = upper(btrim(p_access_code))
+     and p_access_code ~* '^JDG-[A-F0-9]{32}$'
+   limit 1;
+$$;
+
+revoke execute on function public.get_or_create_judge_access(uuid) from public, anon;
+grant execute on function public.get_or_create_judge_access(uuid) to authenticated;
+revoke execute on function public.fetch_judge_event(text) from public;
+grant execute on function public.fetch_judge_event(text) to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
 -- 6. Media storage: public bucket for avatars, reels, gallery and auditions
 -- ---------------------------------------------------------------------------
 insert into storage.buckets (id, name, public, file_size_limit)
@@ -666,4 +788,3 @@ create policy media_public_read on storage.objects
 drop policy if exists media_insert_authenticated on storage.objects;
 create policy media_insert_authenticated on storage.objects
   for insert to authenticated with check (bucket_id = 'media');
-

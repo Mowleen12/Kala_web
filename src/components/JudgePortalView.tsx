@@ -36,10 +36,10 @@ import { CallTypeBadge } from './CallTypeBadge';
 import { VideoPlayer } from './VideoPlayer';
 import { 
   DEFAULT_SCORING_CRITERIA, 
-  findJudgeAccess, 
   getJudgeDraft, 
   saveJudgeSubmission 
 } from '../lib/judge';
+import { fetchJudgeEvent } from '../lib/listings';
 import { KalaLogo } from './KalaLogo';
 
 interface JudgePortalViewProps {
@@ -69,27 +69,28 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
 }) => {
   const handleExit = onExitPortal || onExit || (() => {});
   const effectiveInitialCode = initialCode || initialEventCode;
-  // Judge Session State
   const [judgeAccessCode, setJudgeAccessCode] = useState(effectiveInitialCode);
-  const [activeOppId, setActiveOppId] = useState<string>(
-    propOpportunity?.id || initialEventId || (opportunities[0]?.id ?? '')
-  );
+  const [authorizedEvent, setAuthorizedEvent] = useState<{
+    opportunity: Opportunity;
+    applications: Application[];
+  } | null>(null);
+  const [isLoadingEvent, setIsLoadingEvent] = useState(Boolean(effectiveInitialCode));
+  const [eventLoadError, setEventLoadError] = useState<string | null>(null);
 
   const opportunity: Opportunity = useMemo(() => {
+    if (authorizedEvent) return authorizedEvent.opportunity;
     if (propOpportunity) return propOpportunity;
-    if (activeOppId) {
-      const byId = opportunities.find((o) => o.id === activeOppId);
+    if (initialEventId) {
+      const byId = opportunities.find((o) => o.id === initialEventId);
       if (byId) return byId;
     }
-    if (judgeAccessCode.trim()) {
-      const byCode = opportunities.find((o) => Boolean(findJudgeAccess(judgeAccessCode, o.id)));
-      if (byCode) return byCode;
-    }
+    if (opportunities.length > 0) return opportunities[0];
     return (
-      opportunities[0] || {
-        id: activeOppId || 'default-competition',
-        title: 'Event Evaluation',
+      {
+        id: initialEventId || 'default-competition',
+        title: isLoadingEvent ? 'Loading event details…' : 'Judge Event Access',
         category: 'Music & Dance',
+        categorySlug: 'music-dance',
         callType: 'competition',
         location: 'Grand Auditorium',
         venue: 'Kala Academy',
@@ -100,7 +101,7 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
         statusBadge: { label: 'Active', variant: 'open' },
       }
     );
-  }, [propOpportunity, opportunities, activeOppId, judgeAccessCode]);
+  }, [authorizedEvent, propOpportunity, opportunities, initialEventId, isLoadingEvent]);
 
   const [judgeName, setJudgeName] = useState('');
   const [judgeTitle, setJudgeTitle] = useState('');
@@ -132,13 +133,56 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
 
   const criteria: ScoringCriterion[] = DEFAULT_SCORING_CRITERIA;
 
+  useEffect(() => {
+    if (!effectiveInitialCode.trim()) return;
+
+    let active = true;
+    setIsLoadingEvent(true);
+    setEventLoadError(null);
+    fetchJudgeEvent(effectiveInitialCode)
+      .then((event) => {
+        if (!active) return;
+        if (!event) {
+          setEventLoadError('This judge QR code is invalid or has expired. Ask the organizer for a new code.');
+          return;
+        }
+        setAuthorizedEvent(event);
+        setJudgeAccessCode(effectiveInitialCode);
+      })
+      .catch((error) => {
+        if (active) {
+          setEventLoadError(error instanceof Error ? error.message : 'Could not load this judge event.');
+        }
+      })
+      .finally(() => {
+        if (active) setIsLoadingEvent(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [effectiveInitialCode]);
+
   // Filter applications for this specific event ONLY
   const eventCandidates = useMemo(() => {
+    if (authorizedEvent?.opportunity.id === opportunity.id) {
+      return authorizedEvent.applications;
+    }
     return applications.filter((app) => app.opportunityId === opportunity.id);
-  }, [applications, opportunity.id]);
+  }, [authorizedEvent, applications, opportunity.id]);
 
-  // Attempt restoring existing session or prefilled code
   useEffect(() => {
+    setSelectedCandidateId(eventCandidates[0]?.id || '');
+    setEvaluations({});
+    setTopRemarks({});
+    setOverallRemarks('');
+    setIsSubmitted(false);
+    setSubmittedAt(null);
+  }, [opportunity.id]);
+
+  // Restore a judge session only after the QR code has been validated remotely.
+  useEffect(() => {
+    if (!authorizedEvent) return;
     const savedJudge = localStorage.getItem(`kala_judge_session_${opportunity.id}`);
     if (savedJudge) {
       try {
@@ -146,17 +190,11 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
         setJudgeName(parsed.name || '');
         setJudgeTitle(parsed.title || '');
         setJudgeEmail(parsed.email || '');
-        setJudgeAccessCode(parsed.code || initialCode);
+        setJudgeAccessCode(effectiveInitialCode || parsed.code || '');
         setIsAuthenticated(true);
       } catch {}
-    } else if (initialCode) {
-      // Validate initialCode against opportunity
-      const access = findJudgeAccess(initialCode, opportunity.id);
-      if (access) {
-        setJudgeAccessCode(access.code);
-      }
     }
-  }, [opportunity.id, initialCode]);
+  }, [authorizedEvent, opportunity.id, effectiveInitialCode]);
 
   // Restore existing evaluation draft once authenticated
   useEffect(() => {
@@ -178,9 +216,8 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
     }
   }, [isAuthenticated, judgeName, opportunity.id]);
 
-  // Set default selected candidate
   useEffect(() => {
-    if (eventCandidates.length > 0 && !selectedCandidateId) {
+    if (eventCandidates.length > 0 && !eventCandidates.some((candidate) => candidate.id === selectedCandidateId)) {
       setSelectedCandidateId(eventCandidates[0].id);
     }
   }, [eventCandidates, selectedCandidateId]);
@@ -190,7 +227,7 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleAuthenticate = (e: React.FormEvent) => {
+  const handleAuthenticate = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
 
@@ -204,15 +241,27 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
       return;
     }
 
-    const access = findJudgeAccess(judgeAccessCode, opportunity.id);
-    if (!access) {
-      setAuthError('Invalid access code for this specific event. Check with the organizer or scan the official event QR code.');
+    setAuthorizedEvent(null);
+    setEventLoadError(null);
+    setIsLoadingEvent(true);
+    let event: { opportunity: Opportunity; applications: Application[] } | null;
+    try {
+      event = await fetchJudgeEvent(judgeAccessCode);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Could not load this judge event. Please try again.');
+      setIsLoadingEvent(false);
       return;
     }
+    setIsLoadingEvent(false);
+    if (!event) {
+      setAuthError('Invalid event access code. Check with the organizer or scan the official event QR code.');
+      return;
+    }
+    setAuthorizedEvent(event);
 
     // Save session
     localStorage.setItem(
-      `kala_judge_session_${opportunity.id}`,
+      `kala_judge_session_${event.opportunity.id}`,
       JSON.stringify({
         name: judgeName.trim(),
         title: judgeTitle.trim(),
@@ -222,7 +271,7 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
     );
 
     setIsAuthenticated(true);
-    showToast(`Welcome, ${judgeName}! Judge Portal loaded for "${opportunity.title}".`);
+    showToast(`Welcome, ${judgeName}! Judge Portal loaded for "${event.opportunity.title}".`);
   };
 
   const handleLogoutJudge = () => {
@@ -546,6 +595,19 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
               </p>
             </div>
 
+            {(eventLoadError || (isLoadingEvent && effectiveInitialCode)) && (
+              <div
+                role={eventLoadError ? 'alert' : 'status'}
+                className={`mb-5 p-3 rounded-xl border text-xs ${
+                  eventLoadError
+                    ? 'bg-rose-50 border-rose-200 text-rose-700'
+                    : 'bg-amber-50 border-amber-200 text-amber-800'
+                }`}
+              >
+                {eventLoadError || 'Loading the event and applicant list…'}
+              </div>
+            )}
+
             {authError && (
               <div className="mb-5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -602,7 +664,7 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="e.g. JDG-7249"
+                    placeholder="Enter the code from your event invitation"
                     value={judgeAccessCode}
                     onChange={(e) => setJudgeAccessCode(e.target.value.toUpperCase())}
                     className="w-full px-3.5 py-2.5 font-mono uppercase tracking-wider rounded-xl border border-zinc-300 text-sm font-bold text-[#E45826] focus:border-[#E45826] focus:ring-1 focus:ring-[#E45826] focus:outline-none"
@@ -616,9 +678,10 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
 
               <button
                 type="submit"
-                className="w-full mt-2 py-3 rounded-xl bg-[#E45826] hover:bg-[#D44716] text-white font-bold text-sm shadow-md transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2"
+                disabled={isLoadingEvent}
+                className="w-full mt-2 py-3 rounded-xl bg-[#E45826] hover:bg-[#D44716] disabled:opacity-60 disabled:cursor-wait text-white font-bold text-sm shadow-md transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2"
               >
-                <span>Enter Evaluation Room</span>
+                <span>{isLoadingEvent ? 'Loading event…' : 'Enter Evaluation Room'}</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </form>

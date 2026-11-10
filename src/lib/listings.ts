@@ -334,6 +334,35 @@ export async function fetchApplications(): Promise<{ data: Application[]; error:
   return { data: (data || []).map(rowToApplication), error: null };
 }
 
+/** Fetch the single event and its applicant roster using a judge QR bearer code. */
+export async function fetchJudgeEvent(
+  accessCode: string
+): Promise<{ opportunity: Opportunity; applications: Application[] } | null> {
+  if (!isSupabaseConfigured || !supabaseClient) {
+    throw new Error('Judge event access is unavailable because the database is not configured.');
+  }
+
+  const { data, error } = await supabaseClient.rpc('fetch_judge_event', {
+    p_access_code: accessCode.trim(),
+  });
+  if (error) {
+    if (/function.*fetch_judge_event|schema cache/i.test(error.message)) {
+      throw new Error('Judge QR access is not enabled yet — run the updated supabase/schema.sql in the Supabase SQL editor.');
+    }
+    throw new Error('Could not load this judge event. Please ask the organizer to generate a new QR code.');
+  }
+  if (!data || !data.opportunity) return null;
+
+  const opportunity = rowToOpportunity(data.opportunity);
+  const applications = Array.isArray(data.applications)
+    ? data.applications.map((row: any) => rowToApplication({
+        ...row,
+        opportunities: data.opportunity,
+      }))
+    : [];
+  return { opportunity, applications };
+}
+
 /** Live application status: an organiser's Commission click has to reach the
  *  artist without a reload. Callers gate on isDbReady() first — local mode has
  *  no realtime (one browser, no server), so there is nothing to subscribe to. */

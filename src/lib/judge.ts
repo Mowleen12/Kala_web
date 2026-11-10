@@ -35,19 +35,7 @@ export const DEFAULT_SCORING_CRITERIA: ScoringCriterion[] = [
   },
 ];
 
-const ACCESS_CODES_KEY = 'kala_judge_event_access_codes';
 const EVAL_SUBMISSIONS_KEY = 'kala_judge_eval_submissions';
-
-/**
- * Generate a unique, memorable event judge access code (e.g. JDG-7249)
- */
-export function generateJudgeCode(opportunityId: string): string {
-  const hash = Math.abs(
-    opportunityId.split('').reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) | 0, 0)
-  );
-  const suffix = (1000 + (hash % 9000)).toString();
-  return `JDG-${suffix}`;
-}
 
 /**
  * Generate a shareable QR code Data URL for a specific event
@@ -82,17 +70,26 @@ export async function generateEventJudgeQr(
   }
 }
 
-/**
- * Get or register an event access record
- */
-export function getOrCreateJudgeAccess(opp: Opportunity): JudgeEventAccess {
-  const all = getStoredJudgeAccessList();
-  const existing = all.find((a) => a.opportunityId === opp.id);
-  if (existing) return existing;
-
-  const code = generateJudgeCode(opp.id);
-  const newAccess: JudgeEventAccess = {
-    code,
+/** Issue or retrieve the persistent event access code through the organizer-only RPC. */
+export async function getOrCreateJudgeAccess(opp: Opportunity): Promise<JudgeEventAccess> {
+  const { supabase } = await import('./supabase');
+  if (!supabase) {
+    throw new Error('Judge QR access is unavailable because the database is not configured.');
+  }
+  const { data, error } = await supabase.rpc('get_or_create_judge_access', {
+    p_opportunity_id: opp.id,
+  });
+  if (error) {
+    if (/function.*get_or_create_judge_access|schema cache/i.test(error.message)) {
+      throw new Error('Judge QR access is not enabled yet — run the updated supabase/schema.sql in the Supabase SQL editor.');
+    }
+    throw new Error('Could not generate judge access for this event. Please try again.');
+  }
+  if (typeof data !== 'string' || !data) {
+    throw new Error('The database did not return a judge access code. Please try again.');
+  }
+  return {
+    code: data,
     opportunityId: opp.id,
     opportunityTitle: opp.title,
     category: opp.category,
@@ -102,53 +99,6 @@ export function getOrCreateJudgeAccess(opp: Opportunity): JudgeEventAccess {
     venue: opp.venue,
     city: opp.city,
     createdAt: new Date().toISOString(),
-    active: true,
-  };
-
-  all.push(newAccess);
-  saveStoredJudgeAccessList(all);
-  return newAccess;
-}
-
-export function getStoredJudgeAccessList(): JudgeEventAccess[] {
-  try {
-    const raw = localStorage.getItem(ACCESS_CODES_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveStoredJudgeAccessList(list: JudgeEventAccess[]): void {
-  try {
-    localStorage.setItem(ACCESS_CODES_KEY, JSON.stringify(list));
-  } catch {}
-}
-
-export function findJudgeAccess(code: string, eventId?: string): JudgeEventAccess | null {
-  const trimmedCode = code.trim().toUpperCase();
-  const all = getStoredJudgeAccessList();
-  const match = all.find((a) => {
-    const codeMatches = a.code.toUpperCase() === trimmedCode;
-    return eventId ? codeMatches && a.opportunityId === eventId : codeMatches;
-  });
-  if (match) return match;
-
-  // Shared QR links are opened on devices that do not have the organizer's
-  // local access-code record. The event-bound code is reproducible from its ID.
-  if (!eventId || trimmedCode !== generateJudgeCode(eventId)) return null;
-
-  return {
-    code: trimmedCode,
-    opportunityId: eventId,
-    opportunityTitle: '',
-    category: '',
-    callType: 'competition',
-    organizerName: '',
-    organizerId: '',
-    venue: '',
-    city: '',
-    createdAt: '',
     active: true,
   };
 }

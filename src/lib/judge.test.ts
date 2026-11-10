@@ -1,20 +1,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { findJudgeAccess, generateJudgeCode } from './judge';
+import { generateEventJudgeQr } from './judge';
 
-test('QR event code validates without organizer-local storage', () => {
+test('judge QR includes the exact event and access code in its share URL', async () => {
   const eventId = 'event-from-another-device';
-  const access = findJudgeAccess(generateJudgeCode(eventId), eventId);
-
-  assert.ok(access);
-  assert.equal(access.opportunityId, eventId);
-});
-
-test('event code cannot be used for a different event', () => {
-  const access = findJudgeAccess(
-    generateJudgeCode('event-one'),
-    'event-two',
+  const accessCode = `JDG-${'A1B2'.repeat(8)}`;
+  const { qrDataUrl, shareUrl } = await generateEventJudgeQr(
+    eventId,
+    accessCode,
+    'https://kala.example'
   );
+  const url = new URL(shareUrl);
 
-  assert.equal(access, null);
+  assert.equal(url.searchParams.get('portal'), 'judge');
+  assert.equal(url.searchParams.get('event'), eventId);
+  assert.equal(url.searchParams.get('code'), accessCode);
+  assert.match(qrDataUrl, /^data:image\/png;base64,/);
 });

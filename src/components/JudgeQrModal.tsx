@@ -35,19 +35,35 @@ export const JudgeQrModal: React.FC<JudgeQrModalProps> = ({
   const [shareUrl, setShareUrl] = useState<string>('');
   const [accessCode, setAccessCode] = useState<string>('');
   const [submissions, setSubmissions] = useState<JudgeEvaluationSubmission[]>([]);
+  const [qrError, setQrError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!opportunity || !isOpen) return;
 
-    const access = getOrCreateJudgeAccess(opportunity);
-    setAccessCode(access.code);
-
-    generateEventJudgeQr(opportunity.id, access.code).then(({ qrDataUrl, shareUrl }) => {
-      setQrUrl(qrDataUrl);
-      setShareUrl(shareUrl);
-    });
-
+    let active = true;
+    setQrError(null);
+    setQrUrl('');
+    setShareUrl('');
     setSubmissions(getSubmissionsForEvent(opportunity.id));
+
+    (async () => {
+      try {
+        const access = await getOrCreateJudgeAccess(opportunity);
+        const qr = await generateEventJudgeQr(opportunity.id, access.code);
+        if (!active) return;
+        setAccessCode(access.code);
+        setQrUrl(qr.qrDataUrl);
+        setShareUrl(qr.shareUrl);
+      } catch (error) {
+        if (active) {
+          setQrError(error instanceof Error ? error.message : 'Could not generate judge access for this event.');
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
   }, [opportunity, isOpen]);
 
   if (!isOpen || !opportunity) return null;
@@ -118,7 +134,11 @@ export const JudgeQrModal: React.FC<JudgeQrModalProps> = ({
 
           {/* QR Code Presentation */}
           <div className="flex flex-col items-center justify-center p-6 bg-white rounded-3xl border-2 border-dashed border-[#E0D9CE] shadow-2xs">
-            {qrUrl ? (
+            {qrError ? (
+              <div role="alert" className="w-full p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+                {qrError}
+              </div>
+            ) : qrUrl ? (
               <div className="relative p-3 bg-white rounded-2xl shadow-md border border-zinc-200">
                 <img
                   src={qrUrl}
