@@ -24,7 +24,7 @@ interface MediaUploaderProps {
   label?: string;
   description?: string;
   value?: string;
-  resourceType?: 'image' | 'video' | 'auto';
+  resourceType?: 'image' | 'video' | 'raw' | 'auto';
   folder?: string;
   onChange: (url: string, result?: CloudinaryUploadResult) => void;
   onRemove?: () => void;
@@ -57,7 +57,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   /** Local pre-upload review: file is validated but NOT sent to Cloudinary
    *  until the user confirms. Object URL is revoked whenever `pending`
    *  changes or the component unmounts. */
-  const [pending, setPending] = useState<{ file: File; url: string; video: boolean } | null>(null);
+  const [pending, setPending] = useState<{ file: File; url: string; video: boolean; raw: boolean } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => () => {
@@ -66,7 +66,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
 
   // Local media keeps its kind across reloads via the IndexedDB key extension —
   // uploadDetails (session-only) and URL extensions (blob: has none) do not.
-  const isVideo = value && (
+  const isVideo = resourceType !== 'raw' && value && (
     localMediaKind(value) === 'video' ||
     value.includes('/video/') || 
     value.endsWith('.mp4') || 
@@ -94,7 +94,12 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
     }
 
     // Hold for review instead of uploading immediately.
-    setPending({ file, url: URL.createObjectURL(file), video: isVideoFile(file) });
+    setPending({
+      file,
+      url: URL.createObjectURL(file),
+      video: isVideoFile(file),
+      raw: resourceType === 'raw',
+    });
   };
 
   const cancelPending = () => {
@@ -168,6 +173,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   const getAcceptedTypes = () => {
     if (resourceType === 'image') return 'image/*';
     if (resourceType === 'video') return 'video/*,video/mp4,video/quicktime,video/webm';
+    if (resourceType === 'raw') return '.pdf,.doc,.docx,.rtf,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain';
     return 'image/*,video/*,video/mp4,video/quicktime,video/webm';
   };
 
@@ -183,13 +189,18 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
       {pending ? (
         <div className="rounded-2xl overflow-hidden border-2 border-[#E45826]/40 bg-white shadow-xs">
           <div className="relative bg-zinc-950 flex items-center justify-center max-h-56 overflow-hidden">
-            {pending.video ? (
+            {pending.raw ? (
+              <div className="p-8 text-center text-white">
+                <FileText className="w-10 h-10 mx-auto mb-2 text-[#E45826]" />
+                <p className="text-sm font-semibold break-all">{pending.file.name}</p>
+              </div>
+            ) : pending.video ? (
               <video src={pending.url} controls muted playsInline className="w-full max-h-56 object-contain" />
             ) : (
               <img src={pending.url} alt="Upload preview" className="w-full max-h-56 object-contain" />
             )}
             <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-xs px-2.5 py-1 rounded-full text-white text-[11px] font-semibold flex items-center gap-1.5">
-              {pending.video ? <Video className="w-3 h-3 text-red-400" /> : <ImageIcon className="w-3 h-3 text-sky-400" />}
+              {pending.raw ? <FileText className="w-3 h-3 text-amber-300" /> : pending.video ? <Video className="w-3 h-3 text-red-400" /> : <ImageIcon className="w-3 h-3 text-sky-400" />}
               <span>Preview — not uploaded yet</span>
             </div>
           </div>
@@ -221,7 +232,27 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
         </div>
       ) : value ? (
         <div className="relative rounded-2xl overflow-hidden border border-[#E9E4DC] bg-zinc-950 shadow-xs group">
-          {isVideo ? (
+          {resourceType === 'raw' ? (
+            <div className="flex items-center justify-between gap-3 p-4 bg-[#FAF8F5]">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-zinc-900">Document attached</p>
+                  <p className="text-[11px] text-zinc-500 truncate">{uploadDetails?.publicId || 'Profile document'}</p>
+                </div>
+              </div>
+              <a
+                href={value}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50 shrink-0"
+              >
+                Open
+              </a>
+            </div>
+          ) : isVideo ? (
             <div className="relative aspect-video max-h-56 bg-zinc-950 flex items-center justify-center">
               <video 
                 src={value} 
@@ -310,7 +341,9 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
           ) : (
             <div className="space-y-2">
               <div className="w-11 h-11 mx-auto rounded-2xl bg-white border border-[#E8E2D8] text-[#E45826] flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
-                {resourceType === 'video' ? (
+                {resourceType === 'raw' ? (
+                  <FileText className="w-5 h-5" />
+                ) : resourceType === 'video' ? (
                   <Video className="w-5 h-5" />
                 ) : resourceType === 'image' ? (
                   <ImageIcon className="w-5 h-5" />
@@ -327,14 +360,26 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                 </p>
               </div>
               <div className="pt-1 flex items-center justify-center gap-3 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
-                {resourceType !== 'image' && <span>MP4 • MOV • WEBM</span>}
-                {resourceType !== 'image' && resourceType !== 'video' && <span>•</span>}
-                {resourceType !== 'video' && <span>JPG • PNG • WEBP</span>}
+                {resourceType === 'raw' ? (
+                  <span>PDF • DOC • DOCX • RTF • TXT</span>
+                ) : (
+                  <>
+                    {resourceType !== 'image' && <span>MP4 • MOV • WEBM</span>}
+                    {resourceType !== 'image' && resourceType !== 'video' && <span>•</span>}
+                    {resourceType !== 'video' && <span>JPG • PNG • WEBP</span>}
+                  </>
+                )}
               </div>
               <div className="flex items-center justify-center gap-3 text-[10px] font-bold text-[#E45826] uppercase tracking-wider">
-                {resourceType !== 'image' && <span>Max {formatMB(VIDEO_MAX_BYTES)} video</span>}
-                {resourceType !== 'image' && resourceType !== 'video' && <span>•</span>}
-                {resourceType !== 'video' && <span>Max {formatMB(IMAGE_MAX_BYTES)} image</span>}
+                {resourceType === 'raw' ? (
+                  <span>Max {formatMB(IMAGE_MAX_BYTES)} per document</span>
+                ) : (
+                  <>
+                    {resourceType !== 'image' && <span>Max {formatMB(VIDEO_MAX_BYTES)} video</span>}
+                    {resourceType !== 'image' && resourceType !== 'video' && <span>•</span>}
+                    {resourceType !== 'video' && <span>Max {formatMB(IMAGE_MAX_BYTES)} image</span>}
+                  </>
+                )}
               </div>
             </div>
           )}

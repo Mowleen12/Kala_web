@@ -34,7 +34,7 @@ export interface CloudinaryUploadResult {
 
 export interface UploadOptions {
   folder?: string;
-  resourceType?: 'image' | 'video' | 'auto';
+  resourceType?: 'image' | 'video' | 'raw' | 'auto';
   onProgress?: (percent: number) => void;
   /** Keep the file in this browser's IndexedDB instead of shared storage.
    *  Only for flows that run BEFORE a Supabase session exists (signup avatar). */
@@ -55,15 +55,22 @@ export async function uploadToCloudinary(
   // Determine media type
   const isVideo = file.type.startsWith('video/') || ['mp4', 'mov', 'webm', 'ogg'].some(ext => file.name.toLowerCase().endsWith(`.${ext}`));
   const isImage = file.type.startsWith('image/');
-  const detectedType = isVideo ? 'video' : isImage ? 'image' : resourceType;
+  const detectedType: 'image' | 'video' | 'raw' =
+    resourceType === 'raw'
+      ? 'raw'
+      : isVideo
+        ? 'video'
+        : isImage || resourceType === 'image'
+          ? 'image'
+          : 'video';
 
   // Pre-auth flows can only persist locally — no session to authorize a bucket write.
   if (local) {
-    return simulateLocalUpload(file, detectedType === 'image' ? 'image' : 'video', onProgress);
+    return simulateLocalUpload(file, detectedType, onProgress);
   }
 
   if (!isCloudinaryConfigured) {
-    return uploadToMediaBucket(file, detectedType === 'image' ? 'image' : 'video', folder, onProgress);
+    return uploadToMediaBucket(file, detectedType, folder, onProgress);
   }
 
   return new Promise((resolve, reject) => {
@@ -136,7 +143,7 @@ export async function uploadToCloudinary(
  */
 async function uploadToMediaBucket(
   file: File,
-  detectedType: 'image' | 'video',
+  detectedType: 'image' | 'video' | 'raw',
   folder: string,
   onProgress?: (percent: number) => void
 ): Promise<CloudinaryUploadResult> {
@@ -186,7 +193,7 @@ async function uploadToMediaBucket(
  */
 async function simulateLocalUpload(
   file: File,
-  detectedType: 'image' | 'video',
+  detectedType: 'image' | 'video' | 'raw',
   onProgress?: (percent: number) => void
 ): Promise<CloudinaryUploadResult> {
   // Store the blob in IndexedDB first so the upload survives reloads and

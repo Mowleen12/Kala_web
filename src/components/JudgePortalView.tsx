@@ -740,7 +740,7 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
         {activeTab === 'candidates' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start flex-1">
             {/* LEFT COLUMN: Candidate Roster & Filters (4 Cols on LG) */}
-            <div className="lg:col-span-4 bg-white rounded-3xl border border-[#EDE8E0] p-4 sm:p-5 space-y-4 shadow-sm flex flex-col max-h-[85vh]">
+            <div className="order-2 lg:order-1 lg:col-span-4 bg-white rounded-3xl border border-[#EDE8E0] p-4 sm:p-5 space-y-4 shadow-sm flex flex-col max-h-[85vh]">
               {/* Filter Tabs */}
               <div className="flex items-center justify-between pb-2 border-b border-zinc-100">
                 <div>
@@ -870,10 +870,10 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
 
             {/* RIGHT COLUMN: Participant Evaluation Workspace (8 Cols on LG) */}
             {currentCandidate ? (
-              <div className="lg:col-span-8 space-y-6">
+              <div className="order-1 lg:order-2 lg:col-span-8 space-y-4 sm:space-y-6">
                 {/* Candidate Overview Card */}
-                <div className="bg-white rounded-3xl border border-[#EDE8E0] p-6 shadow-sm">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#EDE8E0]">
+                <div className="bg-white rounded-3xl border border-[#EDE8E0] p-4 sm:p-6 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 sm:pb-6 border-b border-[#EDE8E0]">
                     <div className="flex items-center gap-4">
                       <img
                         src={
@@ -883,13 +883,13 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
                         alt={currentCandidate.artistName}
                         className="w-16 h-16 rounded-2xl object-cover border-2 border-[#E45826]/30 shadow-md shrink-0"
                       />
-                      <div>
+                      <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <h2 className="text-xl sm:text-2xl font-black text-zinc-950">
+                          <h2 className="text-xl sm:text-2xl font-black text-zinc-950 break-words">
                             {currentCandidate.artistName}
                           </h2>
                           {currentCandidate.artistCollege && (
-                            <span className="text-[11px] font-bold bg-[#FAF0E6] text-[#C73E0E] px-2.5 py-0.5 rounded-full border border-[#F3D5C3]">
+                            <span className="text-[11px] font-bold bg-[#FAF0E6] text-[#C73E0E] px-2.5 py-0.5 rounded-full border border-[#F3D5C3] break-words">
                               {currentCandidate.artistCollege}
                             </span>
                           )}
@@ -964,10 +964,10 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
                 </div>
 
                 {/* MEDIA REVIEW COMPONENT (Videos, Photographs, Scripts) */}
-                <div className="bg-white rounded-3xl border border-[#EDE8E0] p-6 shadow-sm space-y-4">
+                <div className="bg-white rounded-3xl border border-[#EDE8E0] p-4 sm:p-6 shadow-sm space-y-4">
                   {/* Media Selector Tabs */}
-                  <div className="flex items-center justify-between border-b border-[#EDE8E0] pb-3">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EDE8E0] pb-3">
+                    <div className="flex flex-wrap items-center gap-2">
                       <button
                         onClick={() => setMediaTab('videos')}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${

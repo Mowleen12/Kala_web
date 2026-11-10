@@ -14,12 +14,14 @@ import {
   Cloud,
   Camera,
   Film,
-  Pencil
+  Pencil,
+  FileText,
 } from 'lucide-react';
 import { KalaStar } from './KalaLogo';
 import { MediaUploader } from './MediaUploader';
 import { MediaPreview } from './MediaPreview';
 import { SkillsInput } from './SkillsInput';
+import { ScriptAttachment } from '../types';
 import { getDraft, setDraft } from '../lib/drafts';
 import { computeProfileCompletion, ProfileFields } from '../lib/profile';
 import { VIDEO_MAX_BYTES, formatMB } from '../lib/limits';
@@ -27,8 +29,11 @@ import { StudentTag } from './HostTypeTag';
 
 export interface ProfileMedia {
   avatar?: string;
+  /** Primary reel retained for compatibility with existing profile data. */
   reel?: string;
+  videos?: string[];
   gallery?: string[];
+  scripts?: ScriptAttachment[];
 }
 
 interface ProfileText {
@@ -65,11 +70,18 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const profileTextDraftKey = `kala_profile_text_${profileKey}`;
   const skillsKey = `kala_skills_${profileKey}`;
   const currentAvatar = profileMedia?.avatar || avatarUrl;
-  const reelUrl = profileMedia?.reel || '';
+  const reelUrl = profileMedia?.reel || profileMedia?.videos?.[0] || '';
+  const profileVideos = Array.from(new Set([
+    ...(profileMedia?.reel ? [profileMedia.reel] : []),
+    ...(profileMedia?.videos || []),
+  ]));
   const galleryImages = profileMedia?.gallery || [];
+  const profileScripts = profileMedia?.scripts || [];
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
   const [newGalleryImage, setNewGalleryImage] = useState('');
   const [showAddGallery, setShowAddGallery] = useState(false);
+  const [showAddVideo, setShowAddVideo] = useState(false);
+  const [showAddScript, setShowAddScript] = useState(false);
 
   // Completion is always recomputed from what actually exists — never +9 or
   // a hardcoded 100.
@@ -135,9 +147,44 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     return stored && stored.length > 0 ? stored : [];
   });
 
-  const handleReelUploaded = (url: string) => {
-    onProfileMediaChange?.({ reel: url });
-    recomputeCompletion({ reel: url });
+  const updateProfileVideos = (next: string[]) => {
+    onProfileMediaChange?.({ videos: next, reel: next[0] || '' });
+    recomputeCompletion({ reel: next[0] || '' });
+  };
+
+  const handleProfileVideoChanged = (index: number, url: string) => {
+    const next = [...profileVideos];
+    if (url) {
+      next[index] = url;
+    } else {
+      next.splice(index, 1);
+    }
+    updateProfileVideos(next.filter(Boolean));
+  };
+
+  const handleAddProfileVideo = (url: string) => {
+    if (!url) return;
+    updateProfileVideos([...profileVideos, url]);
+    setShowAddVideo(false);
+  };
+
+  const handleScriptChanged = (index: number, url: string) => {
+    const next = [...profileScripts];
+    if (url) {
+      next[index] = { ...next[index], url };
+    } else {
+      next.splice(index, 1);
+    }
+    onProfileMediaChange?.({ scripts: next });
+  };
+
+  const handleAddScript = (url: string) => {
+    if (!url) return;
+    const title = `Script ${profileScripts.length + 1}`;
+    onProfileMediaChange?.({
+      scripts: [...profileScripts, { title, name: title, url }],
+    });
+    setShowAddScript(false);
   };
 
   const handleAddGalleryImage = (url: string) => {
@@ -310,30 +357,54 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
       {/* Cloudinary Performance Reel Section */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EDE8E0] shadow-xs">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
             <h3 className="text-base font-bold text-zinc-900 flex items-center gap-2">
               <Film className="w-4 h-4 text-[#E45826]" />
-              Performance Video & Showreel
+              Performance Videos &amp; Showreels
             </h3>
             <p className="text-xs text-zinc-500 mt-0.5">
-              Streamed securely. Directly attached to all your event and competition submissions.
+              Add multiple videos to your artist profile. Your first video remains the primary reel.
             </p>
           </div>
+          <button
+            type="button"
+            onClick={() => setShowAddVideo((shown) => !shown)}
+            className="px-4 py-2 rounded-xl bg-[#FAF2EB] hover:bg-[#F6E4D7] text-[#E45826] text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Video</span>
+          </button>
         </div>
 
-        <MediaUploader
-          label="Upload Performance Reel (MP4 / MOV / WEBM)"
-          description={`Drag & drop or click to upload your performance reel. Curators can play it directly in their review room. Max ${formatMB(VIDEO_MAX_BYTES)}.`}
-          folder="kala-artists/reels"
-          resourceType="video"
-          value={reelUrl}
-          onChange={handleReelUploaded}
-          onRemove={() => {
-            onProfileMediaChange?.({ reel: '' });
-            recomputeCompletion({ reel: '' });
-          }}
-        />
+        <div className="space-y-4">
+          {profileVideos.map((videoUrl, index) => (
+            <MediaUploader
+              key={`${videoUrl}-${index}`}
+              label={`Performance Video ${index + 1}${index === 0 ? ' (Primary Reel)' : ''}`}
+              description={`Upload an MP4, MOV, or WEBM video. Max ${formatMB(VIDEO_MAX_BYTES)}.`}
+              folder="kala-artists/reels"
+              resourceType="video"
+              value={videoUrl}
+              onChange={(url) => handleProfileVideoChanged(index, url)}
+              onRemove={() => handleProfileVideoChanged(index, '')}
+            />
+          ))}
+          {profileVideos.length === 0 && !showAddVideo && (
+            <p className="text-xs text-zinc-400 text-center py-5 border border-dashed border-zinc-200 rounded-2xl">
+              No performance videos added yet.
+            </p>
+          )}
+          {showAddVideo && (
+            <MediaUploader
+              label="Add Performance Video"
+              description={`Upload an MP4, MOV, or WEBM video. Max ${formatMB(VIDEO_MAX_BYTES)}.`}
+              folder="kala-artists/reels"
+              resourceType="video"
+              onChange={handleAddProfileVideo}
+            />
+          )}
+        </div>
       </div>
 
       {/* Portfolio Stills & Gallery (Cloudinary Storage) */}
@@ -345,7 +416,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               Visual Portfolio & Stage Stills
             </h3>
             <p className="text-xs text-zinc-500 mt-0.5">
-              High-resolution stage photos, costume stills, and album artwork for your portfolio.
+              Add multiple high-resolution stage photos, costume stills, and album artwork.
             </p>
           </div>
           <button
@@ -353,7 +424,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             className="px-4 py-2 rounded-xl bg-[#FAF2EB] hover:bg-[#F6E4D7] text-[#E45826] text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Add Work</span>
+            <span>Add Photo</span>
           </button>
         </div>
 
@@ -382,8 +453,72 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 alt={`Portfolio still ${idx + 1}`}
                 mediaClassName="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
+              <button
+                type="button"
+                onClick={() => {
+                  const next = galleryImages.filter((_, imageIndex) => imageIndex !== idx);
+                  onProfileMediaChange?.({ gallery: next });
+                  recomputeCompletion({ gallery: next });
+                }}
+                aria-label={`Remove portfolio photo ${idx + 1}`}
+                className="absolute top-2 right-2 p-2 rounded-full bg-black/60 text-white hover:bg-red-600 transition-colors"
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Scripts & Documents */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EDE8E0] shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <h3 className="text-base font-bold text-zinc-900 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-[#E45826]" />
+              Scripts &amp; Documents
+            </h3>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              Attach multiple scripts, portfolios, or other supporting documents to your profile.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowAddScript((shown) => !shown)}
+            className="px-4 py-2 rounded-xl bg-[#FAF2EB] hover:bg-[#F6E4D7] text-[#E45826] text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Script</span>
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {profileScripts.map((script, index) => (
+            <MediaUploader
+              key={`${script.url}-${index}`}
+              label={script.title || script.name || `Script ${index + 1}`}
+              description="Upload a PDF, DOC, DOCX, RTF, or TXT document."
+              folder="kala-artists/scripts"
+              resourceType="raw"
+              value={script.url}
+              onChange={(url) => handleScriptChanged(index, url)}
+              onRemove={() => handleScriptChanged(index, '')}
+            />
+          ))}
+          {profileScripts.length === 0 && !showAddScript && (
+            <p className="text-xs text-zinc-400 text-center py-5 border border-dashed border-zinc-200 rounded-2xl">
+              No scripts or documents added yet.
+            </p>
+          )}
+          {showAddScript && (
+            <MediaUploader
+              label={`Add Script ${profileScripts.length + 1}`}
+              description="Upload a PDF, DOC, DOCX, RTF, or TXT document."
+              folder="kala-artists/scripts"
+              resourceType="raw"
+              onChange={handleAddScript}
+            />
+          )}
         </div>
       </div>
 
@@ -417,4 +552,3 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     </div>
   );
 };
-

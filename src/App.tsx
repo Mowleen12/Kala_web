@@ -123,9 +123,18 @@ function saveProfileMedia(userId: string, media: ProfileMedia) {
       JSON.stringify({
         avatar: toPersistableUrl(media.avatar) || undefined,
         reel: toPersistableUrl(media.reel) || undefined,
+        videos: (media.videos || [])
+          .map((url) => toPersistableUrl(url))
+          .filter((url): url is string => Boolean(url)),
         gallery: (media.gallery || [])
           .map((u) => toPersistableUrl(u))
           .filter((u): u is string => Boolean(u)),
+        scripts: (media.scripts || [])
+          .map((script) => ({
+            ...script,
+            url: toPersistableUrl(script.url),
+          }))
+          .filter((script) => Boolean(script.url)),
       })
     );
   } catch {}
