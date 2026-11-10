@@ -1,6 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { generateEventJudgeQr } from './judge';
+import { createJudgeId, generateEventJudgeQr } from './judge';
+
+test('each judge session receives an independent evaluator ID', () => {
+  const firstJudgeId = createJudgeId();
+  const secondJudgeId = createJudgeId();
+
+  assert.match(firstJudgeId, /^judge-[0-9a-f-]{36}$/i);
+  assert.notEqual(firstJudgeId, secondJudgeId);
+});
 
 test('judge QR includes the exact event and access code in its share URL', async () => {
   const eventId = 'event-from-another-device';

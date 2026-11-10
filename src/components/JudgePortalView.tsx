@@ -36,8 +36,10 @@ import { CallTypeBadge } from './CallTypeBadge';
 import { VideoPlayer } from './VideoPlayer';
 import { 
   DEFAULT_SCORING_CRITERIA, 
+  createJudgeId,
   getJudgeDraft, 
-  saveJudgeSubmission 
+  saveJudgeSubmission,
+  submitJudgeEvaluation,
 } from '../lib/judge';
 import { fetchJudgeEvent } from '../lib/listings';
 import { KalaLogo } from './KalaLogo';
@@ -104,6 +106,7 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
   }, [authorizedEvent, propOpportunity, opportunities, initialEventId, isLoadingEvent]);
 
   const [judgeName, setJudgeName] = useState('');
+  const [judgeId, setJudgeId] = useState('');
   const [judgeTitle, setJudgeTitle] = useState('');
   const [judgeEmail, setJudgeEmail] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -130,6 +133,8 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
   const [submittedAt, setSubmittedAt] = useState<string | null>(null);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isSavingSubmission, setIsSavingSubmission] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
   const criteria: ScoringCriterion[] = DEFAULT_SCORING_CRITERIA;
 
@@ -187,10 +192,18 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
     if (savedJudge) {
       try {
         const parsed = JSON.parse(savedJudge);
+        const restoredJudgeId =
+          parsed.judgeId ||
+          `judge-${String(parsed.name || '').toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+        setJudgeId(restoredJudgeId);
         setJudgeName(parsed.name || '');
         setJudgeTitle(parsed.title || '');
         setJudgeEmail(parsed.email || '');
         setJudgeAccessCode(effectiveInitialCode || parsed.code || '');
+        localStorage.setItem(
+          `kala_judge_session_${opportunity.id}`,
+          JSON.stringify({ ...parsed, judgeId: restoredJudgeId })
+        );
         setIsAuthenticated(true);
       } catch {}
     }
@@ -198,9 +211,8 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
 
   // Restore existing evaluation draft once authenticated
   useEffect(() => {
-    if (!isAuthenticated || !judgeName) return;
+    if (!isAuthenticated || !judgeName || !judgeId) return;
 
-    const judgeId = `judge-${judgeName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
     const draft = getJudgeDraft(opportunity.id, judgeId);
 
     if (draft) {
@@ -214,7 +226,7 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
       setIsSubmitted(Boolean(draft.isSubmitted));
       setSubmittedAt(draft.submittedAt || null);
     }
-  }, [isAuthenticated, judgeName, opportunity.id]);
+  }, [isAuthenticated, judgeName, judgeId, opportunity.id]);
 
   useEffect(() => {
     if (eventCandidates.length > 0 && !eventCandidates.some((candidate) => candidate.id === selectedCandidateId)) {
@@ -258,11 +270,14 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
       return;
     }
     setAuthorizedEvent(event);
+    const nextJudgeId = createJudgeId();
+    setJudgeId(nextJudgeId);
 
     // Save session
     localStorage.setItem(
       `kala_judge_session_${event.opportunity.id}`,
       JSON.stringify({
+        judgeId: nextJudgeId,
         name: judgeName.trim(),
         title: judgeTitle.trim(),
         email: judgeEmail.trim(),
@@ -277,6 +292,7 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
   const handleLogoutJudge = () => {
     localStorage.removeItem(`kala_judge_session_${opportunity.id}`);
     setIsAuthenticated(false);
+    setJudgeId('');
   };
 
   // Get active candidate
@@ -408,7 +424,7 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
     evals: Record<string, CandidateEvaluation>,
     remarks: Record<string, TopCandidateRemark>
   ) => {
-    const judgeId = `judge-${judgeName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+    if (!judgeId) return;
     const shortlistedIds = Object.keys(evals).filter(
       (id) => evals[id].selectionStatus === 'shortlisted' || evals[id].selectionStatus === 'selected'
     );
@@ -436,8 +452,8 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
     saveJudgeSubmission(submission);
   };
 
-  const handleFinalSubmit = () => {
-    const judgeId = `judge-${judgeName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+  const handleFinalSubmit = async () => {
+    if (isSavingSubmission || !judgeId) return;
     const shortlistedIds = Object.keys(evaluations).filter(
       (id) => evaluations[id].selectionStatus === 'shortlisted' || evaluations[id].selectionStatus === 'selected'
     );
@@ -463,10 +479,20 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
       updatedAt: now,
     };
 
-    saveJudgeSubmission(submission);
+    setIsSavingSubmission(true);
+    setSubmissionError(null);
+    try {
+      await submitJudgeEvaluation(submission);
+    } catch (error) {
+      setSubmissionError(error instanceof Error ? error.message : 'Evaluation could not be submitted. Please try again.');
+      setIsSavingSubmission(false);
+      return;
+    }
+
     setIsSubmitted(true);
     setSubmittedAt(now);
     setIsSubmitModalOpen(false);
+    setIsSavingSubmission(false);
 
     if (onEvaluationSubmitted) {
       onEvaluationSubmitted(submission);
@@ -592,6 +618,9 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
               </h1>
               <p className="text-xs text-zinc-600 leading-relaxed">
                 Sign in to evaluate candidates registered for <span className="font-semibold text-zinc-900">"{opportunity.title}"</span>.
+              </p>
+              <p className="text-[11px] text-zinc-500 leading-relaxed">
+                Each judge should enter their own name. Scorecards are saved separately, even when judges share this QR code.
               </p>
             </div>
 
@@ -1641,6 +1670,12 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
               />
             </div>
 
+            {submissionError && (
+              <div role="alert" className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                {submissionError}
+              </div>
+            )}
+
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -1652,9 +1687,10 @@ export const JudgePortalView: React.FC<JudgePortalViewProps> = ({
               <button
                 type="button"
                 onClick={handleFinalSubmit}
-                className="flex-1 py-2.5 rounded-xl bg-[#E45826] hover:bg-[#D44716] text-white text-xs font-bold shadow-md transition-all cursor-pointer"
+                disabled={isSavingSubmission}
+                className="flex-1 py-2.5 rounded-xl bg-[#E45826] hover:bg-[#D44716] disabled:opacity-60 disabled:cursor-wait text-white text-xs font-bold shadow-md transition-all cursor-pointer"
               >
-                Confirm &amp; Submit Report
+                {isSavingSubmission ? 'Syncing Results…' : 'Confirm &amp; Submit Report'}
               </button>
             </div>
           </div>

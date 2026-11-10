@@ -13,7 +13,13 @@ import {
 } from 'lucide-react';
 import { Opportunity, JudgeEvaluationSubmission } from '../types';
 import { CallTypeBadge } from './CallTypeBadge';
-import { generateEventJudgeQr, getOrCreateJudgeAccess, getSubmissionsForEvent } from '../lib/judge';
+import {
+  fetchJudgeSubmissionsForEvent,
+  generateEventJudgeQr,
+  getOrCreateJudgeAccess,
+  getSubmissionsForEvent,
+  subscribeJudgeSubmissionsForEvent,
+} from '../lib/judge';
 
 interface JudgeQrModalProps {
   isOpen: boolean;
@@ -36,15 +42,35 @@ export const JudgeQrModal: React.FC<JudgeQrModalProps> = ({
   const [accessCode, setAccessCode] = useState<string>('');
   const [submissions, setSubmissions] = useState<JudgeEvaluationSubmission[]>([]);
   const [qrError, setQrError] = useState<string | null>(null);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!opportunity || !isOpen) return;
 
     let active = true;
     setQrError(null);
+    setSubmissionError(null);
     setQrUrl('');
     setShareUrl('');
     setSubmissions(getSubmissionsForEvent(opportunity.id));
+    let stopSubmissions: (() => void) | null = null;
+
+    const refreshSubmissions = async () => {
+      try {
+        const remote = await fetchJudgeSubmissionsForEvent(opportunity.id);
+        if (!active) return;
+        const byId = new Map(
+          getSubmissionsForEvent(opportunity.id).map((submission) => [submission.id, submission])
+        );
+        remote.forEach((submission) => byId.set(submission.id, submission));
+        setSubmissions([...byId.values()]);
+        setSubmissionError(null);
+      } catch (error) {
+        if (active) {
+          setSubmissionError(error instanceof Error ? error.message : 'Could not load judge evaluations.');
+        }
+      }
+    };
 
     (async () => {
       try {
@@ -60,9 +86,21 @@ export const JudgeQrModal: React.FC<JudgeQrModalProps> = ({
         }
       }
     })();
+    void refreshSubmissions();
+    subscribeJudgeSubmissionsForEvent(opportunity.id, () => {
+      void refreshSubmissions();
+    }).then((stop) => {
+      if (active) stopSubmissions = stop;
+      else stop();
+    }).catch((error) => {
+      if (active) {
+        setSubmissionError(error instanceof Error ? error.message : 'Could not subscribe to live judge results.');
+      }
+    });
 
     return () => {
       active = false;
+      stopSubmissions?.();
     };
   }, [opportunity, isOpen]);
 
@@ -204,6 +242,11 @@ export const JudgeQrModal: React.FC<JudgeQrModalProps> = ({
 
           {/* Assigned & Completed Judges Status */}
           <div className="space-y-2 pt-2 border-t border-[#EDE8E0]">
+            {submissionError && (
+              <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
+                {submissionError}
+              </div>
+            )}
             <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-zinc-800">
               <span className="flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-[#E45826]" />

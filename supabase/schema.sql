@@ -684,7 +684,7 @@ begin
   end if;
 
   insert into public.judge_event_access_codes (opportunity_id, access_code)
-  values (p_opportunity_id, 'JDG-' || upper(encode(gen_random_bytes(16), 'hex')))
+  values (p_opportunity_id, 'JDG-' || upper(replace(gen_random_uuid()::text, '-', '')))
   on conflict (opportunity_id) do nothing;
 
   select access_code
@@ -773,6 +773,115 @@ revoke execute on function public.get_or_create_judge_access(uuid) from public, 
 grant execute on function public.get_or_create_judge_access(uuid) to authenticated;
 revoke execute on function public.fetch_judge_event(text) from public;
 grant execute on function public.fetch_judge_event(text) to anon, authenticated;
+
+-- Judge submissions are shared across devices and scoped to the owning event.
+create table if not exists public.judge_event_submissions (
+  submission_id text primary key,
+  opportunity_id uuid not null references public.opportunities(id) on delete cascade,
+  judge_id text not null,
+  submission jsonb not null,
+  updated_at timestamptz not null default now(),
+  unique (opportunity_id, judge_id)
+);
+
+alter table public.judge_event_submissions enable row level security;
+revoke all on table public.judge_event_submissions from public, anon;
+revoke insert, update, delete on table public.judge_event_submissions from authenticated;
+grant select on table public.judge_event_submissions to authenticated;
+
+drop policy if exists judge_event_submissions_select on public.judge_event_submissions;
+create policy judge_event_submissions_select on public.judge_event_submissions
+  for select to authenticated
+  using (
+    exists (
+      select 1
+        from public.opportunities o
+       where o.id = opportunity_id
+         and o.organiser_id = auth.uid()
+    )
+  );
+
+create or replace function public.save_judge_submission(
+  p_access_code text,
+  p_submission jsonb
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  event_id uuid;
+  submission_judge_id text;
+  submission_id_value text;
+begin
+  if jsonb_typeof(p_submission) is distinct from 'object'
+     or octet_length(p_submission::text) > 1000000 then
+    raise exception 'Invalid judge submission.';
+  end if;
+
+  select opportunity_id
+    into event_id
+    from public.judge_event_access_codes
+   where upper(access_code) = upper(btrim(p_access_code))
+     and p_access_code ~* '^JDG-[A-F0-9]{32}$';
+
+  if event_id is null
+     or p_submission->>'opportunityId' is distinct from event_id::text
+     or upper(p_submission->>'judgeAccessCode') is distinct from upper(btrim(p_access_code))
+     or p_submission->>'isSubmitted' is distinct from 'true' then
+    raise exception 'Invalid judge submission access.';
+  end if;
+
+  submission_judge_id := p_submission->>'judgeId';
+  submission_id_value := p_submission->>'id';
+  if submission_judge_id is null
+     or btrim(submission_judge_id) = ''
+     or submission_id_value <> event_id::text || '_' || submission_judge_id
+     or jsonb_typeof(p_submission->'evaluations') is distinct from 'object' then
+    raise exception 'Invalid judge submission data.';
+  end if;
+
+  if exists (
+    select 1
+      from jsonb_object_keys(p_submission->'evaluations') as evaluated(candidate_id)
+     where not exists (
+       select 1
+         from public.applications a
+        where a.id::text = evaluated.candidate_id
+          and a.opportunity_id = event_id
+     )
+  ) then
+    raise exception 'Judge submission contains a candidate from another event.';
+  end if;
+
+  insert into public.judge_event_submissions (
+    submission_id, opportunity_id, judge_id, submission, updated_at
+  )
+  values (
+    submission_id_value, event_id, submission_judge_id, p_submission, now()
+  )
+  on conflict (opportunity_id, judge_id) do update
+    set submission_id = excluded.submission_id,
+        submission = excluded.submission,
+        updated_at = excluded.updated_at;
+end;
+$$;
+
+revoke execute on function public.save_judge_submission(text, jsonb) from public;
+grant execute on function public.save_judge_submission(text, jsonb) to anon, authenticated;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+     where pubname = 'supabase_realtime'
+       and schemaname = 'public'
+       and tablename = 'judge_event_submissions'
+  ) then
+    alter publication supabase_realtime add table public.judge_event_submissions;
+  end if;
+end $$;
 
 -- ---------------------------------------------------------------------------
 -- 6. Media storage: public bucket for avatars, reels, gallery and auditions

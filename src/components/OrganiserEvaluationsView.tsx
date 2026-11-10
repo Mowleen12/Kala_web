@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Award, 
   CheckCircle2, 
@@ -25,7 +25,8 @@ import { CallTypeBadge } from './CallTypeBadge';
 import { 
   calculateCandidateAggregate, 
   getSubmissionsForEvent, 
-  loadAllJudgeSubmissions 
+  fetchJudgeSubmissionsForEvent,
+  subscribeJudgeSubmissionsForEvent,
 } from '../lib/judge';
 
 interface OrganiserEvaluationsViewProps {
@@ -61,17 +62,67 @@ export const OrganiserEvaluationsView: React.FC<OrganiserEvaluationsViewProps> =
   const [searchQuery, setSearchQuery] = useState('');
   const [filterView, setFilterView] = useState<'all' | 'shortlisted' | 'selected'>('all');
   const [expandedCandidateId, setExpandedCandidateId] = useState<string | null>(null);
+  const [remoteSubmissions, setRemoteSubmissions] = useState<JudgeEvaluationSubmission[]>([]);
+  const [submissionLoadError, setSubmissionLoadError] = useState<string | null>(null);
+  const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(false);
 
   // Active Opportunity
   const currentOpp = useMemo(() => {
     return opportunities.find((o) => o.id === activeOppId) || opportunities[0] || null;
   }, [opportunities, activeOppId]);
 
-  // Submissions for this event
+  useEffect(() => {
+    if (!currentOpp) {
+      setRemoteSubmissions([]);
+      return;
+    }
+
+    let active = true;
+    let unsubscribe: (() => void) | null = null;
+    const refresh = async () => {
+      setIsLoadingSubmissions(true);
+      try {
+        const results = await fetchJudgeSubmissionsForEvent(currentOpp.id);
+        if (!active) return;
+        setRemoteSubmissions(results);
+        setSubmissionLoadError(null);
+      } catch (error) {
+        if (active) {
+          setSubmissionLoadError(error instanceof Error ? error.message : 'Could not load judge evaluations.');
+        }
+      } finally {
+        if (active) setIsLoadingSubmissions(false);
+      }
+    };
+
+    void refresh();
+    subscribeJudgeSubmissionsForEvent(currentOpp.id, () => {
+      void refresh();
+    }).then((stop) => {
+      if (active) unsubscribe = stop;
+      else stop();
+    }).catch((error) => {
+      if (active) {
+        setSubmissionLoadError(error instanceof Error ? error.message : 'Could not subscribe to live judge results.');
+      }
+    });
+
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
+  }, [currentOpp?.id]);
+
   const submissions = useMemo(() => {
     if (!currentOpp) return [];
-    return getSubmissionsForEvent(currentOpp.id);
-  }, [currentOpp]);
+    const byId = new Map(
+      getSubmissionsForEvent(currentOpp.id).map((submission) => [submission.id, submission])
+    );
+    remoteSubmissions
+      .filter((submission) => submission.opportunityId === currentOpp.id)
+      .forEach((submission) => byId.set(submission.id, submission));
+    return [...byId.values()];
+  }, [currentOpp, remoteSubmissions]);
 
   // Candidates for this event
   const candidates = useMemo(() => {
@@ -165,6 +216,17 @@ export const OrganiserEvaluationsView: React.FC<OrganiserEvaluationsViewProps> =
           </button>
         </div>
       </div>
+
+      {submissionLoadError ? (
+        <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700">
+          {submissionLoadError}
+        </div>
+      ) : (
+        <div role="status" className="flex items-center gap-2 text-[11px] font-semibold text-emerald-700">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          {isLoadingSubmissions ? 'Loading judge results…' : 'Live judge result updates are enabled'}
+        </div>
+      )}
 
       {/* Evaluation Progress & Metrics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
