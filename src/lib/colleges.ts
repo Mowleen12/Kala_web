@@ -94,3 +94,8 @@ export const DELHI_COLLEGES: string[] = [
   'Pearl Academy',
   'Indian Agricultural Research Institute (IARI)',
 ];
+
+export function isSameCollege(a?: string | null, b?: string | null): boolean {
+  if (!a || !b) return false;
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}

@@ -66,6 +66,8 @@ import {
   fetchCategoryCounts,
   schemaMissing,
 } from './lib/listings';
+import { isOpportunityOpen } from './lib/opportunityStatus';
+import { isSameCollege } from './lib/colleges';
 import { computeProfileCompletion, initialProfileCompletion, loadProfileSkills, loadProfileText, isDeviceLocalAvatarUrl, persistAvatarToAccount, upgradeLocalAvatarToHosted, fetchAccountAvatar } from './lib/profile';
 import { ThreadModal } from './components/ThreadModal';
 import { WorkspaceSkeleton } from './components/Skeletons';
@@ -529,12 +531,23 @@ export default function App() {
     () => (portalMode === 'artist' ? selectionNotices.find((n) => n.kind === 'selected') || null : null),
     [selectionNotices, portalMode]
   );
-  const societyCalls = useMemo(
-    () => opportunities.filter(
-      (o) => o.organiserType === 'society' || o.category === 'College Societies & Clubs'
-    ),
+  // Artist surfaces never show calls whose application deadline has passed
+  // (or that the organiser closed); the organiser portal keeps the raw list.
+  const artistOpportunities = useMemo(
+    () => opportunities.filter(isOpportunityOpen),
     [opportunities]
   );
+  const societyCalls = useMemo(
+    () => artistOpportunities.filter(
+      (o) => o.organiserType === 'society' || o.category === 'College Societies & Clubs'
+    ),
+    [artistOpportunities]
+  );
+  const collegeCalls = useMemo(() => {
+    const myCollege = currentUser?.collegeName;
+    if (!myCollege) return [];
+    return artistOpportunities.filter((o) => isSameCollege(myCollege, o.collegeName));
+  }, [artistOpportunities, currentUser]);
   const myOpportunities = useMemo(
     () => (currentUser ? opportunities.filter((o) => o.organiserId === currentUser.id) : []),
     [opportunities, currentUser]
@@ -1233,12 +1246,13 @@ export default function App() {
                     <div className="xl:col-span-8 space-y-6">
                       {/* Featured Opportunities Section */}
                       <FeaturedOpportunities
-                        opportunities={opportunities}
+                        opportunities={artistOpportunities}
                         appliedIds={appliedOppIds}
                         onApply={handleApplyClick}
                         onViewDetails={handleViewDetails}
                         onViewOrganizerProfile={handleOpenOrganizerProfile}
                         onViewAll={() => setCurrentArtistTab('discover')}
+                        collegeName={currentUser.collegeName}
                       />
 
                       {societyCalls.length > 0 && (
@@ -1251,6 +1265,21 @@ export default function App() {
                           onViewDetails={handleViewDetails}
                           onViewOrganizerProfile={handleOpenOrganizerProfile}
                           onViewAll={() => setCurrentArtistTab('discover')}
+                          collegeName={currentUser.collegeName}
+                        />
+                      )}
+
+                      {collegeCalls.length > 0 && (
+                        <FeaturedOpportunities
+                          title={`Calls from ${currentUser.collegeName}`}
+                          subtitle="Open opportunities posted by your college."
+                          opportunities={collegeCalls}
+                          appliedIds={appliedOppIds}
+                          onApply={handleApplyClick}
+                          onViewDetails={handleViewDetails}
+                          onViewOrganizerProfile={handleOpenOrganizerProfile}
+                          onViewAll={() => setCurrentArtistTab('discover')}
+                          collegeName={currentUser.collegeName}
                         />
                       )}
 
@@ -1280,7 +1309,7 @@ export default function App() {
 
               {currentArtistTab === 'discover' && (
                 <DiscoverView
-                  opportunities={opportunities}
+                  opportunities={artistOpportunities}
                   appliedIds={appliedOppIds}
                   initialCategory={selectedCategory}
                   initialSearch={searchQuery}
@@ -1288,6 +1317,7 @@ export default function App() {
                   onApply={handleApplyClick}
                   onViewDetails={handleViewDetails}
                   onViewOrganizerProfile={handleOpenOrganizerProfile}
+                  collegeName={currentUser.collegeName}
                 />
               )}
 

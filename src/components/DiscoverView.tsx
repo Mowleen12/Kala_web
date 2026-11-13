@@ -14,9 +14,10 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { KalaStar } from './KalaLogo';
-import { HostTypeTag, CollegeOnlyTag } from './HostTypeTag';
+import { HostTypeTag, CollegeOnlyTag, YourCollegeTag } from './HostTypeTag';
 import { CallTypeBadge } from './CallTypeBadge';
 import { Opportunity } from '../types';
+import { isSameCollege } from '../lib/colleges';
 
 interface DiscoverViewProps {
   opportunities: Opportunity[];
@@ -27,6 +28,7 @@ interface DiscoverViewProps {
   onApply: (opp: Opportunity) => void;
   onViewDetails: (opp: Opportunity) => void;
   onViewOrganizerProfile?: (opp: Opportunity) => void;
+  collegeName?: string | null;
 }
 
 export const DiscoverView: React.FC<DiscoverViewProps> = ({
@@ -38,6 +40,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
   onApply,
   onViewDetails,
   onViewOrganizerProfile,
+  collegeName,
 }) => {
   // Filter States
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory || 'All');
@@ -497,6 +500,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({
                     </span>
                     <HostTypeTag organiserType={opp.organiserType} />
                     <CollegeOnlyTag show={opp.collegeOnly} />
+                    <YourCollegeTag show={isSameCollege(collegeName, opp.collegeName)} />
                   </div>
                   <div className="absolute top-3 right-3">
                     <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-zinc-900/90 text-white backdrop-blur-xs">

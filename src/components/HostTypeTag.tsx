@@ -49,3 +49,16 @@ export const StudentTag: React.FC<StudentTagProps> = ({ college, className = '' 
     </span>
   );
 };
+
+interface YourCollegeTagProps {
+  show?: boolean;
+}
+
+export const YourCollegeTag: React.FC<YourCollegeTagProps> = ({ show }) => {
+  if (!show) return null;
+  return (
+    <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold shadow-xs whitespace-nowrap bg-[#E45826] text-white border border-[#C73E0E]">
+      Your College
+    </span>
+  );
+};

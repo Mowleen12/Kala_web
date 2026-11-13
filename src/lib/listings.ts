@@ -2,6 +2,7 @@ import { supabase as supabaseClient, isSupabaseConfigured } from './supabase';
 import { Application, ApplicationStatus, CallType, Opportunity, OpportunityStatus, OrganiserType, PlatformStats, VideoAttachment, ScriptAttachment } from '../types';
 import { isCallType } from './offer';
 import { isDirectMediaUrl, mediaKind } from './media';
+import { isOpportunityOpen } from './opportunityStatus';
 
 const supabase = supabaseClient!;
 
@@ -23,10 +24,9 @@ export function deriveStatusBadge(opp: {
   status?: OpportunityStatus;
   deadline?: string | null;
 }): { label: string; variant: 'countdown' | 'open' | 'closed' } {
-  if (opp.status === 'closed') return { label: 'Closed', variant: 'closed' };
+  if (!isOpportunityOpen(opp)) return { label: 'Closed', variant: 'closed' };
   if (opp.deadline) {
     const remaining = new Date(opp.deadline).getTime() - Date.now();
-    if (remaining <= 0) return { label: 'Closed', variant: 'closed' };
     const days = Math.ceil(remaining / 86_400_000);
     if (days <= 7) {
       return { label: `Closes in ${days} day${days === 1 ? '' : 's'}`, variant: 'countdown' };

@@ -2,9 +2,10 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight, MapPin, Calendar } from 'lucide-react';
 import { KalaStar } from './KalaLogo';
-import { HostTypeTag, CollegeOnlyTag } from './HostTypeTag';
+import { HostTypeTag, CollegeOnlyTag, YourCollegeTag } from './HostTypeTag';
 import { CallTypeBadge } from './CallTypeBadge';
 import { Opportunity } from '../types';
+import { isSameCollege } from '../lib/colleges';
 
 interface FeaturedOpportunitiesProps {
   opportunities: Opportunity[];
@@ -15,6 +16,7 @@ interface FeaturedOpportunitiesProps {
   onViewOrganizerProfile?: (opp: Opportunity) => void;
   title?: string;
   subtitle?: string;
+  collegeName?: string | null;
 }
 
 export const FeaturedOpportunities: React.FC<FeaturedOpportunitiesProps> = ({
@@ -26,6 +28,7 @@ export const FeaturedOpportunities: React.FC<FeaturedOpportunitiesProps> = ({
   onViewOrganizerProfile,
   title,
   subtitle,
+  collegeName,
 }) => {
   const getCategoryBadgeStyle = (category: string) => {
     switch (category) {
@@ -111,6 +114,7 @@ export const FeaturedOpportunities: React.FC<FeaturedOpportunitiesProps> = ({
                   </span>
                   <HostTypeTag organiserType={opp.organiserType} />
                   <CollegeOnlyTag show={opp.collegeOnly} />
+                  <YourCollegeTag show={isSameCollege(collegeName, opp.collegeName)} />
                 </div>
 
                 <div className="absolute top-3 right-3">
