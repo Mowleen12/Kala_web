@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   buildDateRange,
   buildCompensation,
@@ -63,4 +64,17 @@ test('buildCompensation presets pass through', () => {
 test('buildCompensation custom range orders min/max', () => {
   assert.equal(buildCompensation('custom', '30000', '12000'), '₹12,000 – ₹30,000');
   assert.equal(buildCompensation('custom', '5000', '8000'), '₹5,000 – ₹8,000');
+});
+
+test('schema.sql call_type constraint allows every frontend call type', () => {
+  const sql = readFileSync(new URL('../../supabase/schema.sql', import.meta.url), 'utf8');
+  const match = sql.match(/call_type in\s*\(([^)]*)\)/);
+  assert.ok(match, 'call_type check constraint not found in schema.sql');
+  const allowed = (match[1].match(/'[^']+'/g) || []).map((s) => s.slice(1, -1));
+  for (const type of CALL_TYPES) {
+    assert.ok(
+      allowed.includes(type.value),
+      `schema.sql opportunities_call_type_chk is missing '${type.value}' — posting this call type fails at the DB`
+    );
+  }
 });

@@ -421,7 +421,7 @@ alter table public.opportunities add column if not exists call_type text;
 alter table public.opportunities drop constraint if exists opportunities_call_type_chk;
 alter table public.opportunities add constraint opportunities_call_type_chk
   check (call_type is null or call_type in
-    ('audition','competition','event','residency','workshop','commission'));
+    ('audition','competition','event','showcase','festival','exhibition','stage_production','residency','workshop','commission'));
 update public.opportunities set call_type = 'audition' where call_type is null;
 
 -- Core-7 mandatory event fields: backfill legacy rows, then hold new writes.
